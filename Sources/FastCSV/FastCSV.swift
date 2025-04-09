@@ -119,7 +119,8 @@ public class FastCSV {
 
             return CSVArrayIterator(
                 rawIterator: rawIterator,
-                headerCount: headerCount
+                headerCount: headerCount,
+                skipFirstRow: skipFirstRow
             )
         } catch {
             // If raw iterator creation fails, propagate the error

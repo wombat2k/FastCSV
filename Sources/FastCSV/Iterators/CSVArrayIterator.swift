@@ -12,19 +12,15 @@ public extension FastCSV {
         // Pre-allocated arrays for reuse
         private var valueBuffer: [CSVValue]
 
-        // Direct storage for CSVResult to avoid copying
-        private var resultValues: [CSVValue]?
-
-        init(rawIterator: CSVBaseIterator, headerCount: Int) {
+        init(rawIterator: CSVBaseIterator, headerCount: Int, skipFirstRow: Bool = false) {
             self.rawIterator = rawIterator
             self.headerCount = headerCount
 
             // Pre-allocate buffer for values with expected capacity
-            // Pass nil to the existing buffer initializer for empty values
             if headerCount > 0 {
-                rowNumber = 1
-                // Pre-allocate the buffer with the expected header count
-                // This avoids reallocation in the hot path
+                // Start with row 2 if we're skipping the first row (headers)
+                rowNumber = skipFirstRow ? 1 : 0
+                // Pre-allocate with capacity to avoid reallocations
                 valueBuffer = [CSVValue](repeating: CSVValue(buffer: nil), count: headerCount)
             } else {
                 rowNumber = 0
@@ -40,55 +36,52 @@ public extension FastCSV {
 
             rowNumber += 1
 
-            // Use the optimized count property instead of array.count
+            // Use the optimized count property
             let fieldCount = result.count
 
-            // Fast path for when headerCount matches fieldCount
-            // This avoids any array operations when column count is stable
-            if headerCount > 0 && valueBuffer.count == fieldCount {
-                // Reuse the existing values directly
+            // Fast path for when headerCount matches fieldCount exactly
+            if valueBuffer.count == fieldCount {
+                // Process in-place without array resizing
                 for i in 0 ..< fieldCount {
                     let fieldPointer = result[i]
-                    valueBuffer[i] = CSVValue(buffer: fieldPointer.isEmpty ? nil : fieldPointer)
+                    // Reuse existing buffer if not empty
+                    // This avoids unnecessary copying of data
+                    valueBuffer[i].update(buffer: fieldPointer.isEmpty ? nil : fieldPointer)
                 }
 
-                // Determine if there's an error
-                let error = result.parsingError
+                // Create error if needed
+                var error = result.parsingError
+                if headerCount > 0 && fieldCount != headerCount && error == nil {
+                    error = CSVError.rowError(
+                        row: rowNumber,
+                        message: "Row \(rowNumber) has \(fieldCount) columns, expected \(headerCount)."
+                    )
+                }
 
-                // Return directly, avoiding the array copy
+                // Return directly using the existing buffer
                 return CSVArrayResult(values: valueBuffer, error: error)
             }
 
-            // Slow path for when we need to resize
-
-            // Resize our buffer if needed
+            // Need to resize the buffer
             if valueBuffer.count < fieldCount {
-                // Avoid append(contentsOf:) as it does bounds checking
-                // and can trigger expensive copy-on-write operations
-                let currentCount = valueBuffer.count
+                // Grow the array efficiently
                 valueBuffer.reserveCapacity(fieldCount)
-
-                // Add individual elements which can be more efficient
-                for _ in currentCount ..< fieldCount {
+                while valueBuffer.count < fieldCount {
                     valueBuffer.append(CSVValue(buffer: nil))
                 }
+            } else if valueBuffer.count > fieldCount {
+                // Shrink the array
+                valueBuffer.removeSubrange(fieldCount ..< valueBuffer.count)
             }
 
-            // Fill the buffer with values created directly from pointers
+            // Fill the buffer with values
             for i in 0 ..< fieldCount {
                 let fieldPointer = result[i]
                 valueBuffer[i] = CSVValue(buffer: fieldPointer.isEmpty ? nil : fieldPointer)
             }
 
-            // Truncate if needed using more efficient method
-            if valueBuffer.count > fieldCount {
-                valueBuffer = Array(valueBuffer[0 ..< fieldCount])
-            }
-
-            // Determine the error - either from parsing or column count mismatch
+            // Determine the error
             var error = result.parsingError
-
-            // Validate row count
             if headerCount > 0 && fieldCount != headerCount && error == nil {
                 error = CSVError.rowError(
                     row: rowNumber,
@@ -96,7 +89,7 @@ public extension FastCSV {
                 )
             }
 
-            // Return the CSVArrayResult with values and error
+            // Return the result using our optimized buffer
             return CSVArrayResult(values: valueBuffer, error: error)
         }
 
