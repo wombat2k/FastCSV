@@ -93,7 +93,6 @@ public extension FastCSV {
     func forEach(_ callback: (CSVArrayResult) throws -> Void) throws {
         var iterator = try makeValueArrayIterator()
         defer {
-            // Ensure cleanup happens even if processing fails
             iterator.cleanup()
         }
 

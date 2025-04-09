@@ -10,6 +10,24 @@ extension FastCSV {
     struct CSVBaseIterator: IteratorProtocol, Sequence {
         public typealias Element = CSVIteratorResult
 
+        // Define allocation strategy enum to make the behavior explicit
+        private enum FieldAllocationStrategy {
+            case dynamic // Used when column count is unknown (initially)
+            case fixed(capacity: Int) // Used once we know the column count
+
+            var capacity: Int {
+                switch self {
+                case .dynamic: return 0
+                case let .fixed(capacity): return capacity
+                }
+            }
+
+            var isFixed: Bool {
+                if case .fixed = self { return true }
+                return false
+            }
+        }
+
         /// Whether parsing has finished
         private var isFinished = false
 
@@ -17,6 +35,8 @@ extension FastCSV {
         private var fieldStartPosition = 0
         /// Collection of field pointers for nextFieldPointers method
         private var fieldPointers = [UnsafeBufferPointer<UInt8>]()
+        /// The allocation strategy for field pointers
+        private let allocationStrategy: FieldAllocationStrategy
 
         /// Current position within the read buffer
         var currentPosition = 0
@@ -50,12 +70,16 @@ extension FastCSV {
             delimiter = config.delimiter
             readBufferSize = config.readBufferSize
 
-            // Pre-allocate field pointers based on known column count
-            // Only reserve capacity if we know the actual column count
+            // Set the allocation strategy explicitly based on known column count
             if columnCount > 0 {
+                allocationStrategy = .fixed(capacity: columnCount)
                 fieldPointers.reserveCapacity(columnCount)
+            } else {
+                // Use dynamic allocation when column count is unknown
+                allocationStrategy = .dynamic
+                // Initial modest capacity helps with small files without being wasteful
+                fieldPointers.reserveCapacity(10)
             }
-            // When columnCount is 0, we'll let the array grow naturally based on the CSV content
 
             // Load initial data
             loadNextChunkIfNeeded()
@@ -119,8 +143,8 @@ extension FastCSV {
             // State tracking for quotes
             var inQuote = false
 
-            // Get the maximum allowed column count (0 means unlimited)
-            let maxColumns = fieldPointers.capacity
+            // Get the maximum allowed column count (0 means unlimited for dynamic strategy)
+            let maxColumns = allocationStrategy.capacity
 
             // Keep track of whether we've exceeded the column limit
             var exceededColumnLimit = false
@@ -190,8 +214,8 @@ extension FastCSV {
                     } else if !inQuote && byte == delimiter.field {
                         // End of field - create a pointer to the current field
 
-                        // Only add the field if we haven't exceeded the column limit
-                        if maxColumns == 0 || fieldPointers.count < maxColumns {
+                        // Only add the field if we haven't exceeded the column limit or using dynamic allocation
+                        if !allocationStrategy.isFixed || fieldPointers.count < maxColumns {
                             if currentPosition > fieldStartPosition {
                                 let fieldPointer = createFieldPointer(
                                     from: fieldStartPosition,
