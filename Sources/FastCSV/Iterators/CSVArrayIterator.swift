@@ -35,49 +35,27 @@ public extension FastCSV {
             }
 
             rowNumber += 1
-
-            // Use the optimized count property
             let fieldCount = result.count
 
-            // Fast path for when headerCount matches fieldCount exactly
-            if valueBuffer.count == fieldCount {
-                // Process in-place without array resizing
-                for i in 0 ..< fieldCount {
-                    let fieldPointer = result[i]
-                    // Reuse existing buffer if not empty
-                    // This avoids unnecessary copying of data
-                    valueBuffer[i].update(buffer: fieldPointer.isEmpty ? nil : fieldPointer)
-                }
+            // Ensure buffer has the right size at initialization and keep it that way
+            // If size needs to change, create a new buffer with exact size once
+            if valueBuffer.count != fieldCount {
+                // Create a new buffer of exactly the right size - more efficient than
+                // repeated append/remove operations when sizes differ a lot
+                var newBuffer = [CSVValue](repeating: CSVValue(buffer: nil), count: fieldCount)
 
-                // Create error if needed
-                var error = result.parsingError
-                if headerCount > 0 && fieldCount != headerCount && error == nil {
-                    error = CSVError.rowError(
-                        row: rowNumber,
-                        message: "Row \(rowNumber) has \(fieldCount) columns, expected \(headerCount)."
-                    )
+                // Copy over existing values up to the minimum count
+                let minCount = Swift.min(valueBuffer.count, fieldCount)
+                for i in 0 ..< minCount {
+                    newBuffer[i] = valueBuffer[i]
                 }
-
-                // Return directly using the existing buffer
-                return CSVArrayResult(values: valueBuffer, error: error)
+                valueBuffer = newBuffer
             }
 
-            // Need to resize the buffer
-            if valueBuffer.count < fieldCount {
-                // Grow the array efficiently
-                valueBuffer.reserveCapacity(fieldCount)
-                while valueBuffer.count < fieldCount {
-                    valueBuffer.append(CSVValue(buffer: nil))
-                }
-            } else if valueBuffer.count > fieldCount {
-                // Shrink the array
-                valueBuffer.removeSubrange(fieldCount ..< valueBuffer.count)
-            }
-
-            // Fill the buffer with values
+            // Now we know valueBuffer.count == fieldCount, update in place
             for i in 0 ..< fieldCount {
                 let fieldPointer = result[i]
-                valueBuffer[i] = CSVValue(buffer: fieldPointer.isEmpty ? nil : fieldPointer)
+                valueBuffer[i].update(buffer: fieldPointer.isEmpty ? nil : fieldPointer)
             }
 
             // Determine the error
@@ -89,7 +67,6 @@ public extension FastCSV {
                 )
             }
 
-            // Return the result using our optimized buffer
             return CSVArrayResult(values: valueBuffer, error: error)
         }
 
