@@ -77,8 +77,6 @@ extension FastCSV {
             } else {
                 // Use dynamic allocation when column count is unknown
                 allocationStrategy = .dynamic
-                // Initial modest capacity helps with small files without being wasteful
-                fieldPointers.reserveCapacity(10)
             }
 
             // Load initial data
