@@ -68,7 +68,7 @@ public class FastCSV {
     ///   - customHeaders: Custom headers provided by the user, if any
     /// - Returns: Tuple containing processed headers, whether to skip first row, and header count
     /// - Throws: CSVError if header validation fails
-    static func processHeaders(firstRow: [CSVValue], hasHeaders: Bool, customHeaders: [String]) throws ->
+    private static func processHeaders(firstRow: [CSVValue], hasHeaders: Bool, customHeaders: [String]) throws ->
         (headers: [String], skipFirstRow: Bool, headerCount: Int)
     {
         if !customHeaders.isEmpty {
@@ -77,16 +77,28 @@ public class FastCSV {
                 throw CSVError.invalidCSV(message: "Header count (\(customHeaders.count)) does not match the number of fields in the first row (\(firstRow.count)).")
             }
 
+            // Process empty header values with auto-generated column names
+            let processedHeaders = customHeaders.enumerated().map { index, header in
+                header.isEmpty ? "column_\(index + 1)" : header // Using 1-based indexing for readability
+            }
+
             // If custom headers are provided AND file has headers,
             // we should skip the first row when reading data
-            return (customHeaders, hasHeaders, customHeaders.count)
+            return (processedHeaders, hasHeaders, processedHeaders.count)
         } else if hasHeaders {
             // If hasHeaders=true, use first row as headers
             let extractedHeaders = try firstRow.map { try $0.getString() ?? "" }
-            return (extractedHeaders, true, extractedHeaders.count)
+
+            // Process empty header values with auto-generated column names
+            let processedHeaders = extractedHeaders.enumerated().map { index, header in
+                header.isEmpty ? "column_\(index + 1)" : header // Using 1-based indexing for readability
+            }
+
+            return (processedHeaders, true, processedHeaders.count)
         } else {
-            // No headers in file or provided, don't skip any rows
-            return ([], false, firstRow.count)
+            // No headers in file or provided, generate auto-numbered columns
+            let generatedHeaders = (0 ..< firstRow.count).map { "column_\($0 + 1)" }
+            return (generatedHeaders, false, firstRow.count)
         }
     }
 

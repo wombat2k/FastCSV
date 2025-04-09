@@ -1,20 +1,4 @@
-public struct CSVArrayResult {
-    public let values: [CSVValue]
-    public let error: CSVError?
-
-    init(values: [CSVValue], error: CSVError?) {
-        self.values = values
-        self.error = error
-    }
-
-    /// Returns a safe copy of the array
-    /// - Returns: A new array with copied values
-    /// - Note: This method is useful for ensuring that the values are not invalidated
-    ///   when the underlying buffer is released.
-    func copyArray() -> [CSVValue] {
-        return values.map { $0.copy() }
-    }
-}
+import Foundation
 
 public extension FastCSV {
     /// Iterator for CSVValue objects that reference the underlying buffer directly

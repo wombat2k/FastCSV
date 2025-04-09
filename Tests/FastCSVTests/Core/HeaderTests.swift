@@ -180,4 +180,32 @@ struct HeaderTests {
             }
         )
     }
+
+    @Test("Dictionary with empty values")
+    func testEmptyHeadersWithCustomHeaders() async throws {
+        let headers = ["header1", "", "header3"]
+        let rows = [["value1", "value2", "value3"]]
+
+        try await TestUtils.runTest(
+            testName: "Empty headers with custom headers",
+            contentHeaders: headers,
+            contentRows: rows,
+            outputFormat: .dictionary,
+            validate: { (results: [CSVDictionaryResult]) in
+                #expect(TestUtils.isErrorFree(dictionaryResult: results), "All rows should be error-free")
+
+                #expect(results.count == 1, "Should have 1 row")
+                #expect(results[0].values.count == 3, "First row should have 3 columns")
+
+                let value1 = try results[0].values["header1"]?.getString() ?? ""
+                #expect(value1 == "value1", "First value should be 'value1'")
+
+                let value2 = try results[0].values["column_2"]?.getString() ?? ""
+                #expect(value2 == "value2", "Second value should be 'value2'")
+
+                let value3 = try results[0].values["header3"]?.getString() ?? ""
+                #expect(value3 == "value3", "Third value should be 'value3'")
+            }
+        )
+    }
 }

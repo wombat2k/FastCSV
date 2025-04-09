@@ -1,23 +1,4 @@
-public struct CSVDictionaryResult {
-    public let values: [String: CSVValue]
-    public let error: CSVError?
-
-    init(values: [String: CSVValue], error: CSVError?) {
-        self.values = values
-        self.error = error
-    }
-
-    /// Returns a safe copy of the dictionary
-    /// - Returns: A new dictionary with copied values
-    ///
-    public func copyDictionary() -> [String: CSVValue] {
-        var safeDictionary = [String: CSVValue](minimumCapacity: values.count)
-        for (key, value) in values {
-            safeDictionary[key] = value.copy()
-        }
-        return safeDictionary
-    }
-}
+import Foundation
 
 public extension FastCSV {
     /// Iterator for dictionaries of header keys -> CSVValue
@@ -27,17 +8,9 @@ public extension FastCSV {
         private var valueArrayIterator: CSVArrayIterator
         private let headers: [String]
 
-        // Cache of column names to avoid string interpolation in the hot path
-        private let columnKeys: [String]
-
         init(valueArrayIterator: CSVArrayIterator, headers: [String]) {
             self.valueArrayIterator = valueArrayIterator
             self.headers = headers
-
-            // Pre-compute column keys once, replacing empty headers with auto-generated column names
-            columnKeys = headers.enumerated().map { index, header in
-                header.isEmpty ? "column_\(index + 1)" : header // Using 1-based indexing for readability
-            }
         }
 
         /// Cleans up resources used by this iterator and the underlying iterators
@@ -58,16 +31,15 @@ public extension FastCSV {
             // Create a new dictionary with enough capacity
             var resultDict = [String: CSVValue](minimumCapacity: headers.count)
 
-            // Populate the dictionary directly using column keys (which handle empty headers)
-            let count = Swift.min(columnKeys.count, values.count)
+            // Populate the dictionary directly using headers (empty headers already handled in FastCSV)
+            let count = Swift.min(headers.count, values.count)
             for i in 0 ..< count {
-                // Here we use columnKeys which already handles empty headers
-                resultDict[columnKeys[i]] = values[i]
+                resultDict[headers[i]] = values[i]
             }
 
             // Handle any extra columns
-            if values.count > columnKeys.count {
-                for i in columnKeys.count ..< values.count {
+            if values.count > headers.count {
+                for i in headers.count ..< values.count {
                     resultDict["column_\(i + 1)"] = values[i] // Use 1-based indexing for extra columns
                 }
             }
