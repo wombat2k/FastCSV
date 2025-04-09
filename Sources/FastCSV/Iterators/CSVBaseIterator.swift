@@ -3,6 +3,40 @@ import Foundation
 struct CSVIteratorResult {
     public let fieldPointers: [UnsafeBufferPointer<UInt8>]
     public let parsingError: CSVError?
+    // Add an underlying storage property to avoid temporary array creation
+    private let fixedStorage: UnsafeBufferPointer<UnsafeBufferPointer<UInt8>>?
+    private let fieldCount: Int
+
+    // Add a constructor that allows direct passing of existing arrays for zero-copy field pointers
+    init(fieldPointers: [UnsafeBufferPointer<UInt8>], parsingError: CSVError?) {
+        self.fieldPointers = fieldPointers
+        self.parsingError = parsingError
+        fixedStorage = nil
+        fieldCount = fieldPointers.count
+    }
+
+    // Optimized constructor that truly avoids array creation by keeping a reference to the buffer
+    init(directStorage: UnsafeBufferPointer<UnsafeBufferPointer<UInt8>>, count: Int, parsingError: CSVError?) {
+        fixedStorage = directStorage
+        fieldCount = count
+        // Create a custom array facade that accesses the underlying buffer directly
+        fieldPointers = []
+        self.parsingError = parsingError
+    }
+
+    // Add subscript accessor to support direct access without array copying
+    subscript(index: Int) -> UnsafeBufferPointer<UInt8> {
+        precondition(index >= 0 && index < fieldCount, "Index out of bounds")
+        if let storage = fixedStorage {
+            return storage[index]
+        }
+        return fieldPointers[index]
+    }
+
+    // Add count property to support looping without array copying
+    var count: Int {
+        return fieldCount
+    }
 }
 
 extension FastCSV {
@@ -35,8 +69,13 @@ extension FastCSV {
         private var fieldStartPosition = 0
         /// Collection of field pointers for nextFieldPointers method
         private var fieldPointers = [UnsafeBufferPointer<UInt8>]()
+        /// Pre-allocated field pointers for reuse with fixed allocation strategy
+        private var reusableFieldPointers: [UnsafeBufferPointer<UInt8>]
         /// The allocation strategy for field pointers
         private let allocationStrategy: FieldAllocationStrategy
+
+        /// Pre-allocated contiguous storage for field pointers in fixed allocation mode
+        private var fixedFieldPointersStorage: UnsafeMutableBufferPointer<UnsafeBufferPointer<UInt8>>?
 
         /// Current position within the read buffer
         var currentPosition = 0
@@ -73,10 +112,22 @@ extension FastCSV {
             // Set the allocation strategy explicitly based on known column count
             if columnCount > 0 {
                 allocationStrategy = .fixed(capacity: columnCount)
+
+                // Allocate continuous memory for field pointers to avoid array operations
+                let storage = UnsafeMutableBufferPointer<UnsafeBufferPointer<UInt8>>.allocate(capacity: columnCount)
+                for i in 0 ..< columnCount {
+                    storage[i] = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
+                }
+                fixedFieldPointersStorage = storage
+
+                // Keep the normal arrays as fallbacks
+                reusableFieldPointers = Array(repeating: UnsafeBufferPointer<UInt8>(start: nil, count: 0), count: columnCount)
                 fieldPointers.reserveCapacity(columnCount)
             } else {
                 // Use dynamic allocation when column count is unknown
                 allocationStrategy = .dynamic
+                reusableFieldPointers = []
+                fixedFieldPointersStorage = nil
             }
 
             // Load initial data
@@ -123,6 +174,12 @@ extension FastCSV {
         public mutating func cleanup() {
             // Close file handle if it's still open
             try? fileHandle.close()
+
+            // Deallocate fixed storage buffer if allocated
+            if let storage = fixedFieldPointersStorage {
+                fixedFieldPointersStorage = nil
+                storage.deallocate()
+            }
         }
 
         public mutating func nextFieldPointers() -> CSVIteratorResult? {
@@ -134,15 +191,19 @@ extension FastCSV {
             // Clear any previous parsing error before starting a new row
             parsingError = nil
 
-            // Reuse the field pointers array by setting count to 0 instead of recreating
-            fieldPointers.removeAll(keepingCapacity: true)
+            let isFixedAllocation = allocationStrategy.isFixed
+            let maxColumns = allocationStrategy.capacity
+            var currentFieldIndex = 0
+
+            // For dynamic allocation, clear the array but keep capacity
+            if !isFixedAllocation {
+                fieldPointers.removeAll(keepingCapacity: true)
+            }
+
             fieldStartPosition = currentPosition
 
             // State tracking for quotes
             var inQuote = false
-
-            // Get the maximum allowed column count (0 means unlimited for dynamic strategy)
-            let maxColumns = allocationStrategy.capacity
 
             // Keep track of whether we've exceeded the column limit
             var exceededColumnLimit = false
@@ -155,24 +216,39 @@ extension FastCSV {
                     // Process any final field at EOF if needed
                     if currentPosition > fieldStartPosition && currentBytes != nil {
                         // Only add the field if we haven't exceeded the column limit
-                        if maxColumns == 0 || fieldPointers.count < maxColumns {
+                        if maxColumns == 0 || currentFieldIndex < maxColumns {
                             let fieldPointer = createFieldPointer(
                                 from: fieldStartPosition,
                                 to: currentPosition,
                                 in: currentBytes!
                             )
-                            fieldPointers.append(fieldPointer)
+
+                            if isFixedAllocation, let storage = fixedFieldPointersStorage {
+                                storage[currentFieldIndex] = fieldPointer
+                                currentFieldIndex += 1
+                            } else {
+                                fieldPointers.append(fieldPointer)
+                            }
                         } else if !exceededColumnLimit {
                             // Set the error but only once per row
                             parsingError = .rowError(
                                 row: currentRowNumber,
-                                message: "Row \(currentRowNumber) has more columns than expected: got \(fieldPointers.count + 1), expected \(maxColumns)."
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(maxColumns)."
                             )
                             exceededColumnLimit = true
                         }
-                        // No need to add additional fields when limit is exceeded
                     }
-                    return fieldPointers.isEmpty ? nil : CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
+
+                    // Return result based on allocation strategy
+                    if isFinished {
+                        if isFixedAllocation, let storage = fixedFieldPointersStorage {
+                            return currentFieldIndex > 0 ?
+                                CSVIteratorResult(directStorage: UnsafeBufferPointer(storage), count: currentFieldIndex, parsingError: parsingError) : nil
+                        } else {
+                            return fieldPointers.isEmpty ? nil : CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
+                        }
+                    }
+                    return nil
                 }
 
                 guard let bytes = currentBytes else {
@@ -213,23 +289,36 @@ extension FastCSV {
                         // End of field - create a pointer to the current field
 
                         // Only add the field if we haven't exceeded the column limit or using dynamic allocation
-                        if !allocationStrategy.isFixed || fieldPointers.count < maxColumns {
+                        if maxColumns == 0 || currentFieldIndex < maxColumns {
                             if currentPosition > fieldStartPosition {
                                 let fieldPointer = createFieldPointer(
                                     from: fieldStartPosition,
                                     to: currentPosition,
                                     in: bytes
                                 )
-                                fieldPointers.append(fieldPointer)
+
+                                if isFixedAllocation, let storage = fixedFieldPointersStorage {
+                                    storage[currentFieldIndex] = fieldPointer
+                                    currentFieldIndex += 1
+                                } else {
+                                    fieldPointers.append(fieldPointer)
+                                }
                             } else {
                                 // Empty field
-                                fieldPointers.append(UnsafeBufferPointer<UInt8>(start: nil, count: 0))
+                                let emptyPointer = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
+
+                                if isFixedAllocation, let storage = fixedFieldPointersStorage {
+                                    storage[currentFieldIndex] = emptyPointer
+                                    currentFieldIndex += 1
+                                } else {
+                                    fieldPointers.append(emptyPointer)
+                                }
                             }
                         } else if !exceededColumnLimit {
                             // Set the error but only once per row
                             parsingError = .rowError(
                                 row: currentRowNumber,
-                                message: "Row \(currentRowNumber) has more columns than expected: got \(fieldPointers.count + 1), expected \(maxColumns)."
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(maxColumns)."
                             )
                             exceededColumnLimit = true
                             // Once we exceed the column limit, we don't create more field pointers
@@ -242,23 +331,36 @@ extension FastCSV {
                         // End of row - finalize the current field
 
                         // Only add the field if we haven't exceeded the column limit
-                        if maxColumns == 0 || fieldPointers.count < maxColumns {
+                        if maxColumns == 0 || currentFieldIndex < maxColumns {
                             if currentPosition > fieldStartPosition {
                                 let fieldPointer = createFieldPointer(
                                     from: fieldStartPosition,
                                     to: currentPosition,
                                     in: bytes
                                 )
-                                fieldPointers.append(fieldPointer)
+
+                                if isFixedAllocation, let storage = fixedFieldPointersStorage {
+                                    storage[currentFieldIndex] = fieldPointer
+                                    currentFieldIndex += 1
+                                } else {
+                                    fieldPointers.append(fieldPointer)
+                                }
                             } else {
                                 // Empty field at end of row
-                                fieldPointers.append(UnsafeBufferPointer<UInt8>(start: nil, count: 0))
+                                let emptyPointer = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
+
+                                if isFixedAllocation, let storage = fixedFieldPointersStorage {
+                                    storage[currentFieldIndex] = emptyPointer
+                                    currentFieldIndex += 1
+                                } else {
+                                    fieldPointers.append(emptyPointer)
+                                }
                             }
                         } else if !exceededColumnLimit {
                             // Set the error but only once per row
                             parsingError = .rowError(
                                 row: currentRowNumber,
-                                message: "Row \(currentRowNumber) has more columns than expected: got \(fieldPointers.count + 1), expected \(maxColumns)."
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(maxColumns)."
                             )
                             exceededColumnLimit = true
                             // Don't add more fields after exceeding the limit
@@ -276,8 +378,17 @@ extension FastCSV {
 
                         fieldStartPosition = currentPosition
 
-                        // Increment row number after processing a complete row
-                        let result = CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
+                        // Create result and return based on allocation strategy
+                        let result: CSVIteratorResult
+                        if isFixedAllocation, let storage = fixedFieldPointersStorage {
+                            // Use the optimized direct storage accessor to avoid array creation
+                            result = CSVIteratorResult(directStorage: UnsafeBufferPointer(storage),
+                                                       count: currentFieldIndex,
+                                                       parsingError: parsingError)
+                        } else {
+                            result = CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
+                        }
+
                         currentRowNumber += 1
                         return result
                     } else {
@@ -299,7 +410,15 @@ extension FastCSV {
                     to: currentPosition,
                     in: bytes
                 )
-                fieldPointers.append(fieldPointer)
+
+                // Store the field pointer based on allocation strategy
+                if allocationStrategy.isFixed, let storage = fixedFieldPointersStorage {
+                    if let count = fixedFieldPointersStorage?.count, fieldPointers.count < count {
+                        storage[fieldPointers.count] = fieldPointer
+                    }
+                } else {
+                    fieldPointers.append(fieldPointer)
+                }
 
                 // Reset for next time
                 fieldStartPosition = currentPosition
