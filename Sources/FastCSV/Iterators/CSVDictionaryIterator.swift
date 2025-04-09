@@ -8,9 +8,20 @@ public extension FastCSV {
         private var valueArrayIterator: CSVArrayIterator
         private let headers: [String]
 
+        // Pre-allocated reusable dictionary for performance
+        private var reusableDict: [String: CSVValue]
+
         init(valueArrayIterator: CSVArrayIterator, headers: [String]) {
             self.valueArrayIterator = valueArrayIterator
             self.headers = headers
+
+            // Pre-allocate dictionary with the exact capacity needed
+            reusableDict = Dictionary(minimumCapacity: headers.count)
+
+            // Pre-populate with empty values to establish keys
+            for header in headers {
+                reusableDict[header] = CSVValue(buffer: nil)
+            }
         }
 
         /// Cleans up resources used by this iterator and the underlying iterators
@@ -28,23 +39,14 @@ public extension FastCSV {
             let values = arrayResult.values
             let error = arrayResult.error
 
-            // Create a new dictionary with enough capacity
-            var resultDict = [String: CSVValue](minimumCapacity: headers.count)
-
-            // Populate the dictionary directly using headers (empty headers already handled in FastCSV)
+            // Update dictionary values directly - no need to recreate keys
             let count = Swift.min(headers.count, values.count)
             for i in 0 ..< count {
-                resultDict[headers[i]] = values[i]
+                reusableDict[headers[i]] = values[i]
             }
 
-            // Handle any extra columns
-            if values.count > headers.count {
-                for i in headers.count ..< values.count {
-                    resultDict["column_\(i + 1)"] = values[i] // Use 1-based indexing for extra columns
-                }
-            }
-
-            return CSVDictionaryResult(values: resultDict, error: error)
+            // Since dictionaries are value types, return a copy for the caller
+            return CSVDictionaryResult(values: reusableDict, error: error)
         }
     }
 
