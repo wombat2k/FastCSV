@@ -37,7 +37,10 @@ extension FastCSV {
         // Add a property to store any error encountered during parsing
         private(set) var parsingError: CSVError?
 
-        /// Initialize a CSVRawIterator for parsing a CSV file with a FileHandle
+        // Add a property to track the current row number
+        private var currentRowNumber = 1
+
+        /// Initialize a CSVIterator for parsing a CSV file with a FileHandle
         /// - Parameters:
         ///   - fileHandle: FileHandle to read CSV data from
         ///   - skipFirstRow: Whether to skip the first row during iteration (default: true)
@@ -60,6 +63,7 @@ extension FastCSV {
             // Skip the first row if requested
             if skipFirstRow {
                 _ = nextFieldPointers()
+                currentRowNumber = 2
             }
         }
 
@@ -108,7 +112,7 @@ extension FastCSV {
             // Clear any previous parsing error before starting a new row
             parsingError = nil
 
-            // Clear the field pointers from previous row
+            // Reuse the field pointers array by setting count to 0 instead of recreating
             fieldPointers.removeAll(keepingCapacity: true)
             fieldStartPosition = currentPosition
 
@@ -138,9 +142,13 @@ extension FastCSV {
                             fieldPointers.append(fieldPointer)
                         } else if !exceededColumnLimit {
                             // Set the error but only once per row
-                            parsingError = .invalidCSV(message: "CSV row contains more columns than the specified limit (\(maxColumns))")
+                            parsingError = .rowError(
+                                row: currentRowNumber,
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(fieldPointers.count + 1), expected \(maxColumns)."
+                            )
                             exceededColumnLimit = true
                         }
+                        // No need to add additional fields when limit is exceeded
                     }
                     return fieldPointers.isEmpty ? nil : CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
                 }
@@ -197,8 +205,12 @@ extension FastCSV {
                             }
                         } else if !exceededColumnLimit {
                             // Set the error but only once per row
-                            parsingError = .invalidCSV(message: "CSV row contains more columns than the specified limit (\(maxColumns))")
+                            parsingError = .rowError(
+                                row: currentRowNumber,
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(fieldPointers.count + 1), expected \(maxColumns)."
+                            )
                             exceededColumnLimit = true
+                            // Once we exceed the column limit, we don't create more field pointers
                         }
 
                         // Update for next field
@@ -222,8 +234,12 @@ extension FastCSV {
                             }
                         } else if !exceededColumnLimit {
                             // Set the error but only once per row
-                            parsingError = .invalidCSV(message: "CSV row contains more columns than the specified limit (\(maxColumns))")
+                            parsingError = .rowError(
+                                row: currentRowNumber,
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(fieldPointers.count + 1), expected \(maxColumns)."
+                            )
                             exceededColumnLimit = true
+                            // Don't add more fields after exceeding the limit
                         }
 
                         // Move past the row delimiter
@@ -237,7 +253,11 @@ extension FastCSV {
                         }
 
                         fieldStartPosition = currentPosition
-                        return CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
+
+                        // Increment row number after processing a complete row
+                        let result = CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
+                        currentRowNumber += 1
+                        return result
                     } else {
                         // Normal character - just advance
                         currentPosition += 1
