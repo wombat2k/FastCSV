@@ -45,7 +45,12 @@ struct HeaderTests {
 
         var iterator = try parser.makeValueArrayIterator()
 
-        while let _ = iterator.next() {}
+        var results: [CSVArrayResult] = []
+        while let row = iterator.next() {
+            results.append(row)
+        }
+
+        #expect(TestUtils.isErrorFree(arrayResult: results), "All rows should be error-free")
 
         let resultHeaders = parser.headers
 
@@ -67,17 +72,19 @@ struct HeaderTests {
             contentRows: rows,
             customHeaders: customHeaders,
             outputFormat: .array,
-            validate: { (rows: [[CSVValue]]) in
-                #expect(rows.count == 1, "Should have 1 row")
-                #expect(rows[0].count == 3, "First row should have 3 columns")
+            validate: { (results: [CSVArrayResult]) in
+                #expect(TestUtils.isErrorFree(arrayResult: results), "All rows should be error-free")
+                #expect(results.count == 1, "Should have 1 row")
+                #expect(results[0].values.count == 3, "First row should have 3 columns")
+                #expect(results[0].error == nil, "First row should not have an error")
 
-                let value1 = try rows[0][0].getString() ?? ""
+                let value1 = try results[0].values[0].getString() ?? ""
                 #expect(value1 == "value1", "First value should be 'value1'")
 
-                let value2 = try rows[0][1].getString() ?? ""
+                let value2 = try results[0].values[1].getString() ?? ""
                 #expect(value2 == "value2", "Second value should be 'value2'")
 
-                let value3 = try rows[0][2].getString() ?? ""
+                let value3 = try results[0].values[2].getString() ?? ""
                 #expect(value3 == "value3", "Third value should be 'value3'")
             }
         )
@@ -95,22 +102,24 @@ struct HeaderTests {
             contentRows: rows,
             customHeaders: customHeaders,
             outputFormat: .dictionary,
-            validate: { (rows: [[String: CSVValue]]) in
-                #expect(rows.count == 1, "Should have 1 row")
-                #expect(rows[0].count == 3, "First row should have 3 columns")
+            validate: { (results: [CSVDictionaryResult]) in
+                #expect(TestUtils.isErrorFree(dictionaryResult: results), "All rows should be error-free")
+                #expect(results.count == 1, "Should have 1 row")
+                #expect(results[0].values.count == 3, "First row should have 3 columns")
+                #expect(results[0].error == nil, "First row should not have an error")
 
-                let value1 = try rows[0]["custom1"]?.getString() ?? ""
+                let value1 = try results[0].values["custom1"]?.getString() ?? ""
                 #expect(value1 == "value1", "First value should be 'value1'")
 
-                let value2 = try rows[0]["custom2"]?.getString() ?? ""
+                let value2 = try results[0].values["custom2"]?.getString() ?? ""
                 #expect(value2 == "value2", "Second value should be 'value2'")
 
-                let value3 = try rows[0]["custom3"]?.getString() ?? ""
+                let value3 = try results[0].values["custom3"]?.getString() ?? ""
                 #expect(value3 == "value3", "Third value should be 'value3'")
 
-                #expect(rows[0]["header1"] == nil, "Header 'header1' should not exist")
-                #expect(rows[0]["header2"] == nil, "Header 'header2' should not exist")
-                #expect(rows[0]["header3"] == nil, "Header 'header3' should not exist")
+                #expect(results[0].values["header1"] == nil, "Header 'header1' should not exist")
+                #expect(results[0].values["header2"] == nil, "Header 'header2' should not exist")
+                #expect(results[0].values["header3"] == nil, "Header 'header3' should not exist")
             }
         )
     }
@@ -126,22 +135,23 @@ struct HeaderTests {
             contentRows: rows,
             customHeaders: customHeaders,
             outputFormat: .dictionary,
-            validate: { (rows: [[String: CSVValue]]) in
-                #expect(rows.count == 1, "Should have 1 row")
-                #expect(rows[0].count == 3, "First row should have 3 columns")
+            validate: { (results: [CSVDictionaryResult]) in
+                #expect(TestUtils.isErrorFree(dictionaryResult: results), "All rows should be error-free")
+                #expect(results.count == 1, "Should have 1 row")
+                #expect(results[0].values.count == 3, "First row should have 3 columns")
 
-                let value1 = try rows[0]["custom1"]?.getString() ?? ""
+                let value1 = try results[0].values["custom1"]?.getString() ?? ""
                 #expect(value1 == "value1", "First value should be 'value1'")
 
-                let value2 = try rows[0]["custom2"]?.getString() ?? ""
+                let value2 = try results[0].values["custom2"]?.getString() ?? ""
                 #expect(value2 == "value2", "Second value should be 'value2'")
 
-                let value3 = try rows[0]["custom3"]?.getString() ?? ""
+                let value3 = try results[0].values["custom3"]?.getString() ?? ""
                 #expect(value3 == "value3", "Third value should be 'value3'")
 
-                #expect(rows[0]["value1"] == nil, "Header 'value1' should not exist")
-                #expect(rows[0]["value2"] == nil, "Header 'value2' should not exist")
-                #expect(rows[0]["value2"] == nil, "Header 'value3' should not exist")
+                #expect(results[0].values["value1"] == nil, "Header 'value1' should not exist")
+                #expect(results[0].values["value2"] == nil, "Header 'value2' should not exist")
+                #expect(results[0].values["value2"] == nil, "Header 'value3' should not exist")
             }
         )
     }
@@ -154,17 +164,18 @@ struct HeaderTests {
             testName: "Empty headers",
             contentRows: rows,
             outputFormat: .dictionary,
-            validate: { (rows: [[String: CSVValue]]) in
-                #expect(rows.count == 1, "Should have 1 row")
-                #expect(rows[0].count == 3, "First row should have 3 columns")
+            validate: { (results: [CSVDictionaryResult]) in
+                #expect(TestUtils.isErrorFree(dictionaryResult: results), "All rows should be error-free")
+                #expect(results.count == 1, "Should have 1 row")
+                #expect(results[0].values.count == 3, "First row should have 3 columns")
 
-                let value1 = try rows[0]["column_1"]?.getString() ?? ""
+                let value1 = try results[0].values["column_1"]?.getString() ?? ""
                 #expect(value1 == "value1", "First value should be 'value1'")
 
-                let value2 = try rows[0]["column_2"]?.getString() ?? ""
+                let value2 = try results[0].values["column_2"]?.getString() ?? ""
                 #expect(value2 == "value2", "Second value should be 'value2'")
 
-                let value3 = try rows[0]["column_3"]?.getString() ?? ""
+                let value3 = try results[0].values["column_3"]?.getString() ?? ""
                 #expect(value3 == "value3", "Third value should be 'value3'")
             }
         )

@@ -1,20 +1,36 @@
+public struct CSVDictionaryResult {
+    public let values: [String: CSVValue]
+    public let error: CSVError?
+
+    init(values: [String: CSVValue], error: CSVError?) {
+        self.values = values
+        self.error = error
+    }
+
+    /// Returns a safe copy of the dictionary
+    /// - Returns: A new dictionary with copied values
+    ///
+    public func copyDictionary() -> [String: CSVValue] {
+        var safeDictionary = [String: CSVValue](minimumCapacity: values.count)
+        for (key, value) in values {
+            safeDictionary[key] = value.copy()
+        }
+        return safeDictionary
+    }
+}
+
 public extension FastCSV {
     /// Iterator for dictionaries of header keys -> CSVValue
-    struct CSVValueDictionaryIterator: IteratorProtocol, Sequence {
-        public typealias Element = [String: CSVValue]
+    struct CSVDictionaryIterator: IteratorProtocol, Sequence {
+        public typealias Element = CSVDictionaryResult
 
-        private var valueArrayIterator: CSVValueArrayIterator
+        private var valueArrayIterator: CSVArrayIterator
         private let headers: [String]
 
         // Cache of column names to avoid string interpolation in the hot path
         private let columnKeys: [String]
 
-        /// Access the current row's validation error, if any
-        public var currentRowError: CSVError? {
-            valueArrayIterator.currentRowError
-        }
-
-        init(valueArrayIterator: CSVValueArrayIterator, headers: [String]) {
+        init(valueArrayIterator: CSVArrayIterator, headers: [String]) {
             self.valueArrayIterator = valueArrayIterator
             self.headers = headers
 
@@ -31,29 +47,32 @@ public extension FastCSV {
             valueArrayIterator.cleanup()
         }
 
-        public mutating func next() -> [String: CSVValue]? {
-            guard let values = valueArrayIterator.next() else {
+        public mutating func next() -> CSVDictionaryResult? {
+            guard let arrayResult = valueArrayIterator.next() else {
                 return nil
             }
 
+            let values = arrayResult.values
+            let error = arrayResult.error
+
             // Create a new dictionary with enough capacity
-            var result = [String: CSVValue](minimumCapacity: headers.count)
+            var resultDict = [String: CSVValue](minimumCapacity: headers.count)
 
             // Populate the dictionary directly using column keys (which handle empty headers)
             let count = Swift.min(columnKeys.count, values.count)
             for i in 0 ..< count {
                 // Here we use columnKeys which already handles empty headers
-                result[columnKeys[i]] = values[i]
+                resultDict[columnKeys[i]] = values[i]
             }
 
             // Handle any extra columns
             if values.count > columnKeys.count {
                 for i in columnKeys.count ..< values.count {
-                    result["column_\(i + 1)"] = values[i] // Use 1-based indexing for extra columns
+                    resultDict["column_\(i + 1)"] = values[i] // Use 1-based indexing for extra columns
                 }
             }
 
-            return result
+            return CSVDictionaryResult(values: resultDict, error: error)
         }
     }
 
@@ -62,15 +81,15 @@ public extension FastCSV {
     /// Process the CSV file with a callback for each row as a dictionary
     /// - Parameter callback: Function to process each row
     /// - Note: This method will automatically clean up resources after processing all rows.
-    func forEach(_ callback: ([String: CSVValue], CSVError?) throws -> Void) throws {
+    func forEach(_ callback: (CSVDictionaryResult) throws -> Void) throws {
         var iterator = try makeValueDictionaryIterator()
         defer {
             // Ensure cleanup happens even if processing fails
             iterator.cleanup()
         }
 
-        while let row = iterator.next() {
-            try callback(row, iterator.currentRowError)
+        while let result = iterator.next() {
+            try callback(result)
         }
     }
 }

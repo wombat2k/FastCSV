@@ -1,9 +1,14 @@
 import Foundation
 
+struct CSVIteratorResult {
+    public let fieldPointers: [UnsafeBufferPointer<UInt8>]
+    public let parsingError: CSVError?
+}
+
 extension FastCSV {
     /// Zero-copy iterator for CSV rows, returning raw field pointers to the underlying buffer
-    struct CSVRawIterator: IteratorProtocol, Sequence {
-        public typealias Element = [UnsafeBufferPointer<UInt8>]
+    struct CSVIterator: IteratorProtocol, Sequence {
+        public typealias Element = CSVIteratorResult
 
         /// Whether parsing has finished
         private var isFinished = false
@@ -29,6 +34,9 @@ extension FastCSV {
         /// Maximum size of buffer chunks to request when reading from file
         private let readBufferSize: Int
 
+        // Add a property to store any error encountered during parsing
+        private(set) var parsingError: CSVError?
+
         /// Initialize a CSVRawIterator for parsing a CSV file with a FileHandle
         /// - Parameters:
         ///   - fileHandle: FileHandle to read CSV data from
@@ -39,8 +47,12 @@ extension FastCSV {
             delimiter = config.delimiter
             readBufferSize = config.readBufferSize
 
-            // Pre-allocate field pointers with capacity based on column count
-            fieldPointers.reserveCapacity(columnCount)
+            // Pre-allocate field pointers based on known column count
+            // Only reserve capacity if we know the actual column count
+            if columnCount > 0 {
+                fieldPointers.reserveCapacity(columnCount)
+            }
+            // When columnCount is 0, we'll let the array grow naturally based on the CSV content
 
             // Load initial data
             loadNextChunkIfNeeded()
@@ -77,7 +89,7 @@ extension FastCSV {
             }
         }
 
-        public mutating func next() -> [UnsafeBufferPointer<UInt8>]? {
+        public mutating func next() -> CSVIteratorResult? {
             return nextFieldPointers()
         }
 
@@ -87,11 +99,14 @@ extension FastCSV {
             try? fileHandle.close()
         }
 
-        public mutating func nextFieldPointers() -> [UnsafeBufferPointer<UInt8>]? {
+        public mutating func nextFieldPointers() -> CSVIteratorResult? {
             // Handle finished state
             if isFinished {
                 return nil
             }
+
+            // Clear any previous parsing error before starting a new row
+            parsingError = nil
 
             // Clear the field pointers from previous row
             fieldPointers.removeAll(keepingCapacity: true)
@@ -100,6 +115,12 @@ extension FastCSV {
             // State tracking for quotes
             var inQuote = false
 
+            // Get the maximum allowed column count (0 means unlimited)
+            let maxColumns = fieldPointers.capacity
+
+            // Keep track of whether we've exceeded the column limit
+            var exceededColumnLimit = false
+
             // Parse until we find a complete row
             while true {
                 loadNextChunkIfNeeded()
@@ -107,14 +128,21 @@ extension FastCSV {
                 if isFinished {
                     // Process any final field at EOF if needed
                     if currentPosition > fieldStartPosition && currentBytes != nil {
-                        let fieldPointer = createFieldPointer(
-                            from: fieldStartPosition,
-                            to: currentPosition,
-                            in: currentBytes!
-                        )
-                        fieldPointers.append(fieldPointer)
+                        // Only add the field if we haven't exceeded the column limit
+                        if maxColumns == 0 || fieldPointers.count < maxColumns {
+                            let fieldPointer = createFieldPointer(
+                                from: fieldStartPosition,
+                                to: currentPosition,
+                                in: currentBytes!
+                            )
+                            fieldPointers.append(fieldPointer)
+                        } else if !exceededColumnLimit {
+                            // Set the error but only once per row
+                            parsingError = .invalidCSV(message: "CSV row contains more columns than the specified limit (\(maxColumns))")
+                            exceededColumnLimit = true
+                        }
                     }
-                    return fieldPointers.isEmpty ? nil : fieldPointers
+                    return fieldPointers.isEmpty ? nil : CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
                 }
 
                 guard let bytes = currentBytes else {
@@ -153,16 +181,24 @@ extension FastCSV {
                         }
                     } else if !inQuote && byte == delimiter.field {
                         // End of field - create a pointer to the current field
-                        if currentPosition > fieldStartPosition {
-                            let fieldPointer = createFieldPointer(
-                                from: fieldStartPosition,
-                                to: currentPosition,
-                                in: bytes
-                            )
-                            fieldPointers.append(fieldPointer)
-                        } else {
-                            // Empty field
-                            fieldPointers.append(UnsafeBufferPointer<UInt8>(start: nil, count: 0))
+
+                        // Only add the field if we haven't exceeded the column limit
+                        if maxColumns == 0 || fieldPointers.count < maxColumns {
+                            if currentPosition > fieldStartPosition {
+                                let fieldPointer = createFieldPointer(
+                                    from: fieldStartPosition,
+                                    to: currentPosition,
+                                    in: bytes
+                                )
+                                fieldPointers.append(fieldPointer)
+                            } else {
+                                // Empty field
+                                fieldPointers.append(UnsafeBufferPointer<UInt8>(start: nil, count: 0))
+                            }
+                        } else if !exceededColumnLimit {
+                            // Set the error but only once per row
+                            parsingError = .invalidCSV(message: "CSV row contains more columns than the specified limit (\(maxColumns))")
+                            exceededColumnLimit = true
                         }
 
                         // Update for next field
@@ -170,16 +206,24 @@ extension FastCSV {
                         fieldStartPosition = currentPosition
                     } else if !inQuote && byte == delimiter.row {
                         // End of row - finalize the current field
-                        if currentPosition > fieldStartPosition {
-                            let fieldPointer = createFieldPointer(
-                                from: fieldStartPosition,
-                                to: currentPosition,
-                                in: bytes
-                            )
-                            fieldPointers.append(fieldPointer)
-                        } else {
-                            // Empty field at end of row
-                            fieldPointers.append(UnsafeBufferPointer<UInt8>(start: nil, count: 0))
+
+                        // Only add the field if we haven't exceeded the column limit
+                        if maxColumns == 0 || fieldPointers.count < maxColumns {
+                            if currentPosition > fieldStartPosition {
+                                let fieldPointer = createFieldPointer(
+                                    from: fieldStartPosition,
+                                    to: currentPosition,
+                                    in: bytes
+                                )
+                                fieldPointers.append(fieldPointer)
+                            } else {
+                                // Empty field at end of row
+                                fieldPointers.append(UnsafeBufferPointer<UInt8>(start: nil, count: 0))
+                            }
+                        } else if !exceededColumnLimit {
+                            // Set the error but only once per row
+                            parsingError = .invalidCSV(message: "CSV row contains more columns than the specified limit (\(maxColumns))")
+                            exceededColumnLimit = true
                         }
 
                         // Move past the row delimiter
@@ -193,7 +237,7 @@ extension FastCSV {
                         }
 
                         fieldStartPosition = currentPosition
-                        return fieldPointers
+                        return CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
                     } else {
                         // Normal character - just advance
                         currentPosition += 1
@@ -233,12 +277,12 @@ extension FastCSV {
         }
 
         /// Iterates through all rows in the CSV file and applies the given closure to each row of raw buffer pointers.
-        /// - Parameter body: The closure to apply to each row, where the row is represented as an array of buffer pointers.
+        /// - Parameter body: The closure to apply to each row, where the row is represented as a CSVIteratorResult.
         /// - Note: This method will automatically clean up resources after processing all rows.
-        mutating func forEach(_ body: ([UnsafeBufferPointer<UInt8>]) -> Void) {
+        mutating func forEach(_ body: (CSVIteratorResult) -> Void) {
             // Process each row and call the provided closure
-            while let row = next() {
-                body(row)
+            while let result = next() {
+                body(result)
             }
 
             // Ensure resources are cleaned up after iteration

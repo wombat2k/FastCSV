@@ -10,6 +10,24 @@ enum TestUtils {
         case dictionary
     }
 
+    static func isErrorFree(dictionaryResult: [CSVDictionaryResult]) -> Bool {
+        for result in dictionaryResult {
+            if let _ = result.error {
+                return false
+            }
+        }
+        return true
+    }
+
+    static func isErrorFree(arrayResult: [CSVArrayResult]) -> Bool {
+        for result in arrayResult {
+            if let _ = result.error {
+                return false
+            }
+        }
+        return true
+    }
+
     // Create a temporary CSV file from arrays with configurable delimiter
     static func createTemporaryCSVFile(
         headers: [String] = [],
@@ -68,42 +86,33 @@ enum TestUtils {
 
             switch outputFormat {
             case .array:
-                guard T.self is [CSVValue].Type else {
-                    throw ParserTestError(message: "Type mismatch: expected [[CSVValue]] for array format")
+                guard T.self is CSVArrayResult.Type else {
+                    throw ParserTestError(message: "Type mismatch: expected [CSVArrayResult] for array format")
                 }
 
                 let rows = try parser.makeValueArrayIterator()
 
-                for row in rows {
-                    if expectThrow != nil {
-                        if let error = rows.currentRowError {
-                            throw error
-                        }
-                    }
-
-                    // make a copy of the values to avoid invalidation
-                    let row = row as [CSVValue]
-                    let safeValues = row.map { $0.copy() }
-                    items.append(safeValues as! T)
+                for result in rows {
+                    // Make a safe copy of the values to avoid invalidation
+                    let safeArray = result.copyArray()
+                    let error = result.error
+                    let safeArrayResult = CSVArrayResult(values: safeArray, error: error)
+                    items.append(safeArrayResult as! T)
                 }
             case .dictionary:
-                guard T.self is [String: CSVValue].Type else {
-                    throw ParserTestError(message: "Type mismatch: expected [[String: CSVValue]] for dictionary format")
+                guard T.self is CSVDictionaryResult.Type else {
+                    throw ParserTestError(message: "Type mismatch: expected [CSVDictionaryResult] for dictionary format. Got \(T.self)")
                 }
 
                 let rows = try parser.makeValueDictionaryIterator()
 
-                for row in rows {
-                    if expectThrow != nil {
-                        if let error = rows.currentRowError {
-                            throw error
-                        }
-                    }
+                for result in rows {
+                    // Make a safef copy of the dictionary to avoid invalidation
+                    let safeDictionary = result.copyDictionary()
+                    let error = result.error
+                    let safeDictionaryResult = CSVDictionaryResult(values: safeDictionary, error: error)
 
-                    // make a copy of the values to avoid invalidation
-                    let row = row as [String: CSVValue]
-                    let safeValues = row.mapValues { $0.copy() }
-                    items.append(safeValues as! T)
+                    items.append(safeDictionaryResult as! T)
                 }
             }
 

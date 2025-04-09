@@ -42,15 +42,20 @@ public class FastCSV {
         let fileHandle = try FileHandle(forReadingFrom: fileURL)
         defer { try? fileHandle.close() }
 
-        let rawIterator = CSVRawIterator(fileHandle: fileHandle, skipFirstRow: false, config: self.config)
-        var valueArrayIterator = CSVValueArrayIterator(rawIterator: rawIterator, headerCount: 0) // No header validation yet
+        let rawIterator = CSVIterator(fileHandle: fileHandle, skipFirstRow: false, config: self.config)
+        var valueArrayIterator = CSVArrayIterator(rawIterator: rawIterator, headerCount: 0) // No header validation yet
+        defer { valueArrayIterator.cleanup() }
 
-        guard let firstRow = valueArrayIterator.next() else {
+        guard let firstRowResult = valueArrayIterator.next() else {
             throw CSVError.invalidFile(message: "No data found in the file.")
         }
 
+        if let error = firstRowResult.error {
+            throw error
+        }
+
         // Process headers and determine settings
-        let headerSettings = try FastCSV.processHeaders(firstRow: firstRow, hasHeaders: hasHeaders, customHeaders: headers)
+        let headerSettings = try FastCSV.processHeaders(firstRow: firstRowResult.values, hasHeaders: hasHeaders, customHeaders: headers)
         _headers = headerSettings.headers
         skipFirstRow = headerSettings.skipFirstRow
         headerCount = headerSettings.headerCount
@@ -58,7 +63,7 @@ public class FastCSV {
 
     /// Process header information based on first row and configuration
     /// - Parameters:
-    ///   - firstRow: First row of the CSV file
+    ///   - firstRow: First row values from the CSV file
     ///   - hasHeaders: Whether the file has headers in the first row
     ///   - customHeaders: Custom headers provided by the user, if any
     /// - Returns: Tuple containing processed headers, whether to skip first row, and header count
@@ -89,18 +94,18 @@ public class FastCSV {
 
     /// Create an iterator over raw CSV rows
     /// - Returns: Iterator that yields rows as arrays of buffer pointers
-    func makeRawIterator() throws -> CSVRawIterator {
+    func makeRawIterator() throws -> CSVIterator {
         let fileHandle = try FileHandle(forReadingFrom: fileURL)
-        return CSVRawIterator(fileHandle: fileHandle, skipFirstRow: skipFirstRow, columnCount: headerCount, config: config)
+        return CSVIterator(fileHandle: fileHandle, skipFirstRow: skipFirstRow, columnCount: headerCount, config: config)
     }
 
     /// Create an iterator over CSV rows as arrays of CSVValue
     /// - Returns: Iterator that yields rows as arrays of CSVValue
-    public func makeValueArrayIterator() throws -> CSVValueArrayIterator {
+    public func makeValueArrayIterator() throws -> CSVArrayIterator {
         do {
             let rawIterator = try makeRawIterator()
 
-            return CSVValueArrayIterator(
+            return CSVArrayIterator(
                 rawIterator: rawIterator,
                 headerCount: headerCount
             )
@@ -112,10 +117,10 @@ public class FastCSV {
 
     /// Create an iterator over CSV rows as dictionaries with header keys
     /// - Returns: Iterator that yields rows as dictionaries of String -> CSVValue
-    public func makeValueDictionaryIterator() throws -> CSVValueDictionaryIterator {
+    public func makeValueDictionaryIterator() throws -> CSVDictionaryIterator {
         do {
             let valueArrayIterator = try makeValueArrayIterator()
-            return CSVValueDictionaryIterator(valueArrayIterator: valueArrayIterator, headers: headers)
+            return CSVDictionaryIterator(valueArrayIterator: valueArrayIterator, headers: headers)
         } catch {
             // If iterator creation fails, propagate the error
             throw error

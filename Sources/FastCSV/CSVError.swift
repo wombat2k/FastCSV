@@ -5,5 +5,5 @@ public enum CSVError: Error {
     case invalidCSV(message: String)
     case invalidHeaders(message: String)
     case invalidValueConversion(message: String)
-    case rowError(message: String)
+    case rowError(row: Int, message: String)
 }
