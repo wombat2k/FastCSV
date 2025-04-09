@@ -42,7 +42,7 @@ public class FastCSV {
         let fileHandle = try FileHandle(forReadingFrom: fileURL)
         defer { try? fileHandle.close() }
 
-        let rawIterator = CSVIterator(fileHandle: fileHandle, skipFirstRow: false, config: self.config)
+        let rawIterator = CSVBaseIterator(fileHandle: fileHandle, skipFirstRow: false, config: self.config)
         var valueArrayIterator = CSVArrayIterator(rawIterator: rawIterator, headerCount: 0) // No header validation yet
         defer { valueArrayIterator.cleanup() }
 
@@ -106,9 +106,9 @@ public class FastCSV {
 
     /// Create an iterator over raw CSV rows
     /// - Returns: Iterator that yields rows as arrays of buffer pointers
-    func makeRawIterator() throws -> CSVIterator {
+    func makeRawIterator() throws -> CSVBaseIterator {
         let fileHandle = try FileHandle(forReadingFrom: fileURL)
-        return CSVIterator(fileHandle: fileHandle, skipFirstRow: skipFirstRow, columnCount: headerCount, config: config)
+        return CSVBaseIterator(fileHandle: fileHandle, skipFirstRow: skipFirstRow, columnCount: headerCount, config: config)
     }
 
     /// Create an iterator over CSV rows as arrays of CSVValue

@@ -7,7 +7,7 @@ struct CSVIteratorResult {
 
 extension FastCSV {
     /// Zero-copy iterator for CSV rows, returning raw field pointers to the underlying buffer
-    struct CSVIterator: IteratorProtocol, Sequence {
+    struct CSVBaseIterator: IteratorProtocol, Sequence {
         public typealias Element = CSVIteratorResult
 
         /// Whether parsing has finished

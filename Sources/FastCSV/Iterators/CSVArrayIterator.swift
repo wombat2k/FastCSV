@@ -5,14 +5,14 @@ public extension FastCSV {
     struct CSVArrayIterator: IteratorProtocol, Sequence {
         public typealias Element = CSVArrayResult
 
-        private var rawIterator: CSVIterator
+        private var rawIterator: CSVBaseIterator
         private let headerCount: Int
         private var rowNumber: Int
 
         // Pre-allocated arrays for reuse
         private var valueBuffer: [CSVValue]
 
-        init(rawIterator: CSVIterator, headerCount: Int) {
+        init(rawIterator: CSVBaseIterator, headerCount: Int) {
             self.rawIterator = rawIterator
             self.headerCount = headerCount
 
