@@ -96,7 +96,7 @@ extension FastCSV {
 
             // Skip the first row if requested
             if skipFirstRow {
-                _ = nextFieldPointers()
+                _ = next()
                 currentRowNumber = 2
             }
         }
@@ -128,7 +128,17 @@ extension FastCSV {
         }
 
         public mutating func next() -> CSVIteratorResult? {
-            return nextFieldPointers()
+            // Handle finished state
+            if isFinished {
+                return nil
+            }
+
+            // Dispatch to the appropriate implementation based on allocation strategy
+            if case .fixed = allocationStrategy {
+                return nextFieldPointersFixed()
+            } else {
+                return nextFieldPointersDynamic()
+            }
         }
 
         // Enhanced cleanup for background I/O resources
@@ -143,31 +153,22 @@ extension FastCSV {
             }
         }
 
-        public mutating func nextFieldPointers() -> CSVIteratorResult? {
-            // Handle finished state
-            if isFinished {
-                return nil
+        // Optimized implementation for fixed column count
+        private mutating func nextFieldPointersFixed() -> CSVIteratorResult? {
+            guard let storage = fixedFieldPointersStorage else {
+                fatalError("Fixed allocation strategy used without storage")
             }
 
             // Clear any previous parsing error before starting a new row
             parsingError = nil
 
-            let isFixedAllocation = allocationStrategy.isFixed
             let maxColumns = allocationStrategy.capacity
             var currentFieldIndex = 0
-
-            // For dynamic allocation, clear the array but keep capacity
-            if !isFixedAllocation {
-                fieldPointers.removeAll(keepingCapacity: true)
-            }
 
             fieldStartPosition = currentPosition
 
             // State tracking for quotes
             var inQuote = false
-
-            // Keep track of whether we've exceeded the column limit
-            var exceededColumnLimit = false
 
             // Parse until we find a complete row
             while true {
@@ -176,40 +177,164 @@ extension FastCSV {
                 if isFinished {
                     // Process any final field at EOF if needed
                     if currentPosition > fieldStartPosition && currentBytes != nil {
-                        // Only add the field if we haven't exceeded the column limit
-                        if maxColumns == 0 || currentFieldIndex < maxColumns {
-                            let fieldPointer = createFieldPointer(
+                        // Since we have a fixed allocation, we know when we're exceeding capacity
+                        if currentFieldIndex < maxColumns {
+                            storage[currentFieldIndex] = createFieldPointer(
                                 from: fieldStartPosition,
                                 to: currentPosition,
                                 in: currentBytes!
                             )
-
-                            if isFixedAllocation, let storage = fixedFieldPointersStorage {
-                                storage[currentFieldIndex] = fieldPointer
-                                currentFieldIndex += 1
-                            } else {
-                                fieldPointers.append(fieldPointer)
-                            }
-                        } else if !exceededColumnLimit {
-                            // Set the error but only once per row
+                            currentFieldIndex += 1
+                        } else if parsingError == nil {
+                            // Only set error if not already set
                             parsingError = .rowError(
                                 row: currentRowNumber,
                                 message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(maxColumns)."
                             )
-                            exceededColumnLimit = true
                         }
                     }
 
-                    // Return result based on allocation strategy
-                    if isFinished {
-                        if isFixedAllocation, let storage = fixedFieldPointersStorage {
-                            return currentFieldIndex > 0 ?
-                                CSVIteratorResult(directStorage: UnsafeBufferPointer(storage), count: currentFieldIndex, parsingError: parsingError) : nil
-                        } else {
-                            return fieldPointers.isEmpty ? nil : CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
-                        }
-                    }
+                    return currentFieldIndex > 0 ?
+                        CSVIteratorResult(directStorage: UnsafeBufferPointer(storage), count: currentFieldIndex, parsingError: parsingError) : nil
+                }
+
+                guard let bytes = currentBytes else {
                     return nil
+                }
+
+                // Process the current chunk to find field boundaries
+                while currentPosition < currentReadBufferSize {
+                    let byte = bytes[currentPosition]
+
+                    // Handle quote character
+                    if byte == delimiter.value {
+                        // Only treat as opening quote if at the start of a field and not in a quoted context
+                        if !inQuote && currentPosition == fieldStartPosition {
+                            // Opening quote at start of field
+                            inQuote = true
+                            // We want to keep the quote in the field to properly detect quoted fields later
+                            currentPosition += 1
+                            continue
+                        } else if inQuote {
+                            // Check for escaped quote (double quote) inside quoted field
+                            if currentPosition + 1 < currentReadBufferSize && bytes[currentPosition + 1] == delimiter.value {
+                                // Skip one of the quotes, keeping the other in the field
+                                currentPosition += 2
+                                continue
+                            } else {
+                                // Closing quote - need to find the field/row delimiter
+                                inQuote = false
+                                currentPosition += 1
+                                continue
+                            }
+                        } else {
+                            // Handle quote that's not at the start of the field as a normal character
+                            currentPosition += 1
+                            continue
+                        }
+                    } else if !inQuote && byte == delimiter.field {
+                        // End of field - simplified logic that assumes storage has adequate capacity
+                        if currentFieldIndex < maxColumns {
+                            // Store field directly without extra checks
+                            if currentPosition > fieldStartPosition {
+                                storage[currentFieldIndex] = createFieldPointer(
+                                    from: fieldStartPosition,
+                                    to: currentPosition,
+                                    in: bytes
+                                )
+                            } else {
+                                storage[currentFieldIndex] = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
+                            }
+                            currentFieldIndex += 1
+                        } else if parsingError == nil {
+                            // Only set error if not already set
+                            parsingError = .rowError(
+                                row: currentRowNumber,
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(maxColumns)."
+                            )
+                        }
+
+                        // Update for next field
+                        currentPosition += 1
+                        fieldStartPosition = currentPosition
+                    } else if !inQuote && byte == delimiter.row {
+                        // End of row - simplified logic that assumes storage has adequate capacity
+                        if currentFieldIndex < maxColumns {
+                            // Store field directly without extra checks
+                            if currentPosition > fieldStartPosition {
+                                storage[currentFieldIndex] = createFieldPointer(
+                                    from: fieldStartPosition,
+                                    to: currentPosition,
+                                    in: bytes
+                                )
+                            } else {
+                                storage[currentFieldIndex] = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
+                            }
+                            currentFieldIndex += 1
+                        } else if parsingError == nil {
+                            // Only set error if not already set
+                            parsingError = .rowError(
+                                row: currentRowNumber,
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(maxColumns)."
+                            )
+                        }
+
+                        // Move past the row delimiter and handle CR+LF
+                        currentPosition += 1
+                        if byte == UInt8(ascii: "\r") && currentPosition < currentReadBufferSize &&
+                            bytes[currentPosition] == UInt8(ascii: "\n")
+                        {
+                            currentPosition += 1
+                        }
+
+                        fieldStartPosition = currentPosition
+
+                        // Create result using the optimized direct storage accessor
+                        let result = CSVIteratorResult(
+                            directStorage: UnsafeBufferPointer(storage),
+                            count: currentFieldIndex,
+                            parsingError: parsingError
+                        )
+
+                        currentRowNumber += 1
+                        return result
+                    } else {
+                        // Normal character - just advance
+                        currentPosition += 1
+                    }
+                }
+            }
+        }
+
+        // Implementation for dynamic column count (only used initially)
+        private mutating func nextFieldPointersDynamic() -> CSVIteratorResult? {
+            // Clear any previous parsing error before starting a new row
+            parsingError = nil
+
+            // Clear the array but keep capacity
+            fieldPointers.removeAll(keepingCapacity: true)
+
+            fieldStartPosition = currentPosition
+
+            // State tracking for quotes
+            var inQuote = false
+
+            // Parse until we find a complete row
+            while true {
+                loadNextChunkIfNeeded()
+
+                if isFinished {
+                    // Process any final field at EOF if needed
+                    if currentPosition > fieldStartPosition && currentBytes != nil {
+                        let fieldPointer = createFieldPointer(
+                            from: fieldStartPosition,
+                            to: currentPosition,
+                            in: currentBytes!
+                        )
+                        fieldPointers.append(fieldPointer)
+                    }
+
+                    return fieldPointers.isEmpty ? nil : CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
                 }
 
                 guard let bytes = currentBytes else {
@@ -248,41 +373,15 @@ extension FastCSV {
                         }
                     } else if !inQuote && byte == delimiter.field {
                         // End of field - create a pointer to the current field
-
-                        // Only add the field if we haven't exceeded the column limit or using dynamic allocation
-                        if maxColumns == 0 || currentFieldIndex < maxColumns {
-                            if currentPosition > fieldStartPosition {
-                                let fieldPointer = createFieldPointer(
-                                    from: fieldStartPosition,
-                                    to: currentPosition,
-                                    in: bytes
-                                )
-
-                                if isFixedAllocation, let storage = fixedFieldPointersStorage {
-                                    storage[currentFieldIndex] = fieldPointer
-                                    currentFieldIndex += 1
-                                } else {
-                                    fieldPointers.append(fieldPointer)
-                                }
-                            } else {
-                                // Empty field
-                                let emptyPointer = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
-
-                                if isFixedAllocation, let storage = fixedFieldPointersStorage {
-                                    storage[currentFieldIndex] = emptyPointer
-                                    currentFieldIndex += 1
-                                } else {
-                                    fieldPointers.append(emptyPointer)
-                                }
-                            }
-                        } else if !exceededColumnLimit {
-                            // Set the error but only once per row
-                            parsingError = .rowError(
-                                row: currentRowNumber,
-                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(maxColumns)."
-                            )
-                            exceededColumnLimit = true
-                            // Once we exceed the column limit, we don't create more field pointers
+                        if currentPosition > fieldStartPosition {
+                            fieldPointers.append(createFieldPointer(
+                                from: fieldStartPosition,
+                                to: currentPosition,
+                                in: bytes
+                            ))
+                        } else {
+                            // Empty field
+                            fieldPointers.append(UnsafeBufferPointer<UInt8>(start: nil, count: 0))
                         }
 
                         // Update for next field
@@ -290,41 +389,15 @@ extension FastCSV {
                         fieldStartPosition = currentPosition
                     } else if !inQuote && byte == delimiter.row {
                         // End of row - finalize the current field
-
-                        // Only add the field if we haven't exceeded the column limit
-                        if maxColumns == 0 || currentFieldIndex < maxColumns {
-                            if currentPosition > fieldStartPosition {
-                                let fieldPointer = createFieldPointer(
-                                    from: fieldStartPosition,
-                                    to: currentPosition,
-                                    in: bytes
-                                )
-
-                                if isFixedAllocation, let storage = fixedFieldPointersStorage {
-                                    storage[currentFieldIndex] = fieldPointer
-                                    currentFieldIndex += 1
-                                } else {
-                                    fieldPointers.append(fieldPointer)
-                                }
-                            } else {
-                                // Empty field at end of row
-                                let emptyPointer = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
-
-                                if isFixedAllocation, let storage = fixedFieldPointersStorage {
-                                    storage[currentFieldIndex] = emptyPointer
-                                    currentFieldIndex += 1
-                                } else {
-                                    fieldPointers.append(emptyPointer)
-                                }
-                            }
-                        } else if !exceededColumnLimit {
-                            // Set the error but only once per row
-                            parsingError = .rowError(
-                                row: currentRowNumber,
-                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(maxColumns)."
-                            )
-                            exceededColumnLimit = true
-                            // Don't add more fields after exceeding the limit
+                        if currentPosition > fieldStartPosition {
+                            fieldPointers.append(createFieldPointer(
+                                from: fieldStartPosition,
+                                to: currentPosition,
+                                in: bytes
+                            ))
+                        } else {
+                            // Empty field at end of row
+                            fieldPointers.append(UnsafeBufferPointer<UInt8>(start: nil, count: 0))
                         }
 
                         // Move past the row delimiter
@@ -339,16 +412,8 @@ extension FastCSV {
 
                         fieldStartPosition = currentPosition
 
-                        // Create result and return based on allocation strategy
-                        let result: CSVIteratorResult
-                        if isFixedAllocation, let storage = fixedFieldPointersStorage {
-                            // Use the optimized direct storage accessor to avoid array creation
-                            result = CSVIteratorResult(directStorage: UnsafeBufferPointer(storage),
-                                                       count: currentFieldIndex,
-                                                       parsingError: parsingError)
-                        } else {
-                            result = CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
-                        }
+                        // Create result using dynamic fieldPointers array
+                        let result = CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
 
                         currentRowNumber += 1
                         return result
@@ -390,7 +455,7 @@ extension FastCSV {
         }
 
         // Helper method to create a field pointer
-        @inline(__always) private func createFieldPointer(from startPosition: Int, to endPosition: Int, in bytes: UnsafePointer<UInt8>) -> UnsafeBufferPointer<UInt8> {
+        private func createFieldPointer(from startPosition: Int, to endPosition: Int, in bytes: UnsafePointer<UInt8>) -> UnsafeBufferPointer<UInt8> {
             let length = endPosition - startPosition
             return UnsafeBufferPointer(
                 start: bytes.advanced(by: startPosition),

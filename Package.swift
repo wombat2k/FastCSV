@@ -17,7 +17,6 @@ let package = Package(
         .executable(name: "CSVBenchmark", targets: ["CSVBenchmark"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftcsv/SwiftCSV.git", from: "0.8.0"),
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.0"),
     ],
     targets: [
@@ -37,7 +36,6 @@ let package = Package(
             name: "CSVBenchmark",
             dependencies: [
                 "FastCSV",
-                "SwiftCSV",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]
         ),
