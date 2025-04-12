@@ -6,11 +6,8 @@ import Testing
 struct StandardParserTests {
     @Test("Basic CSV as array")
     func testBasicCSV() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [
-            ["value1", "value2", "value3"],
-            ["value4", "value5", "value6"],
-        ]
+        let headers = TestUtils.createHeaders(count: 3)
+        let rows = TestUtils.createValues(rows: 2, columns: 3)
 
         try await TestUtils.runTest(
             testName: "Basic CSV",
@@ -23,22 +20,25 @@ struct StandardParserTests {
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
                 #expect(results[0].error == nil, "First row should not have an error")
 
+                let expectedValue1 = "row1_col1"
                 let value1 = try results[0].values[0].getString() ?? ""
-                #expect(value1 == "value1", "First value should be 'value1'")
+                #expect(value1 == expectedValue1, "First value should be '\(expectedValue1)'")
 
+                let expectedValue2 = "row1_col2"
                 let value2 = try results[0].values[1].getString() ?? ""
-                #expect(value2 == "value2", "Second value should be 'value2'")
+                #expect(value2 == expectedValue2, "Second value should be '\(expectedValue2)'")
 
+                let expectedValue3 = "row1_col3"
                 let value3 = try results[0].values[2].getString() ?? ""
-                #expect(value3 == "value3", "Third value should be 'value3'")
+                #expect(value3 == expectedValue3, "Third value should be '\(expectedValue3)'")
             }
         )
     }
 
     @Test("Basic CSV as dictionary")
     func testBasicCSVAsDictionary() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [["value1", "value2", "value3"]]
+        let headers = TestUtils.createHeaders(count: 3)
+        let rows = TestUtils.createValues(rows: 1, columns: 3)
 
         try await TestUtils.runTest(
             testName: "Basic CSV as dictionary",
@@ -51,22 +51,26 @@ struct StandardParserTests {
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
                 #expect(results[0].error == nil, "First row should not have an error")
 
+                let expectedValue1 = "row1_col1"
                 let value1 = try results[0].values["header1"]?.getString() ?? ""
-                #expect(value1 == "value1", "First value should be 'value1'")
+                #expect(value1 == expectedValue1, "First value should be '\(expectedValue1)'")
 
+                let expectedValue2 = "row1_col2"
                 let value2 = try results[0].values["header2"]?.getString() ?? ""
-                #expect(value2 == "value2", "Second value should be 'value2'")
+                #expect(value2 == expectedValue2, "Second value should be '\(expectedValue2)'")
 
+                let expectedValue3 = "row1_col3"
                 let value3 = try results[0].values["header3"]?.getString() ?? ""
-                #expect(value3 == "value3", "Third value should be 'value3'")
+                #expect(value3 == expectedValue3, "Third value should be '\(expectedValue3)'")
             }
         )
     }
 
     @Test("Quoted fields")
     func testQuotedFields() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [["quoted value", "value2", "value3"]]
+        let headers = TestUtils.createHeaders(count: 3)
+        var rows = TestUtils.createValues(rows: 1, columns: 3)
+        rows[0][0] = "\"quoted value\""
 
         try await TestUtils.runTest(
             testName: "Quoted fields",
@@ -83,22 +87,19 @@ struct StandardParserTests {
                 #expect(value1 == "quoted value", "First value should be 'quoted value'")
 
                 let value2 = try results[0].values[1].getString() ?? ""
-                #expect(value2 == "value2", "Second value should be 'value2'")
+                #expect(value2 == "row1_col2", "Second value should be 'row1_col2'")
 
                 let value3 = try results[0].values[2].getString() ?? ""
-                #expect(value3 == "value3", "Third value should be 'value3'")
+                #expect(value3 == "row1_col3", "Third value should be 'row1_col3'")
             }
         )
     }
 
     @Test("Escaped quotes")
     func testEscapedQuotes() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [[
-            "value1",
-            "value with \"escaped\" quotes",
-            "value3",
-        ]]
+        let headers = TestUtils.createHeaders(count: 3)
+        var rows = TestUtils.createValues(rows: 1, columns: 3)
+        rows[0][1] = #"value with "escaped" quotes"#
 
         try await TestUtils.runTest(
             testName: "Escaped quotes",
@@ -120,12 +121,9 @@ struct StandardParserTests {
 
     @Test("Return within quotes")
     func testReturnWithinQuotes() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [[
-            "value1",
-            "\"value with\nreturn\"",
-            "value3",
-        ]]
+        let headers = TestUtils.createHeaders(count: 3)
+        var rows = TestUtils.createValues(rows: 1, columns: 3)
+        rows[0][1] = "\"value with\nreturn\""
 
         try await TestUtils.runTest(
             testName: "Return within quotes",
@@ -146,8 +144,9 @@ struct StandardParserTests {
 
     @Test("Empty fields")
     func testEmptyFields() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [["value1", "", "value3"]]
+        let headers = TestUtils.createHeaders(count: 3)
+        var rows = TestUtils.createValues(rows: 1, columns: 3)
+        rows[0][1] = ""
 
         try await TestUtils.runTest(
             testName: "Empty fields",
@@ -167,8 +166,9 @@ struct StandardParserTests {
 
     @Test("Empty headers in dictionaries")
     func testEmptyHeadersInDictionaries() async throws {
-        let headers = ["header1", "", "header3"]
-        let rows = [["value1", "value2", "value3"]]
+        var headers = TestUtils.createHeaders(count: 3)
+        headers[1] = ""
+        let rows = TestUtils.createValues(rows: 1, columns: 3)
 
         try await TestUtils.runTest(
             testName: "Empty headers in dictionaries",
@@ -182,11 +182,11 @@ struct StandardParserTests {
                 #expect(results[0].error == nil, "First row should not have an error")
 
                 let value1 = try results[0].values["header1"]?.getString() ?? ""
-                #expect(value1 == "value1", "First value should be 'value1'")
+                #expect(value1 == "row1_col1", "First value should be 'row1_col1'")
                 let value2 = try results[0].values["column_2"]?.getString() ?? ""
-                #expect(value2 == "value2", "Second value should be 'value2'")
+                #expect(value2 == "row1_col2", "Second value should be 'row1_col2'")
                 let value3 = try results[0].values["header3"]?.getString() ?? ""
-                #expect(value3 == "value3", "Third value should be 'value3'")
+                #expect(value3 == "row1_col3", "Third value should be 'row1_col3'")
             }
         )
     }

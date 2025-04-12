@@ -75,5 +75,14 @@ extension FastCSV {
             currentReadBuffer = nil
             currentBytes = nil
         }
+
+        /// Force parsing to finish, regardless of remaining data
+        func forceFinish() {
+            isFinished = true
+            // Clean up current data to prevent further processing
+            currentReadBuffer = nil
+            currentBytes = nil
+            currentReadBufferSize = 0
+        }
     }
 }

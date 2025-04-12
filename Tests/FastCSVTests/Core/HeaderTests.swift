@@ -6,8 +6,8 @@ import Testing
 struct HeaderTests {
     @Test("Array with headers before parsing")
     func testHeaders() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [["value1", "value2", "value3"]]
+        let headers = TestUtils.createHeaders(count: 3)
+        let rows = TestUtils.createValues(rows: 1, columns: 3)
 
         let tempURL = try TestUtils.createTemporaryCSVFile(
             headers: headers,
@@ -29,8 +29,8 @@ struct HeaderTests {
 
     @Test("Headers after parsing")
     func testHeadersAfterParsing() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [["value1", "value2", "value3"]]
+        let headers = TestUtils.createHeaders(count: 3)
+        let rows = TestUtils.createValues(rows: 1, columns: 3)
 
         let tempURL = try TestUtils.createTemporaryCSVFile(
             headers: headers,
@@ -63,8 +63,8 @@ struct HeaderTests {
     @Test("Array with headers and custom headers")
     func testArrayHeadersWithCustomHeaders() async throws {
         let customHeaders = ["custom1", "custom2", "custom3"]
-        let headers = ["header1", "header2", "header3"]
-        let rows = [["value1", "value2", "value3"]]
+        let headers = TestUtils.createHeaders(count: 3)
+        let rows = TestUtils.createValues(rows: 1, columns: 3)
 
         try await TestUtils.runTest(
             testName: "Headers with custom headers",
@@ -78,14 +78,17 @@ struct HeaderTests {
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
                 #expect(results[0].error == nil, "First row should not have an error")
 
+                let expectedValue1 = "row1_col1"
                 let value1 = try results[0].values[0].getString() ?? ""
-                #expect(value1 == "value1", "First value should be 'value1'")
+                #expect(value1 == expectedValue1, "First value should be '\(expectedValue1)'")
 
+                let expectedValue2 = "row1_col2"
                 let value2 = try results[0].values[1].getString() ?? ""
-                #expect(value2 == "value2", "Second value should be 'value2'")
+                #expect(value2 == expectedValue2, "Second value should be '\(expectedValue2)'")
 
+                let expectedValue3 = "row1_col3"
                 let value3 = try results[0].values[2].getString() ?? ""
-                #expect(value3 == "value3", "Third value should be 'value3'")
+                #expect(value3 == expectedValue3, "Third value should be '\(expectedValue3)'")
             }
         )
     }
@@ -158,7 +161,7 @@ struct HeaderTests {
 
     @Test("Dictionary without headers")
     func testEmptyHeaders() async throws {
-        let rows = [["value1", "value2", "value3"]]
+        let rows = TestUtils.createValues(rows: 1, columns: 3)
 
         try await TestUtils.runTest(
             testName: "Empty headers",
@@ -169,14 +172,17 @@ struct HeaderTests {
                 #expect(results.count == 1, "Should have 1 row")
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
 
+                let expectedValue1 = "row1_col1"
                 let value1 = try results[0].values["column_1"]?.getString() ?? ""
-                #expect(value1 == "value1", "First value should be 'value1'")
+                #expect(value1 == expectedValue1, "First value should be '\(expectedValue1)'")
 
+                let expectedValue2 = "row1_col2"
                 let value2 = try results[0].values["column_2"]?.getString() ?? ""
-                #expect(value2 == "value2", "Second value should be 'value2'")
+                #expect(value2 == expectedValue2, "Second value should be '\(expectedValue2)'")
 
+                let expectedValue3 = "row1_col3"
                 let value3 = try results[0].values["column_3"]?.getString() ?? ""
-                #expect(value3 == "value3", "Third value should be 'value3'")
+                #expect(value3 == expectedValue3, "Third value should be '\(expectedValue3)'")
             }
         )
     }

@@ -39,7 +39,7 @@ public struct CSVValue {
         valueSource = .own(bytes)
     }
 
-    /// Check if the value is empty. Empty means the field as empty
+    /// Check if the value is empty. Empty means the field is empty
     /// - Returns: true if the value is empty, false otherwise
     public var isEmpty: Bool {
         if case .none = valueSource {
@@ -50,7 +50,7 @@ public struct CSVValue {
 }
 
 public extension CSVValue {
-    /// Get the value as a String, with quotes processed
+    /// Get the value as a String
     func getString() throws -> String? {
         guard let str = try getRawString() else {
             return nil

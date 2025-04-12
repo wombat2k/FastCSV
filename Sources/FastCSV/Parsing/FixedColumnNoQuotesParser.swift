@@ -186,8 +186,27 @@ extension FastCSV {
                     } else if byte == UInt8(ascii: "\"") {
                         // Error condition - quotes not allowed in no-quotes mode
                         parsingError = .invalidCSV(message: "File contains quotes but was parsed in no-quotes mode")
-                        // Since we can't set isFinished directly, we'll just return and let cleanup handle resources
-                        return CSVIteratorResult(directStorage: UnsafeBufferPointer(storage), count: currentFieldIndex, parsingError: parsingError)
+
+                        // Process current field before returning
+                        if currentFieldIndex < columnCount && chunkReader.currentPosition > fieldStartPosition {
+                            storage[currentFieldIndex] = createFieldPointer(
+                                from: fieldStartPosition,
+                                to: chunkReader.currentPosition,
+                                in: bytes
+                            )
+                            currentFieldIndex += 1
+                        }
+
+                        // Return current fields with error
+                        let result = CSVIteratorResult(
+                            directStorage: UnsafeBufferPointer(storage),
+                            count: currentFieldIndex,
+                            parsingError: parsingError
+                        )
+
+                        // Terminate parsing
+                        chunkReader.forceFinish()
+                        return result
                     } else {
                         // Normal character - just advance
                         chunkReader.advancePosition()

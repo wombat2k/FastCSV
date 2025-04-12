@@ -8,8 +8,10 @@ struct EdgeDelimiterTests {
 
     @Test("Empty value at beginning of headers")
     func testFrontDelimiterAtHeaders() async throws {
-        let headers = ["", "header2", "header3"]
-        let rows = [["value1", "value2", "value3"]]
+        var headers = TestUtils.createHeaders(count: 3)
+        headers[0] = "" // Empty the first header
+
+        let rows = TestUtils.createValues(rows: 1, columns: 3)
 
         try await TestUtils.runTest(
             testName: "Empty value at beginning of headers",
@@ -21,16 +23,19 @@ struct EdgeDelimiterTests {
                 #expect(results.count == 1, "Should have 1 row")
                 #expect(results[0].error == nil, "First row should not have an error")
 
+                let expectedValue = "row1_col1"
                 let value = try results[0].values["column_1"]?.getString() ?? ""
-                #expect(value == "value1", "First header should have default name 'column_1'.")
+                #expect(value == expectedValue, "First header should have default name 'column_1'.")
             }
         )
     }
 
     @Test("Empty value at middle of headers")
     func testMiddleDelimiterAtHeaders() async throws {
-        let headers = ["header1", "", "header3"]
-        let rows = [["value1", "value2", "value3"]]
+        var headers = TestUtils.createHeaders(count: 3)
+        headers[1] = "" // Empty the middle header
+
+        let rows = TestUtils.createValues(rows: 1, columns: 3)
 
         try await TestUtils.runTest(
             testName: "Empty value at middle of headers",
@@ -42,8 +47,9 @@ struct EdgeDelimiterTests {
                 #expect(results.count == 1, "Should have 1 row")
                 #expect(results[0].error == nil, "First row should not have an error")
 
+                let expectedValue = "row1_col2"
                 let value = try results[0].values["column_2"]?.getString() ?? ""
-                #expect(value != "value1", "Second header should have default name 'column_2'.")
+                #expect(value == expectedValue, "Second header should have default name 'column_2'.")
             }
         )
     }
@@ -73,12 +79,10 @@ struct EdgeDelimiterTests {
 
     @Test("Empty value at beginning of row")
     func testFrontDelimiter() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [
-            ["value1", "value2", "value3"],
-            ["", "value2", "value3"],
-            ["value1", "value2", "value3"],
-        ]
+        let headers = TestUtils.createHeaders(count: 3)
+
+        var rows = TestUtils.createValues(rows: 3, columns: 3)
+        rows[1][0] = "" // Empty the first column of the second row
 
         try await TestUtils.runTest(
             testName: "Empty value at beginning of row",
@@ -94,27 +98,27 @@ struct EdgeDelimiterTests {
 
                 // Check values for first row
                 var value = try results[0].values[0].getString() ?? ""
-                #expect(value == "value1", "First value in first row should be 'value1'")
+                #expect(value == "row1_col1", "First value in first row should be 'row1_col1'")
                 value = try results[0].values[1].getString() ?? ""
-                #expect(value == "value2", "Second value in first row should be 'value2'")
+                #expect(value == "row1_col2", "Second value in first row should be 'row1_col2'")
                 value = try results[0].values[2].getString() ?? ""
-                #expect(value == "value3", "Third value in first row should be 'value3'")
+                #expect(value == "row1_col3", "Third value in first row should be 'row1_col3'")
 
                 // Check values for second row
                 let emptyValue = try results[1].values[0].getString()
                 #expect(emptyValue == nil, "First column in second row should be empty")
                 value = try results[1].values[1].getString() ?? ""
-                #expect(value == "value2", "Second value in second row should be 'value2'")
+                #expect(value == "row2_col2", "Second value in second row should be 'row2_col2'")
                 value = try results[1].values[2].getString() ?? ""
-                #expect(value == "value3", "Third value in second row should be 'value3'")
+                #expect(value == "row2_col3", "Third value in second row should be 'row2_col3'")
 
                 // Check values for third row
                 value = try results[2].values[0].getString() ?? ""
-                #expect(value == "value1", "First value in third row should be 'value1'")
+                #expect(value == "row3_col1", "First value in third row should be 'row3_col1'")
                 value = try results[2].values[1].getString() ?? ""
-                #expect(value == "value2", "Second value in third row should be 'value2'")
+                #expect(value == "row3_col2", "Second value in third row should be 'row3_col2'")
                 value = try results[2].values[2].getString() ?? ""
-                #expect(value == "value3", "Third value in third row should be 'value3'")
+                #expect(value == "row3_col3", "Third value in third row should be 'row3_col3'")
             }
         )
     }
@@ -202,11 +206,14 @@ struct EdgeDelimiterTests {
 
     @Test("Multiple empty values at beginning of row")
     func testMultipleFrontDelimiters() async throws {
-        let headers = ["", "", "header2", "header3"]
-        let rows = [
-            ["", "", "", "value4"],
-            ["value1", "value2", "value3", "value4"],
-        ]
+        var headers = TestUtils.createHeaders(count: 4)
+        headers[0] = ""
+        headers[1] = ""
+
+        var rows = TestUtils.createValues(rows: 2, columns: 4)
+        rows[0][0] = ""
+        rows[0][1] = ""
+        rows[0][2] = ""
 
         try await TestUtils.runTest(
             testName: "Multiple empty values at beginning of row",
@@ -226,17 +233,17 @@ struct EdgeDelimiterTests {
                 let emptyValue3 = try results[0].values[2].getString()
                 #expect(emptyValue3 == nil, "Third column in first row should be empty")
                 var value = try results[0].values[3].getString() ?? ""
-                #expect(value == "value4", "Fourth value in first row should be 'value4'")
+                #expect(value == "row1_col4", "Fourth value in first row should be 'row1_col4'")
 
                 // Second row with no empty values
                 value = try results[1].values[0].getString() ?? ""
-                #expect(value == "value1", "First value in second row should be 'value1'")
+                #expect(value == "row2_col1", "First value in second row should be 'row2_col1'")
                 value = try results[1].values[1].getString() ?? ""
-                #expect(value == "value2", "Second value in second row should be 'value2'")
+                #expect(value == "row2_col2", "Second value in second row should be 'row2_col2'")
                 value = try results[1].values[2].getString() ?? ""
-                #expect(value == "value3", "Third value in second row should be 'value3'")
+                #expect(value == "row2_col3", "Third value in second row should be 'row2_col3'")
                 value = try results[1].values[3].getString() ?? ""
-                #expect(value == "value4", "Fourth value in second row should be 'value4'")
+                #expect(value == "row2_col4", "Fourth value in second row should be 'row2_col4'")
             }
         )
     }

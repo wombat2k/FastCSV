@@ -130,6 +130,18 @@ enum TestUtils {
             }
         }
     }
+
+    static func createHeaders(count: Int) -> [String] {
+        return (1 ..< count + 1).map { "header\($0)" }
+    }
+
+    static func createValues(rows: Int, columns: Int) -> [[String]] {
+        return (1 ..< rows + 1).map { row in
+            (1 ..< columns + 1).map { column in
+                "row\(row)_col\(column)"
+            }
+        }
+    }
 }
 
 // Error type for parser test failures

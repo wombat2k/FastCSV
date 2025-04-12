@@ -6,11 +6,11 @@ import Testing
 struct InvalidCSVTests {
     @Test("Missing columns")
     func testMissingColumns() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [
-            ["value1", "value2", "value3"],
-            ["value4", "value5"], // One column short
-        ]
+        let headers = TestUtils.createHeaders(count: 3)
+
+        var rows = TestUtils.createValues(rows: 2, columns: 3)
+        // Modify second row to have fewer columns
+        rows[1] = [rows[1][0], rows[1][1]] // Remove the last column
 
         try await TestUtils.runTest(
             testName: "Unbalanced columns",
@@ -42,11 +42,11 @@ struct InvalidCSVTests {
 
     @Test("Extra columns")
     func testExtraColumns() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [
-            ["value1", "value2", "value3"],
-            ["value4", "value5", "value6", "value7"], // One column too many
-        ]
+        let headers = TestUtils.createHeaders(count: 3)
+
+        var rows = TestUtils.createValues(rows: 2, columns: 3)
+        // Add an extra column to the second row
+        rows[1].append("extra_value")
 
         try await TestUtils.runTest(
             testName: "Unbalanced columns",
@@ -93,6 +93,33 @@ struct InvalidCSVTests {
             outputFormat: .array,
             validate: { (results: [CSVArrayResult]) in
                 #expect(results.count == 1, "Should have 1 row")
+
+                // Check if any row has errors
+                let hasErrors = !TestUtils.isErrorFree(arrayResult: results)
+                #expect(hasErrors, "Should have at least one row with errors")
+            }
+        )
+    }
+
+    @Test("Unexpected quotes in noQuotes mode")
+    func testUnexpectedQuotesInNoQuotesMode() async throws {
+        let headers = ["header1", "header2", "header3"]
+        let rows = [
+            ["value1", "value2", "value3"],
+            ["value1", "\"unexpected quote\"", "value3"],
+        ]
+
+        // Set the parser to noQuotes mode
+        let config = CSVParserConfig(assumeNoQuotes: true)
+
+        try await TestUtils.runTest(
+            testName: "Unexpected quotes in noQuotes mode",
+            contentHeaders: headers,
+            contentRows: rows,
+            config: config,
+            outputFormat: .array,
+            validate: { (results: [CSVArrayResult]) in
+                #expect(results.count == 2, "Should have 1 row")
 
                 // Check if any row has errors
                 let hasErrors = !TestUtils.isErrorFree(arrayResult: results)
