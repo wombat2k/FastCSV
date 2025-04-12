@@ -20,12 +20,8 @@ struct CSVBenchmarkTool: ParsableCommand {
     var rowLimit: Int = 10000
 
     // Temporary file handling
-    @Flag(name: .long, help: "Skip copying to temporary location")
-    var skipTemp = false
-
-    // Option to enable file caching (disabled by default for accurate benchmarking)
-    @Flag(name: .long, help: "Enable OS file caching (may skew benchmark results)")
-    var enableCache = false
+    @Flag(name: .long, help: "Use original file directly instead of making temporary copies (may benefit from OS caching)")
+    var useOriginalFile = false
 
     // Option to assume no quotes in CSV data for improved parsing performance
     @Flag(name: .long, help: "Assume CSV data contains no quoted fields for improved performance")
@@ -58,20 +54,19 @@ struct CSVBenchmarkTool: ParsableCommand {
         var tempFiles: [String] = []
 
         // Create temporary files for each iteration
-        if !skipTemp {
-            print("Creating temporary files for benchmarks...")
+        if !useOriginalFile {
+            print("Creating temporary copies for benchmarking (file caching disabled)...")
             for _ in 0 ..< iterations {
-                let tempFile = try copyToTemporaryLocation(file, enableCache: enableCache)
+                let tempFile = try copyToTemporaryLocation(file)
                 tempFiles.append(tempFile)
             }
-
-            if !enableCache {
-                print("File caching disabled (for accurate I/O benchmarks)")
-            }
+            print("Created \(tempFiles.count) temporary copies")
+        } else {
+            print("Using original file directly (may benefit from OS file caching)")
         }
 
         defer {
-            if !skipTemp {
+            if !useOriginalFile {
                 // Clean up temporary files
                 for tempFile in tempFiles {
                     try? FileManager.default.removeItem(atPath: tempFile)
@@ -82,7 +77,7 @@ struct CSVBenchmarkTool: ParsableCommand {
 
         for i in 0 ..< iterations {
             // Use original file or the dedicated temporary file for this iteration
-            let benchmarkFile = skipTemp ? file : tempFiles[i]
+            let benchmarkFile = useOriginalFile ? file : tempFiles[i]
 
             let result = try runBenchmark(
                 file: benchmarkFile,
@@ -124,8 +119,8 @@ struct CSVBenchmarkTool: ParsableCommand {
         }
     }
 
-    // Copy file to temporary location
-    func copyToTemporaryLocation(_ filePath: String, enableCache: Bool = false) throws -> String {
+    // Copy file to temporary location with caching disabled
+    func copyToTemporaryLocation(_ filePath: String) throws -> String {
         let tempDir = FileManager.default.temporaryDirectory
         let fileName = URL(fileURLWithPath: filePath).lastPathComponent
         let tempFilePath = tempDir.appendingPathComponent("csvbenchmark-\(UUID().uuidString)-\(fileName)").path
@@ -133,17 +128,15 @@ struct CSVBenchmarkTool: ParsableCommand {
         // Copy the file first
         try FileManager.default.copyItem(atPath: filePath, toPath: tempFilePath)
 
-        if !enableCache {
-            #if os(macOS)
-                // On macOS, open the file with F_NOCACHE to hint that this file should not be cached
-                if let fileHandle = FileHandle(forWritingAtPath: tempFilePath) {
-                    let fd = fileHandle.fileDescriptor
-                    // Set F_NOCACHE flag to disable caching
-                    _ = fcntl(fd, F_NOCACHE, 1)
-                    fileHandle.closeFile()
-                }
-            #endif
-        }
+        #if os(macOS)
+            // On macOS, open the file with F_NOCACHE to disable caching
+            if let fileHandle = FileHandle(forWritingAtPath: tempFilePath) {
+                let fd = fileHandle.fileDescriptor
+                // Set F_NOCACHE flag to disable caching
+                _ = fcntl(fd, F_NOCACHE, 1)
+                fileHandle.closeFile()
+            }
+        #endif
 
         return tempFilePath
     }
@@ -184,6 +177,8 @@ struct CSVBenchmarkTool: ParsableCommand {
         while let _ = iterator.next(), rowCount < rowsToProcess {
             rowCount += 1
         }
+
+        iterator.cleanup()
         let parseEnd = DispatchTime.now()
         result.parseTime = Double(parseEnd.uptimeNanoseconds - parseStart.uptimeNanoseconds) / 1_000_000_000
         result.rowCount = rowCount
@@ -210,7 +205,13 @@ struct CSVBenchmarkTool: ParsableCommand {
         print("File size:        \(String(format: "%.2f", result.fileSize)) MB")
         print("Processing speed: \(String(format: "%.2f", result.mbPerSecond)) MB/second")
 
-        // Add info about whether assumeNoQuotes was enabled
+        // Add info about benchmark settings
+        if useOriginalFile {
+            print("File access:     Original file (may benefit from OS caching)")
+        } else {
+            print("File access:     Temporary copy with caching disabled")
+        }
+
         if assumeNoQuotes {
             print("Quote handling:   Disabled (assumeNoQuotes)")
         } else {
