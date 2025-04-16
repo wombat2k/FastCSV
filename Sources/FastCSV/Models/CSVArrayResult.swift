@@ -9,12 +9,12 @@ public struct CSVArrayResult {
     public let values: [CSVValue]
     public let error: CSVError?
 
-    public init(values: [CSVValue], error: CSVError?) {
+    init(values: [CSVValue], error: CSVError?) {
         self.values = values
         self.error = error
     }
 
-    /// Returns a safe copy of the array
+    /// Returns a safe copy of the array of CSVValue
     /// - Returns: A new array with copied values
     /// - Note: This method is useful for ensuring that the values are not invalidated
     ///   when the underlying buffer is released.

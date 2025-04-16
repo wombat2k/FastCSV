@@ -18,12 +18,13 @@ public struct CSVDictionaryResult {
 
     /// Returns a safe copy of the dictionary
     /// - Returns: A new dictionary with copied values
-    ///
     public func copyDictionary() -> [String: CSVValue] {
         var safeDictionary = [String: CSVValue](minimumCapacity: values.count)
+
         for (key, value) in values {
             safeDictionary[key] = value.copy()
         }
+
         return safeDictionary
     }
 }

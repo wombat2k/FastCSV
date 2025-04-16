@@ -38,12 +38,16 @@ public class FastCSV {
         self.fileURL = fileURL
         self.config = config ?? CSVParserConfig()
 
-        // Read the first row using a temporary raw iterator and value array iterator
         let fileHandle = try FileHandle(forReadingFrom: fileURL)
         defer { try? fileHandle.close() }
 
+        // Read the first row in order to determine the count of columns
+        // Since we don't know the number of columns in advance, we need to use the
+        // dynamic parser which is more inefficient but we only need to do it once.
         let rawIterator = CSVBaseIterator(fileHandle: fileHandle, skipFirstRow: false, config: self.config)
-        var valueArrayIterator = CSVArrayIterator(rawIterator: rawIterator, headerCount: 0) // No header validation yet
+        var valueArrayIterator = CSVArrayIterator(rawIterator: rawIterator, headerCount: 0)
+
+        // Required because we only read the first row
         defer { valueArrayIterator.cleanup() }
 
         guard let firstRowResult = valueArrayIterator.next() else {
@@ -71,16 +75,14 @@ public class FastCSV {
     private static func processHeaders(firstRow: [CSVValue], hasHeaders: Bool, customHeaders: [String]) throws ->
         (headers: [String], skipFirstRow: Bool, headerCount: Int)
     {
+        // Process directly with the first row (BOM handling moved elsewhere)
         if !customHeaders.isEmpty {
             // If custom headers are provided, use them and validate count
             if customHeaders.count != firstRow.count {
                 throw CSVError.invalidCSV(message: "Header count (\(customHeaders.count)) does not match the number of fields in the first row (\(firstRow.count)).")
             }
 
-            // Process empty header values with auto-generated column names
-            let processedHeaders = customHeaders.enumerated().map { index, header in
-                header.isEmpty ? "column_\(index + 1)" : header // Using 1-based indexing for readability
-            }
+            let processedHeaders = processEmptyHeaders(headers: customHeaders)
 
             // If custom headers are provided AND file has headers,
             // we should skip the first row when reading data
@@ -89,16 +91,43 @@ public class FastCSV {
             // If hasHeaders=true, use first row as headers
             let extractedHeaders = try firstRow.map { try $0.getString() ?? "" }
 
-            // Process empty header values with auto-generated column names
-            let processedHeaders = extractedHeaders.enumerated().map { index, header in
-                header.isEmpty ? "column_\(index + 1)" : header // Using 1-based indexing for readability
-            }
+            let processedHeaders = processEmptyHeaders(headers: extractedHeaders)
 
             return (processedHeaders, true, processedHeaders.count)
         } else {
             // No headers in file or provided, generate auto-numbered columns
-            let generatedHeaders = (0 ..< firstRow.count).map { "column_\($0 + 1)" }
-            return (generatedHeaders, false, firstRow.count)
+            let emptyHeaders = Array(repeating: "", count: firstRow.count)
+            let processedHeaders = processEmptyHeaders(headers: emptyHeaders)
+            return (processedHeaders, false, firstRow.count)
+        }
+    }
+
+    // Keep the removeUTF8BOMIfPresent function for now as we'll use it elsewhere
+    /// Removes UTF-8 BOM from the first field of a row if present
+    /// - Parameter row: The CSV row to process
+    /// - Returns: A new row with BOM removed if it was present
+    private static func removeUTF8BOMIfPresent(fromRow row: [CSVValue]) -> [CSVValue] {
+        var result = row
+
+        // Check if there's at least one field and if the first field contains a BOM
+        if !result.isEmpty,
+           let firstValue = try? result[0].getString(),
+           firstValue.hasPrefix("\u{FEFF}")
+        {
+            // Remove BOM from the first field
+            let cleanedField = firstValue.dropFirst(1)
+            result[0] = CSVValue(bytes: Array(cleanedField.utf8))
+        }
+
+        return result
+    }
+
+    /// Process headers by replacing empty values with auto-generated column names
+    /// - Parameter headers: Array of header strings to process
+    /// - Returns: Array of processed headers with no empty values
+    private static func processEmptyHeaders(headers: [String]) -> [String] {
+        return headers.enumerated().map { index, header in
+            header.isEmpty ? "column_\(index + 1)" : header // Using 1-based indexing for readability
         }
     }
 
@@ -111,32 +140,25 @@ public class FastCSV {
         return CSVBaseIterator(fileHandle: fileHandle, skipFirstRow: skipFirstRow, columnCount: headerCount, config: config)
     }
 
+    // MARK: - Public Iterators
+
     /// Create an iterator over CSV rows as arrays of CSVValue
     /// - Returns: Iterator that yields rows as arrays of CSVValue
-    public func makeValueArrayIterator() throws -> CSVArrayIterator {
-        do {
-            let rawIterator = try makeRawIterator()
+    public func makeArrayIterator() throws -> CSVArrayIterator {
+        let rawIterator = try makeRawIterator()
 
-            return CSVArrayIterator(
-                rawIterator: rawIterator,
-                headerCount: headerCount,
-                skipFirstRow: skipFirstRow
-            )
-        } catch {
-            // If raw iterator creation fails, propagate the error
-            throw error
-        }
+        return CSVArrayIterator(
+            rawIterator: rawIterator,
+            headerCount: headerCount,
+            skipFirstRow: skipFirstRow
+        )
     }
 
     /// Create an iterator over CSV rows as dictionaries with header keys
     /// - Returns: Iterator that yields rows as dictionaries of String -> CSVValue
-    public func makeValueDictionaryIterator() throws -> CSVDictionaryIterator {
-        do {
-            let valueArrayIterator = try makeValueArrayIterator()
-            return CSVDictionaryIterator(valueArrayIterator: valueArrayIterator, headers: headers)
-        } catch {
-            // If iterator creation fails, propagate the error
-            throw error
-        }
+    public func makeDictionaryIterator() throws -> CSVDictionaryIterator {
+        let valueArrayIterator = try makeArrayIterator()
+
+        return CSVDictionaryIterator(valueArrayIterator: valueArrayIterator, headers: headers)
     }
 }

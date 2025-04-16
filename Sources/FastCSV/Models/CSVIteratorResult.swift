@@ -13,7 +13,7 @@ struct CSVIteratorResult {
         fieldCount = fieldPointers.count
     }
 
-    // Optimized constructor that truly avoids array creation by keeping a reference to the buffer
+    // Optimized constructor that avoids array creation by keeping a reference to the buffer
     init(directStorage: UnsafeBufferPointer<UnsafeBufferPointer<UInt8>>, count: Int, parsingError: CSVError?) {
         fixedStorage = directStorage
         fieldCount = count
@@ -25,9 +25,11 @@ struct CSVIteratorResult {
     // Add subscript accessor to support direct access without array copying
     subscript(index: Int) -> UnsafeBufferPointer<UInt8> {
         precondition(index >= 0 && index < fieldCount, "Index out of bounds")
+
         if let storage = fixedStorage {
             return storage[index]
         }
+
         return fieldPointers[index]
     }
 

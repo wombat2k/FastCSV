@@ -103,11 +103,9 @@ struct InvalidCSVTests {
 
     @Test("Unexpected quotes in noQuotes mode")
     func testUnexpectedQuotesInNoQuotesMode() async throws {
-        let headers = ["header1", "header2", "header3"]
-        let rows = [
-            ["value1", "value2", "value3"],
-            ["value1", "\"unexpected quote\"", "value3"],
-        ]
+        let headers = TestUtils.createHeaders(count: 3)
+        var rows = TestUtils.createValues(rows: 2, columns: 3)
+        rows[1][1] = "value with \"unexpected\" quotes"
 
         // Set the parser to noQuotes mode
         let config = CSVParserConfig(assumeNoQuotes: true)
@@ -119,7 +117,7 @@ struct InvalidCSVTests {
             config: config,
             outputFormat: .array,
             validate: { (results: [CSVArrayResult]) in
-                #expect(results.count == 2, "Should have 1 row")
+                #expect(results.count == 2, "Should have 2 rows")
 
                 // Check if any row has errors
                 let hasErrors = !TestUtils.isErrorFree(arrayResult: results)

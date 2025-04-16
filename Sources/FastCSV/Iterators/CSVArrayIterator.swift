@@ -1,7 +1,11 @@
 import Foundation
 
 public extension FastCSV {
-    /// Iterator for CSVValue objects that reference the underlying buffer directly
+    /// Row Iterator for CSV files
+    /// This iterator returns each row as an array of CSVValue.
+    /// It is designed to be efficient and reusable, minimizing memory allocations.
+    /// - ⚠️ This iterator is not thread-safe. It only should be used in a single-threaded context.
+    /// - ⚠️ This iterator will automatically clean up resources after the last row is processed (including when encountering a fatal exception), but the user is responsible for calling cleanup if they choose not to iterate through all rows.
     struct CSVArrayIterator: IteratorProtocol, Sequence {
         public typealias Element = CSVArrayResult
 
@@ -28,6 +32,12 @@ public extension FastCSV {
             }
         }
 
+        // MARK: IteratorProtocol
+
+        /// Returns the next row as an array of CSVValue
+        /// - Returns: A CSVArrayResult containing the row values and any parsing error, or nil if there are no more rows
+        /// - Note: This method will automatically clean up resources after processing all rows.
+        /// - Note: This method is not thread-safe and should only be used in a single-threaded context.
         public mutating func next() -> CSVArrayResult? {
             // Get raw field buffers from the raw iterator
             guard let result = rawIterator.next() else {
@@ -70,6 +80,8 @@ public extension FastCSV {
             return CSVArrayResult(values: valueBuffer, error: error)
         }
 
+        // MARK: Helper Methods
+
         /// Cleans up resources used by this iterator and the underlying raw iterator
         /// Call this method when done iterating to ensure all resources are properly released
         public mutating func cleanup() {
@@ -84,7 +96,7 @@ public extension FastCSV {
     /// - Parameter callback: Function to process each row
     /// - Note: This method will automatically clean up resources after processing all rows.
     func forEach(_ callback: (CSVArrayResult) throws -> Void) throws {
-        var iterator = try makeValueArrayIterator()
+        var iterator = try makeArrayIterator()
         defer {
             iterator.cleanup()
         }

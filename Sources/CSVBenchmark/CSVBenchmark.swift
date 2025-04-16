@@ -166,7 +166,7 @@ struct CSVBenchmarkTool: ParsableCommand {
             fileURL: URL(fileURLWithPath: file),
             config: config
         )
-        var iterator = try parser.makeValueArrayIterator()
+        var iterator = try parser.makeArrayIterator()
         let initEnd = DispatchTime.now()
         result.initTime = Double(initEnd.uptimeNanoseconds - initStart.uptimeNanoseconds) / 1_000_000_000
 

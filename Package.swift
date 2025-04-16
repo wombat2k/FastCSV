@@ -30,7 +30,9 @@ let package = Package(
         ),
         .testTarget(
             name: "FastCSVTests",
-            dependencies: ["FastCSV"]
+            dependencies: ["FastCSV"],
+            path: "Tests/FastCSVTests",
+            exclude: []
         ),
         .executableTarget(
             name: "CSVBenchmark",

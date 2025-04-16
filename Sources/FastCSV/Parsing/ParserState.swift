@@ -19,6 +19,8 @@ extension FastCSV {
         private(set) var currentBytes: UnsafePointer<UInt8>?
         /// Current buffer of data read from file
         private var currentReadBuffer: Data?
+        /// Flag to track if we've already checked for BOM
+        private var bomChecked: Bool = false
 
         init(fileHandle: FileHandle, readBufferSize: Int) {
             self.fileHandle = fileHandle
@@ -42,6 +44,20 @@ extension FastCSV {
                             // Create safe pointer to bytes
                             currentBytes = newData.withUnsafeBytes { pointer in
                                 pointer.bindMemory(to: UInt8.self).baseAddress
+                            }
+
+                            // Check for UTF-8 BOM in the first chunk only
+                            if !bomChecked, currentReadBufferSize >= 3 {
+                                bomChecked = true
+
+                                // Check for UTF-8 BOM (EF BB BF)
+                                if currentBytes![0] == 0xEF,
+                                   currentBytes![1] == 0xBB,
+                                   currentBytes![2] == 0xBF
+                                {
+                                    // Skip the BOM by advancing position
+                                    currentPosition = 3
+                                }
                             }
                         } else {
                             // No more data

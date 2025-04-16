@@ -47,6 +47,19 @@ public struct CSVValue {
         }
         return false
     }
+
+    /// Check if the value is safe to be stored
+    /// - Returns: true if the value is safe, false otherwise
+    public var isSafe: Bool {
+        switch valueSource {
+        case .none:
+            return true
+        case .own:
+            return true
+        case .ref:
+            return false
+        }
+    }
 }
 
 public extension CSVValue {
@@ -59,6 +72,8 @@ public extension CSVValue {
     }
 
     /// Get the value as an Int
+    /// - Throws: CSVError.invalidValueConversion if conversion fails
+    /// - Returns: The int value, or nil if empty
     func getInt() throws -> Int? {
         guard let str = try getRawString() else {
             return nil
@@ -71,18 +86,23 @@ public extension CSVValue {
     }
 
     /// Get the value as a Decimal
+    /// - Throws: CSVError.invalidValueConversion if conversion fails
+    /// - Returns: The decimal value, or nil if empty
     func getDecimal() throws -> Decimal? {
         guard let str = try getRawString() else {
             return nil
         }
 
         guard let decimal = Decimal(string: str) else {
-            throw CSVError.invalidValueConversion(message: "Could not convert value to decimal")
+            throw CSVError.invalidValueConversion(message: "Could not convert value '\(str)' to decimal")
         }
         return decimal
     }
 
     /// Get the value as a Double
+    /// - Throws: CSVError.invalidValueConversion if conversion fails
+    /// - Returns: The double value, or nil if empty
+    /// - Note: This method uses `Double(str)` for conversion, which may not be as precise as `Decimal`.
     func getDouble() throws -> Double? {
         guard let str = try getRawString() else {
             return nil
@@ -95,6 +115,9 @@ public extension CSVValue {
     }
 
     /// Get the value as a Float
+    /// - Throws: CSVError.invalidValueConversion if conversion fails
+    /// - Returns: The float value, or nil if empty
+    /// - Note: This method uses `Float(str)` for conversion, which may not be as precise as `Double`.
     func getFloat() throws -> Float? {
         guard let str = try getRawString() else {
             return nil
@@ -107,6 +130,10 @@ public extension CSVValue {
     }
 
     /// Get the value as a Bool
+    /// - Throws: CSVError.invalidValueConversion if conversion fails
+    /// - Returns: true if the value is "true", "yes", "1", "y" (case insensitive)
+    ///          false if the value is "false", "no", "0", "n" (case insensitive)
+    ///          nil if the value is empty or not convertible
     func getBool() throws -> Bool? {
         guard let str = try getRawString()?.lowercased() else {
             return nil

@@ -4,6 +4,8 @@ import Testing
 
 @Suite("RFC 4180 Standard Parser Tests")
 struct StandardParserTests {
+    // MARK: - Basic Functionality Tests
+
     @Test("Basic CSV as array")
     func testBasicCSV() async throws {
         let headers = TestUtils.createHeaders(count: 3)
@@ -65,6 +67,8 @@ struct StandardParserTests {
             }
         )
     }
+
+    // MARK: - Special Character Handling Tests
 
     @Test("Quoted fields")
     func testQuotedFields() async throws {
@@ -142,6 +146,8 @@ struct StandardParserTests {
         )
     }
 
+    // MARK: - Empty Field Tests
+
     @Test("Empty fields")
     func testEmptyFields() async throws {
         let headers = TestUtils.createHeaders(count: 3)
@@ -187,6 +193,28 @@ struct StandardParserTests {
                 #expect(value2 == "row1_col2", "Second value should be 'row1_col2'")
                 let value3 = try results[0].values["header3"]?.getString() ?? ""
                 #expect(value3 == "row1_col3", "Third value should be 'row1_col3'")
+            }
+        )
+    }
+
+    // MARK: - Performance Tests
+
+    @Test("Long and wide CSV")
+    func testLongAndWideCSV() async throws {
+        let headers = TestUtils.createHeaders(count: 100)
+        let rows = TestUtils.createValues(rows: 100, columns: 100)
+
+        try await TestUtils.runTest(
+            testName: "Long and wide CSV",
+            contentHeaders: headers,
+            contentRows: rows,
+            outputFormat: .array,
+            validate: { (results: [CSVArrayResult]) in
+                #expect(TestUtils.isErrorFree(arrayResult: results), "All rows should be error-free")
+                #expect(results.count == 100, "Should have 100 rows")
+                #expect(results[0].values.count == 100, "First row should have 100 columns")
+                let values = try results.map { try $0.values.map { try $0.getString() } }
+                #expect(rows == values)
             }
         )
     }

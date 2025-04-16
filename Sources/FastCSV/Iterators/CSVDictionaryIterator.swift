@@ -56,7 +56,7 @@ public extension FastCSV {
     /// - Parameter callback: Function to process each row
     /// - Note: This method will automatically clean up resources after processing all rows.
     func forEach(_ callback: (CSVDictionaryResult) throws -> Void) throws {
-        var iterator = try makeValueDictionaryIterator()
+        var iterator = try makeDictionaryIterator()
         defer {
             // Ensure cleanup happens even if processing fails
             iterator.cleanup()

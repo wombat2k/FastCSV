@@ -10,6 +10,12 @@ enum TestUtils {
         case dictionary
     }
 
+    // Access mode for testing
+    enum AccessMode {
+        case iterable // Use iterator directly
+        case callable // Use forEach method
+    }
+
     static func isErrorFree(dictionaryResult: [CSVDictionaryResult]) -> Bool {
         for result in dictionaryResult {
             if let _ = result.error {
@@ -65,6 +71,7 @@ enum TestUtils {
         customHeaders: [String] = [],
         config: CSVParserConfig? = nil,
         outputFormat: OutputFormat = .array,
+        accessMode: AccessMode = .iterable,
         expectThrow: CSVError? = nil,
         validate: ([T]) throws -> Void
     ) async throws {
@@ -84,13 +91,13 @@ enum TestUtils {
 
             var items: [T] = []
 
-            switch outputFormat {
-            case .array:
+            switch (outputFormat, accessMode) {
+            case (.array, .iterable):
                 guard T.self is CSVArrayResult.Type else {
                     throw ParserTestError(message: "Type mismatch: expected [CSVArrayResult] for array format")
                 }
 
-                let rows = try parser.makeValueArrayIterator()
+                let rows = try parser.makeArrayIterator()
 
                 for result in rows {
                     // Make a safe copy of the values to avoid invalidation
@@ -99,14 +106,42 @@ enum TestUtils {
                     let safeArrayResult = CSVArrayResult(values: safeArray, error: error)
                     items.append(safeArrayResult as! T)
                 }
-            case .dictionary:
+
+            case (.array, .callable):
+                guard T.self is CSVArrayResult.Type else {
+                    throw ParserTestError(message: "Type mismatch: expected [CSVArrayResult] for array format")
+                }
+
+                try parser.forEach { (result: CSVArrayResult) in
+                    // Make a safe copy of the values to avoid invalidation
+                    let safeArray = result.copyArray()
+                    let error = result.error
+                    let safeArrayResult = CSVArrayResult(values: safeArray, error: error)
+                    items.append(safeArrayResult as! T)
+                }
+
+            case (.dictionary, .iterable):
                 guard T.self is CSVDictionaryResult.Type else {
                     throw ParserTestError(message: "Type mismatch: expected [CSVDictionaryResult] for dictionary format. Got \(T.self)")
                 }
 
-                let rows = try parser.makeValueDictionaryIterator()
+                let rows = try parser.makeDictionaryIterator()
 
                 for result in rows {
+                    // Make a safef copy of the dictionary to avoid invalidation
+                    let safeDictionary = result.copyDictionary()
+                    let error = result.error
+                    let safeDictionaryResult = CSVDictionaryResult(values: safeDictionary, error: error)
+
+                    items.append(safeDictionaryResult as! T)
+                }
+
+            case (.dictionary, .callable):
+                guard T.self is CSVDictionaryResult.Type else {
+                    throw ParserTestError(message: "Type mismatch: expected [CSVDictionaryResult] for dictionary format. Got \(T.self)")
+                }
+
+                try parser.forEach { (result: CSVDictionaryResult) in
                     // Make a safef copy of the dictionary to avoid invalidation
                     let safeDictionary = result.copyDictionary()
                     let error = result.error
@@ -142,6 +177,33 @@ enum TestUtils {
             }
         }
     }
+
+    /// Creates a CSVValue from a string reference with the specified source type
+    /// - Parameters:
+    ///   - stringRef: Reference to a string that will be used to create the CSVValue
+    ///   - source: The source type for the CSVValue (.own, .ref, or .none)
+    /// - Returns: A CSVValue with the specified source type
+
+    static func createCSVValue(from bytes: [uint8], source: SourceType = .own) -> CSVValue {
+        switch source {
+        case .none:
+            return CSVValue(buffer: nil)
+
+        case .ref:
+            return bytes.withUnsafeBufferPointer { buffer in
+                CSVValue(buffer: buffer)
+            }
+
+        case .own:
+            return CSVValue(bytes: bytes)
+        }
+    }
+}
+
+enum SourceType {
+    case none
+    case ref
+    case own
 }
 
 // Error type for parser test failures
