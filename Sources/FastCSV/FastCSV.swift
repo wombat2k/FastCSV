@@ -44,8 +44,8 @@ public class FastCSV {
         // Read the first row in order to determine the count of columns
         // Since we don't know the number of columns in advance, we need to use the
         // dynamic parser which is more inefficient but we only need to do it once.
-        let rawIterator = CSVBaseIterator(fileHandle: fileHandle, skipFirstRow: false, config: self.config)
-        var valueArrayIterator = CSVArrayIterator(rawIterator: rawIterator, headerCount: 0)
+        let rowIterator = CSVRowIterator(fileHandle: fileHandle, skipFirstRow: false, config: self.config)
+        var valueArrayIterator = CSVArrayIterator(rowIterator: rowIterator, headerCount: 0)
 
         // Required because we only read the first row
         defer { valueArrayIterator.cleanup() }
@@ -135,9 +135,9 @@ public class FastCSV {
 
     /// Create an iterator over raw CSV rows
     /// - Returns: Iterator that yields rows as arrays of buffer pointers
-    func makeRawIterator() throws -> CSVBaseIterator {
+    func makeRawIterator() throws -> CSVRowIterator {
         let fileHandle = try FileHandle(forReadingFrom: fileURL)
-        return CSVBaseIterator(fileHandle: fileHandle, skipFirstRow: skipFirstRow, columnCount: headerCount, config: config)
+        return CSVRowIterator(fileHandle: fileHandle, skipFirstRow: skipFirstRow, columnCount: headerCount, config: config)
     }
 
     // MARK: - Public Iterators
@@ -145,10 +145,10 @@ public class FastCSV {
     /// Create an iterator over CSV rows as arrays of CSVValue
     /// - Returns: Iterator that yields rows as arrays of CSVValue
     public func makeArrayIterator() throws -> CSVArrayIterator {
-        let rawIterator = try makeRawIterator()
+        let rowIterator = try makeRawIterator()
 
         return CSVArrayIterator(
-            rawIterator: rawIterator,
+            rowIterator: rowIterator,
             headerCount: headerCount,
             skipFirstRow: skipFirstRow
         )

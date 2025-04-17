@@ -9,15 +9,15 @@ public extension FastCSV {
     struct CSVArrayIterator: IteratorProtocol, Sequence {
         public typealias Element = CSVArrayResult
 
-        private var rawIterator: CSVBaseIterator
+        private var rowIterator: CSVRowIterator
         private let headerCount: Int
         private var rowNumber: Int
 
         // Pre-allocated arrays for reuse
         private var valueBuffer: [CSVValue]
 
-        init(rawIterator: CSVBaseIterator, headerCount: Int, skipFirstRow: Bool = false) {
-            self.rawIterator = rawIterator
+        init(rowIterator: CSVRowIterator, headerCount: Int, skipFirstRow: Bool = false) {
+            self.rowIterator = rowIterator
             self.headerCount = headerCount
 
             // Pre-allocate buffer for values with expected capacity
@@ -40,7 +40,7 @@ public extension FastCSV {
         /// - Note: This method is not thread-safe and should only be used in a single-threaded context.
         public mutating func next() -> CSVArrayResult? {
             // Get raw field buffers from the raw iterator
-            guard let result = rawIterator.next() else {
+            guard let result = rowIterator.next() else {
                 return nil
             }
 
@@ -86,7 +86,7 @@ public extension FastCSV {
         /// Call this method when done iterating to ensure all resources are properly released
         public mutating func cleanup() {
             // Propagate cleanup to the raw iterator to free buffers and close file handles
-            rawIterator.cleanup()
+            rowIterator.cleanup()
         }
     }
 

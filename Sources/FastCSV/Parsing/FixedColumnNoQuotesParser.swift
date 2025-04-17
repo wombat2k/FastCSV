@@ -80,6 +80,11 @@ extension FastCSV {
         }
 
         mutating func parseNextRow() -> CSVIteratorResult? {
+            // Check if already done parsing instead of checking an explicit flag
+            if chunkReader.isFinished {
+                return nil
+            }
+
             // Clear any previous parsing error before starting a new row
             parsingError = nil
 
@@ -108,8 +113,26 @@ extension FastCSV {
                         }
                     }
 
-                    return currentFieldIndex > 0 ?
-                        CSVIteratorResult(directStorage: UnsafeBufferPointer(storage), count: currentFieldIndex, parsingError: parsingError) : nil
+                    if currentFieldIndex > 0 {
+                        // Create a copy of the fields rather than using direct storage
+                        var fieldsCopy: [UnsafeBufferPointer<UInt8>] = []
+                        fieldsCopy.reserveCapacity(currentFieldIndex)
+
+                        for i in 0 ..< currentFieldIndex {
+                            fieldsCopy.append(storage[i])
+                        }
+
+                        // Clean up and then return the result with copied fields
+                        cleanup()
+
+                        return CSVIteratorResult(
+                            fieldPointers: fieldsCopy,
+                            parsingError: parsingError
+                        )
+                    } else {
+                        cleanup()
+                        return nil
+                    }
                 }
 
                 guard let bytes = chunkReader.currentBytes else {
@@ -174,39 +197,31 @@ extension FastCSV {
 
                         fieldStartPosition = chunkReader.currentPosition
 
-                        // Create result using the optimized direct storage accessor
-                        let result = CSVIteratorResult(
-                            directStorage: UnsafeBufferPointer(storage),
-                            count: currentFieldIndex,
-                            parsingError: parsingError
-                        )
+                        // Create a copy of the fields
+                        var fieldsCopy: [UnsafeBufferPointer<UInt8>] = []
+                        fieldsCopy.reserveCapacity(currentFieldIndex)
 
-                        currentRowNumber += 1
-                        return result
-                    } else if byte == UInt8(ascii: "\"") {
-                        // Error condition - quotes not allowed in no-quotes mode
-                        parsingError = .invalidCSV(message: "File contains quotes but was parsed in no-quotes mode")
-
-                        // Process current field before returning
-                        if currentFieldIndex < columnCount && chunkReader.currentPosition > fieldStartPosition {
-                            storage[currentFieldIndex] = createFieldPointer(
-                                from: fieldStartPosition,
-                                to: chunkReader.currentPosition,
-                                in: bytes
-                            )
-                            currentFieldIndex += 1
+                        for i in 0 ..< currentFieldIndex {
+                            fieldsCopy.append(storage[i])
                         }
 
-                        // Return current fields with error
-                        let result = CSVIteratorResult(
-                            directStorage: UnsafeBufferPointer(storage),
-                            count: currentFieldIndex,
+                        currentRowNumber += 1
+                        return CSVIteratorResult(
+                            fieldPointers: fieldsCopy,
                             parsingError: parsingError
                         )
+                    } else if byte == UInt8(ascii: "\"") {
+                        // Create error result first with a completely separate buffer
+                        let emptyFields: [UnsafeBufferPointer<UInt8>] = []
+                        let errorResult = CSVIteratorResult(
+                            fieldPointers: emptyFields,
+                            parsingError: .invalidCSV(message: "File contains quotes but was parsed in no-quotes mode")
+                        )
 
-                        // Terminate parsing
-                        chunkReader.forceFinish()
-                        return result
+                        // Then clean up resources
+                        cleanup()
+
+                        return errorResult
                     } else {
                         // Normal character - just advance
                         chunkReader.advancePosition()
@@ -215,10 +230,17 @@ extension FastCSV {
             }
         }
 
-        /// Release allocated resources
+        /// Release allocated resources - made idempotent
         mutating func cleanup() {
-            storage.deallocate()
+            // Only deallocate if we still have storage to clean up
+            if storage.baseAddress != nil {
+                storage.deallocate()
+            }
+
             chunkReader.cleanup()
+
+            // Mark as finished to prevent further parsing attempts
+            chunkReader.forceFinish()
         }
     }
 }

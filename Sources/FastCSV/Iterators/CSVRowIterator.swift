@@ -2,7 +2,7 @@ import Foundation
 
 extension FastCSV {
     /// Zero-copy iterator for CSV rows, returning raw field pointers to the underlying buffer
-    struct CSVBaseIterator: IteratorProtocol, Sequence {
+    struct CSVRowIterator: IteratorProtocol, Sequence {
         public typealias Element = CSVIteratorResult
 
         /// Parser implementation to use for row parsing
@@ -48,7 +48,8 @@ extension FastCSV {
             return parser.parseNextRow()
         }
 
-        // Enhanced cleanup for background I/O resources
+        /// Cleans up the parser and releases any resources it holds.
+        /// - Note: This method only needs to be called if the iterator is not used in a `forEach` loop or if the iterator is not iterated until the end of the file.
         public mutating func cleanup() {
             // Clean up the parser - each implementation handles its own specific cleanup
             parser.cleanup()

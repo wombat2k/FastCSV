@@ -140,6 +140,9 @@ extension FastCSV {
                         }
                     }
 
+                    // We're at the end of file, clean up resources automatically
+                    cleanup()
+
                     return currentFieldIndex > 0 ?
                         CSVIteratorResult(directStorage: UnsafeBufferPointer(storage),
                                           count: currentFieldIndex,

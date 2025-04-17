@@ -132,6 +132,9 @@ extension FastCSV {
                         fieldPointers.append(fieldPointer)
                     }
 
+                    // We're at the end of file, clean up resources automatically
+                    cleanup()
+
                     return fieldPointers.isEmpty ? nil : CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
                 }
 
