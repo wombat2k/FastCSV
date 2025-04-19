@@ -1,7 +1,11 @@
 import Foundation
 
 public extension FastCSV {
-    /// Iterator for dictionaries of header keys -> CSVValue
+    /// Row Iterator of CSV values as a dictionary.
+    /// This iterator returns each row as a dictionary of String:CSVValue with the key being the header.
+    /// It is designed to be efficient and reusable, minimizing memory allocations.
+    /// ⚠️ - This iterator is not thread-safe. It only should be used in a single-threaded context.
+    /// ⚠️ - This iterator will automatically clean up resources after the last row is processed (including when encountering a fatal exception), but the user is responsible for calling cleanup if they choose not to iterate through all rows.
     struct CSVDictionaryIterator: IteratorProtocol, Sequence {
         public typealias Element = CSVDictionaryResult
 
@@ -54,11 +58,11 @@ public extension FastCSV {
 
     /// Process the CSV file with a callback for each row as a dictionary
     /// - Parameter callback: Function to process each row
-    /// - Note: This method will automatically clean up resources after processing all rows.
+    /// ⚠️ - This method is not thread-safe. It only should be used in a single-threaded context.
+    /// ℹ️ - This method will automatically clean up resources after the last row is processed (including when encountering a fatal exception)
     func forEach(_ callback: (CSVDictionaryResult) throws -> Void) throws {
         var iterator = try makeDictionaryIterator()
         defer {
-            // Ensure cleanup happens even if processing fails
             iterator.cleanup()
         }
 

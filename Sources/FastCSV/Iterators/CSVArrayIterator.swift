@@ -4,8 +4,8 @@ public extension FastCSV {
     /// Row Iterator for CSV files
     /// This iterator returns each row as an array of CSVValue.
     /// It is designed to be efficient and reusable, minimizing memory allocations.
-    /// - ⚠️ This iterator is not thread-safe. It only should be used in a single-threaded context.
-    /// - ⚠️ This iterator will automatically clean up resources after the last row is processed (including when encountering a fatal exception), but the user is responsible for calling cleanup if they choose not to iterate through all rows.
+    /// ⚠️ - This iterator is not thread-safe. It only should be used in a single-threaded context.
+    /// ⚠️ - This iterator will automatically clean up resources after the last row is processed (including when encountering a fatal exception), but the user is responsible for calling cleanup if they choose not to iterate through all rows.
     struct CSVArrayIterator: IteratorProtocol, Sequence {
         public typealias Element = CSVArrayResult
 
@@ -27,6 +27,7 @@ public extension FastCSV {
                 // Pre-allocate with capacity to avoid reallocations
                 valueBuffer = [CSVValue](repeating: CSVValue(buffer: nil), count: headerCount)
             } else {
+                // No headers, we don't know the size yet
                 rowNumber = 0
                 valueBuffer = []
             }
@@ -36,8 +37,8 @@ public extension FastCSV {
 
         /// Returns the next row as an array of CSVValue
         /// - Returns: A CSVArrayResult containing the row values and any parsing error, or nil if there are no more rows
-        /// - Note: This method will automatically clean up resources after processing all rows.
-        /// - Note: This method is not thread-safe and should only be used in a single-threaded context.
+        /// ⚠️ - This method is not thread-safe. It only should be used in a single-threaded context.
+        /// ⚠️ - This method automatically clean up resources after the last row is processed (including when encountering a fatal exception), but the user is responsible for calling cleanup if they choose not to iterate through all rows.
         public mutating func next() -> CSVArrayResult? {
             // Get raw field buffers from the raw iterator
             guard let result = rowIterator.next() else {
@@ -84,6 +85,7 @@ public extension FastCSV {
 
         /// Cleans up resources used by this iterator and the underlying raw iterator
         /// Call this method when done iterating to ensure all resources are properly released
+        /// ℹ️ - this method is safe to be called multiple times
         public mutating func cleanup() {
             // Propagate cleanup to the raw iterator to free buffers and close file handles
             rowIterator.cleanup()
@@ -94,7 +96,8 @@ public extension FastCSV {
 
     /// Process the CSV file with a callback for each row as an array of CSVValue
     /// - Parameter callback: Function to process each row
-    /// - Note: This method will automatically clean up resources after processing all rows.
+    /// ⚠️ - This method is not thread-safe. It only should be used in a single-threaded context.
+    /// ℹ️ - This method will automatically clean up resources after the last row is processed (including when encountering a fatal exception)
     func forEach(_ callback: (CSVArrayResult) throws -> Void) throws {
         var iterator = try makeArrayIterator()
         defer {

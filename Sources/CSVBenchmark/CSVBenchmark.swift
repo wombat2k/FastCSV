@@ -174,11 +174,16 @@ struct CSVBenchmarkTool: ParsableCommand {
         let parseStart = DispatchTime.now()
         var rowCount = 0
         let rowsToProcess = rowLimit ?? Int.max
-        while let _ = iterator.next(), rowCount < rowsToProcess {
+        for _ in iterator {
             rowCount += 1
+            // Break if we reach the row limit
+            if rowCount >= rowsToProcess {
+                break
+            }
         }
 
         iterator.cleanup()
+
         let parseEnd = DispatchTime.now()
         result.parseTime = Double(parseEnd.uptimeNanoseconds - parseStart.uptimeNanoseconds) / 1_000_000_000
         result.rowCount = rowCount

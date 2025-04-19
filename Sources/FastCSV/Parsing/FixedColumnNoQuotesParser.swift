@@ -18,11 +18,20 @@ extension FastCSV {
         /// Current field start position
         private var fieldStartPosition: Int = 0
 
+        // A reference type to track cleanup state
+        private let cleanupState: CleanupTracker
+
+        // Helper class to track cleanup state across copies
+        private final class CleanupTracker {
+            var hasBeenCleaned: Bool = false
+        }
+
         init(columnCount: Int, fileHandle: FileHandle, delimiter: Delimiter,
              readBufferSize: Int, skipFirstRow: Bool)
         {
             self.columnCount = columnCount
             self.delimiter = delimiter
+            cleanupState = CleanupTracker()
 
             // Allocate continuous memory for field pointers
             storage = UnsafeMutableBufferPointer<UnsafeBufferPointer<UInt8>>.allocate(capacity: columnCount)
@@ -232,15 +241,11 @@ extension FastCSV {
 
         /// Release allocated resources - made idempotent
         mutating func cleanup() {
-            // Only deallocate if we still have storage to clean up
-            if storage.baseAddress != nil {
+            if !cleanupState.hasBeenCleaned {
                 storage.deallocate()
+                chunkReader.cleanup()
+                cleanupState.hasBeenCleaned = true
             }
-
-            chunkReader.cleanup()
-
-            // Mark as finished to prevent further parsing attempts
-            chunkReader.forceFinish()
         }
     }
 }

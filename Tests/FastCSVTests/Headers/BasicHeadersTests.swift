@@ -16,7 +16,7 @@ struct HeaderTests {
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
         let parser = try FastCSV(
-            fileURL: tempURL,
+            fileURL: tempURL
         )
 
         let resultHeaders = parser.headers

@@ -184,7 +184,7 @@ enum TestUtils {
     ///   - source: The source type for the CSVValue (.own, .ref, or .none)
     /// - Returns: A CSVValue with the specified source type
 
-    static func createCSVValue(from bytes: [uint8], source: SourceType = .own) -> CSVValue {
+    static func createCSVValue(from bytes: [UInt8], source: SourceType = .own) -> CSVValue {
         switch source {
         case .none:
             return CSVValue(buffer: nil)

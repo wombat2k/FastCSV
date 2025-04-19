@@ -131,15 +131,6 @@ public class FastCSV {
         }
     }
 
-    // MARK: - Instance Iterator Methods
-
-    /// Create an iterator over raw CSV rows
-    /// - Returns: Iterator that yields rows as arrays of buffer pointers
-    func makeRawIterator() throws -> CSVRowIterator {
-        let fileHandle = try FileHandle(forReadingFrom: fileURL)
-        return CSVRowIterator(fileHandle: fileHandle, skipFirstRow: skipFirstRow, columnCount: headerCount, config: config)
-    }
-
     // MARK: - Public Iterators
 
     /// Create an iterator over CSV rows as arrays of CSVValue
@@ -160,5 +151,14 @@ public class FastCSV {
         let valueArrayIterator = try makeArrayIterator()
 
         return CSVDictionaryIterator(valueArrayIterator: valueArrayIterator, headers: headers)
+    }
+
+    // MARK: - Instance Iterator Methods
+
+    /// Create an iterator over raw CSV rows. Only used internally.
+    /// - Returns: Iterator that yields rows as arrays of buffer pointers
+    private func makeRawIterator() throws -> CSVRowIterator {
+        let fileHandle = try FileHandle(forReadingFrom: fileURL)
+        return CSVRowIterator(fileHandle: fileHandle, skipFirstRow: skipFirstRow, columnCount: headerCount, config: config)
     }
 }

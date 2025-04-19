@@ -139,6 +139,7 @@ extension FastCSV {
                 }
 
                 guard let bytes = chunkReader.currentBytes else {
+                    cleanup()
                     return nil
                 }
 

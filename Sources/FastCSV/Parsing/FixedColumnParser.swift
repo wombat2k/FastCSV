@@ -18,9 +18,18 @@ extension FastCSV {
         /// Current field start position
         private var fieldStartPosition: Int = 0
 
+        // A reference type to track cleanup state
+        private let cleanupState: CleanupTracker
+
+        // Helper class to track cleanup state across copies
+        private final class CleanupTracker {
+            var hasBeenCleaned: Bool = false
+        }
+
         init(columnCount: Int, fileHandle: FileHandle, delimiter: Delimiter,
              readBufferSize: Int, skipFirstRow: Bool)
         {
+            cleanupState = CleanupTracker()
             self.columnCount = columnCount
             self.delimiter = delimiter
 
@@ -150,6 +159,7 @@ extension FastCSV {
                 }
 
                 guard let bytes = chunkReader.currentBytes else {
+                    cleanup()
                     return nil
                 }
 
@@ -261,8 +271,11 @@ extension FastCSV {
 
         /// Release allocated resources
         mutating func cleanup() {
-            storage.deallocate()
-            chunkReader.cleanup()
+            if !cleanupState.hasBeenCleaned {
+                storage.deallocate()
+                chunkReader.cleanup()
+                cleanupState.hasBeenCleaned = true
+            }
         }
     }
 }

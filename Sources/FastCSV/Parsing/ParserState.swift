@@ -3,7 +3,7 @@ import Foundation
 extension FastCSV {
     /// Helper class for parsers that provides common file reading and chunk management
     /// Parsers can choose to use this or implement their own state management
-    class FileChunkReader {
+    final class FileChunkReader {
         /// File handle to read from
         private let fileHandle: FileHandle
         /// Maximum size of buffer chunks to request when reading from file
@@ -21,6 +21,8 @@ extension FastCSV {
         private var currentReadBuffer: Data?
         /// Flag to track if we've already checked for BOM
         private var bomChecked: Bool = false
+        /// Cleaned up flag to prevent double cleanup
+        private var hasBeenCleaned: Bool = false
 
         init(fileHandle: FileHandle, readBufferSize: Int) {
             self.fileHandle = fileHandle
@@ -28,45 +30,59 @@ extension FastCSV {
             loadNextChunkIfNeeded()
         }
 
+        deinit {
+            cleanup()
+        }
+
         /// Loads the next chunk of data if needed
         func loadNextChunkIfNeeded() {
             if currentPosition >= currentReadBufferSize || currentReadBuffer == nil {
-                autoreleasepool {
-                    // Release previous chunk data
-                    currentReadBuffer = nil
-
-                    do {
-                        if let newData = try fileHandle.read(upToCount: readBufferSize), !newData.isEmpty {
-                            currentReadBuffer = newData
-                            currentReadBufferSize = newData.count
-                            currentPosition = 0
-
-                            // Create safe pointer to bytes
-                            currentBytes = newData.withUnsafeBytes { pointer in
-                                pointer.bindMemory(to: UInt8.self).baseAddress
-                            }
-
-                            // Check for UTF-8 BOM in the first chunk only
-                            if !bomChecked, currentReadBufferSize >= 3 {
-                                bomChecked = true
-
-                                // Check for UTF-8 BOM (EF BB BF)
-                                if currentBytes![0] == 0xEF,
-                                   currentBytes![1] == 0xBB,
-                                   currentBytes![2] == 0xBF
-                                {
-                                    // Skip the BOM by advancing position
-                                    currentPosition = 3
-                                }
-                            }
-                        } else {
-                            // No more data
-                            isFinished = true
-                        }
-                    } catch {
-                        isFinished = true
+                #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
+                    autoreleasepool {
+                        self.loadNextChunk()
                     }
+                #else
+                    loadNextChunk()
+                #endif
+            }
+        }
+
+        /// Internal method to load the next chunk of data
+        private func loadNextChunk() {
+            // Release previous chunk data
+            currentBytes = nil
+            currentReadBuffer = nil
+
+            do {
+                if let newData = try fileHandle.read(upToCount: readBufferSize), !newData.isEmpty {
+                    currentReadBuffer = newData
+                    currentReadBufferSize = newData.count
+                    currentPosition = 0
+
+                    // Create safe pointer to bytes
+                    currentBytes = newData.withUnsafeBytes { pointer in
+                        pointer.bindMemory(to: UInt8.self).baseAddress
+                    }
+
+                    // Check for UTF-8 BOM in the first chunk only
+                    if !bomChecked, currentReadBufferSize >= 3 {
+                        bomChecked = true
+
+                        // Check for UTF-8 BOM (EF BB BF)
+                        if currentBytes![0] == 0xEF,
+                           currentBytes![1] == 0xBB,
+                           currentBytes![2] == 0xBF
+                        {
+                            // Skip the BOM by advancing position
+                            currentPosition = 3
+                        }
+                    }
+                } else {
+                    // No more data
+                    isFinished = true
                 }
+            } catch {
+                isFinished = true
             }
         }
 
@@ -87,17 +103,24 @@ extension FastCSV {
 
         /// Clean up resources
         func cleanup() {
-            try? fileHandle.close()
-            currentReadBuffer = nil
-            currentBytes = nil
+            if !hasBeenCleaned {
+                try? fileHandle.close()
+                forceFinish()
+                hasBeenCleaned = true
+            }
         }
 
         /// Force parsing to finish, regardless of remaining data
-        func forceFinish() {
+        private func forceFinish() {
             isFinished = true
-            // Clean up current data to prevent further processing
-            currentReadBuffer = nil
+
             currentBytes = nil
+
+            if currentReadBuffer != nil {
+                currentReadBuffer?.removeAll()
+                currentReadBuffer = nil
+            }
+
             currentReadBufferSize = 0
         }
     }

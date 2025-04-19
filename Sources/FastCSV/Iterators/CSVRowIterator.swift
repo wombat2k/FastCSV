@@ -5,7 +5,7 @@ extension FastCSV {
     struct CSVRowIterator: IteratorProtocol, Sequence {
         public typealias Element = CSVIteratorResult
 
-        /// Parser implementation to use for row parsing
+        // Parser implementation to use for row parsing
         private var parser: CSVParser
 
         /// Initialize a CSVIterator for parsing a CSV file with a FileHandle
@@ -34,6 +34,7 @@ extension FastCSV {
                     )
                 }
             } else {
+                // Use dynamic column parser for unknown column count
                 parser = DynamicColumnParser(
                     fileHandle: fileHandle,
                     delimiter: config.delimiter,
@@ -43,6 +44,8 @@ extension FastCSV {
             }
         }
 
+        /// Get the next row of CSV data
+        /// - Returns: A CSVIteratorResult containing the row data, or nil if no more rows are available
         public mutating func next() -> CSVIteratorResult? {
             // Simply delegate to parser - all state is maintained within the parser
             return parser.parseNextRow()
