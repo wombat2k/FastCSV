@@ -162,11 +162,10 @@ struct CSVBenchmarkTool: ParsableCommand {
         // Create parser config with assumeNoQuotes setting
         let config = CSVParserConfig(assumeNoQuotes: assumeNoQuotes)
 
-        let parser = try FastCSV(
+        var rows = try FastCSV.makeArrayRows(
             fileURL: URL(fileURLWithPath: file),
             config: config
         )
-        var iterator = try parser.makeArrayRows()
         let initEnd = DispatchTime.now()
         result.initTime = Double(initEnd.uptimeNanoseconds - initStart.uptimeNanoseconds) / 1_000_000_000
 
@@ -174,7 +173,7 @@ struct CSVBenchmarkTool: ParsableCommand {
         let parseStart = DispatchTime.now()
         var rowCount = 0
         let rowsToProcess = rowLimit ?? Int.max
-        for _ in iterator {
+        for _ in rows {
             rowCount += 1
             // Break if we reach the row limit
             if rowCount >= rowsToProcess {
@@ -182,7 +181,7 @@ struct CSVBenchmarkTool: ParsableCommand {
             }
         }
 
-        iterator.cleanup()
+        rows.cleanup()
 
         let parseEnd = DispatchTime.now()
         result.parseTime = Double(parseEnd.uptimeNanoseconds - parseStart.uptimeNanoseconds) / 1_000_000_000

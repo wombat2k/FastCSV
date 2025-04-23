@@ -10,12 +10,6 @@ enum TestUtils {
         case dictionary
     }
 
-    // Access mode for testing
-    enum AccessMode {
-        case iterable // Use iterator directly
-        case callable // Use forEach method
-    }
-
     static func isErrorFree(dictionaryResult: [CSVDictionaryResult]) -> Bool {
         for result in dictionaryResult {
             if let _ = result.error {
@@ -71,7 +65,6 @@ enum TestUtils {
         customHeaders: [String] = [],
         config: CSVParserConfig? = nil,
         outputFormat: OutputFormat = .array,
-        accessMode: AccessMode = .iterable,
         expectThrow: CSVError? = nil,
         validate: ([T]) throws -> Void
     ) async throws {
@@ -82,22 +75,18 @@ enum TestUtils {
         do {
             let hasHeaders = !contentHeaders.isEmpty
 
-            let parser = try FastCSV(
-                fileURL: fileURL,
-                hasHeaders: hasHeaders,
-                headers: customHeaders,
-                config: actualConfig
-            )
-
             var items: [T] = []
 
-            switch (outputFormat, accessMode) {
-            case (.array, .iterable):
+            switch outputFormat {
+            case .array:
                 guard T.self is CSVArrayResult.Type else {
                     throw ParserTestError(message: "Type mismatch: expected [CSVArrayResult] for array format")
                 }
 
-                let rows = try parser.makeArrayRows()
+                let rows = try FastCSV.makeArrayRows(fileURL: fileURL,
+                                                     hasHeaders: hasHeaders,
+                                                     headers: customHeaders,
+                                                     config: actualConfig)
 
                 for result in rows {
                     // Make a safe copy of the values to avoid invalidation
@@ -107,41 +96,17 @@ enum TestUtils {
                     items.append(safeArrayResult as! T)
                 }
 
-            case (.array, .callable):
-                guard T.self is CSVArrayResult.Type else {
-                    throw ParserTestError(message: "Type mismatch: expected [CSVArrayResult] for array format")
-                }
-
-                try parser.forEach { (result: CSVArrayResult) in
-                    // Make a safe copy of the values to avoid invalidation
-                    let safeArray = result.copyArray()
-                    let error = result.error
-                    let safeArrayResult = CSVArrayResult(values: safeArray, error: error)
-                    items.append(safeArrayResult as! T)
-                }
-
-            case (.dictionary, .iterable):
+            case .dictionary:
                 guard T.self is CSVDictionaryResult.Type else {
                     throw ParserTestError(message: "Type mismatch: expected [CSVDictionaryResult] for dictionary format. Got \(T.self)")
                 }
 
-                let rows = try parser.makeDictionaryRows()
+                let rows = try FastCSV.makeDictionaryRows(fileURL: fileURL,
+                                                          hasHeaders: hasHeaders,
+                                                          headers: customHeaders,
+                                                          config: actualConfig)
 
                 for result in rows {
-                    // Make a safef copy of the dictionary to avoid invalidation
-                    let safeDictionary = result.copyDictionary()
-                    let error = result.error
-                    let safeDictionaryResult = CSVDictionaryResult(values: safeDictionary, error: error)
-
-                    items.append(safeDictionaryResult as! T)
-                }
-
-            case (.dictionary, .callable):
-                guard T.self is CSVDictionaryResult.Type else {
-                    throw ParserTestError(message: "Type mismatch: expected [CSVDictionaryResult] for dictionary format. Got \(T.self)")
-                }
-
-                try parser.forEach { (result: CSVDictionaryResult) in
                     // Make a safef copy of the dictionary to avoid invalidation
                     let safeDictionary = result.copyDictionary()
                     let error = result.error

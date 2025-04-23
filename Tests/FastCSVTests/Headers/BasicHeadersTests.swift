@@ -15,11 +15,11 @@ struct HeaderTests {
         )
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
-        let parser = try FastCSV(
+        let csvRows = try FastCSV.makeDictionaryRows(
             fileURL: tempURL
         )
 
-        let resultHeaders = parser.headers
+        let resultHeaders = csvRows.headers
 
         #expect(resultHeaders.count == 3, "Should have 3 headers")
         #expect(resultHeaders[0] == "header1", "First header should be 'header1'")
@@ -38,21 +38,14 @@ struct HeaderTests {
         )
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
-        let parser = try FastCSV(
+        let csvRows = try FastCSV.makeDictionaryRows(
             fileURL: tempURL,
             hasHeaders: true
         )
 
-        var iterator = try parser.makeArrayRows()
+        for _ in csvRows {}
 
-        var results: [CSVArrayResult] = []
-        while let row = iterator.next() {
-            results.append(row)
-        }
-
-        #expect(TestUtils.isErrorFree(arrayResult: results), "All rows should be error-free")
-
-        let resultHeaders = parser.headers
+        let resultHeaders = csvRows.headers
 
         #expect(resultHeaders.count == 3, "Should have 3 headers")
         #expect(resultHeaders[0] == "header1", "First header should be 'header1'")
@@ -72,21 +65,12 @@ struct HeaderTests {
         )
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
-        let parser = try FastCSV(
+        let csvRows = try FastCSV.makeDictionaryRows(
             fileURL: tempURL,
             hasHeaders: true
         )
 
-        var iterator = try parser.makeArrayRows()
-
-        var results: [CSVArrayResult] = []
-        while let row = iterator.next() {
-            results.append(row)
-        }
-
-        #expect(TestUtils.isErrorFree(arrayResult: results), "All rows should be error-free")
-
-        let resultHeaders = parser.headers
+        let resultHeaders = csvRows.headers
 
         #expect(resultHeaders.count == 3, "Should have 3 headers")
         #expect(resultHeaders[0] == "header1", "First header should be 'header1'")

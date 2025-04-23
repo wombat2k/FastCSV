@@ -13,17 +13,16 @@ struct name {
             try? FileManager.default.removeItem(at: fileURL)
         }
 
-        let parser = try FastCSV(fileURL: fileURL)
-        var iterator = try parser.makeArrayRows()
+        var rows = try FastCSV.makeArrayRows(fileURL: fileURL)
 
         // First read
-        for _ in iterator {}
+        for _ in rows {}
 
         // First cleanup
-        iterator.cleanup()
+        rows.cleanup()
 
         // Second cleanup
-        iterator.cleanup()
+        rows.cleanup()
 
         #expect(Bool(true), "Double cleanup should succeed")
     }

@@ -89,22 +89,21 @@ public extension FastCSV {
         public mutating func cleanup() {
             rowIterator.cleanup()
         }
-    }
 
-    // MARK: - Convenience Methods
+        // MARK: - Convenience Methods
 
-    /// Process the CSV file with a callback for each row as an array of CSVValue
-    /// - Parameter callback: Function to process each row
-    /// ⚠️ - This method is not thread-safe. It only should be used in a single-threaded context.
-    /// ℹ️ - This method will automatically clean up resources after the last row is processed (including when encountering a fatal exception)
-    func forEach(_ callback: (CSVArrayResult) throws -> Void) throws {
-        var iterator = try makeArrayRows()
-        defer {
-            iterator.cleanup()
-        }
+        /// Process the CSV file with a callback for each row as an array of CSVValue
+        /// - Parameter callback: Function to process each row
+        /// ⚠️ - This method is not thread-safe. It only should be used in a single-threaded context.
+        /// ℹ️ - This method will automatically clean up resources after the last row is processed (including when encountering a fatal exception)
+        mutating func forEach(_ callback: (CSVArrayResult) throws -> Void) throws {
+            defer {
+                cleanup()
+            }
 
-        while let result = iterator.next() {
-            try callback(result)
+            while let result = next() {
+                try callback(result)
+            }
         }
     }
 }

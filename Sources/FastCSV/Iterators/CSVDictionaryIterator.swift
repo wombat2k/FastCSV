@@ -10,7 +10,7 @@ public extension FastCSV {
         public typealias Element = CSVDictionaryResult
 
         private var valueArrayIterator: CSVArrayIterator
-        private let headers: [String]
+        public let headers: [String]
 
         // Pre-allocated reusable dictionary for performance
         private var reusableDict: [String: CSVValue]
@@ -52,22 +52,21 @@ public extension FastCSV {
 
             return CSVDictionaryResult(values: reusableDict, error: error)
         }
-    }
 
-    // MARK: - Convenience Methods
+        // MARK: - Convenience Methods
 
-    /// Process the CSV file with a callback for each row as a dictionary
-    /// - Parameter callback: Function to process each row
-    /// ⚠️ - This method is not thread-safe. It only should be used in a single-threaded context.
-    /// ℹ️ - This method will automatically clean up resources after the last row is processed (including when encountering a fatal exception)
-    func forEach(_ callback: (CSVDictionaryResult) throws -> Void) throws {
-        var iterator = try makeDictionaryRows()
-        defer {
-            iterator.cleanup()
-        }
+        /// Process the CSV file with a callback for each row as a dictionary
+        /// - Parameter callback: Function to process each row
+        /// ⚠️ - This method is not thread-safe. It only should be used in a single-threaded context.
+        /// ℹ️ - This method will automatically clean up resources after the last row is processed (including when encountering a fatal exception)
+        mutating func forEach(_ callback: (CSVDictionaryResult) throws -> Void) throws {
+            defer {
+                cleanup()
+            }
 
-        while let result = iterator.next() {
-            try callback(result)
+            while let result = next() {
+                try callback(result)
+            }
         }
     }
 }
