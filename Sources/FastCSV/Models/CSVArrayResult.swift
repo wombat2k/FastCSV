@@ -22,3 +22,31 @@ public struct CSVArrayResult {
         return values.map { $0.copy() }
     }
 }
+
+// MARK: - Array-like access
+
+extension CSVArrayResult: RandomAccessCollection {
+    public typealias Index = Array<CSVValue>.Index
+    public typealias Element = CSVValue
+
+    public var startIndex: Index { return values.startIndex }
+    public var endIndex: Index { return values.endIndex }
+
+    public func index(after i: Index) -> Index {
+        return values.index(after: i)
+    }
+
+    public func index(before i: Index) -> Index {
+        return values.index(before: i)
+    }
+
+    public subscript(position: Index) -> Element {
+        return values[position]
+    }
+
+    /// The number of values in the array
+    public var count: Int { return values.count }
+
+    /// Returns true if the array contains no values
+    public var isEmpty: Bool { return values.isEmpty }
+}

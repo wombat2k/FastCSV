@@ -21,12 +21,13 @@ extension FastCSV {
         private var currentReadBuffer: Data?
         /// Flag to track if we've already checked for BOM
         private var bomChecked: Bool = false
-        /// Cleaned up flag to prevent double cleanup
-        private var hasBeenCleaned: Bool = false
+        /// Tracker to prevent double cleanup
+        private let cleanupTracker: CleanupTracker
 
         init(fileHandle: FileHandle, readBufferSize: Int) {
             self.fileHandle = fileHandle
             self.readBufferSize = readBufferSize
+            cleanupTracker = CleanupTracker()
             loadNextChunkIfNeeded()
         }
 
@@ -103,10 +104,10 @@ extension FastCSV {
 
         /// Clean up resources
         func cleanup() {
-            if !hasBeenCleaned {
+            if !cleanupTracker.hasBeenCleaned {
                 try? fileHandle.close()
                 forceFinish()
-                hasBeenCleaned = true
+                cleanupTracker.hasBeenCleaned = true
             }
         }
 

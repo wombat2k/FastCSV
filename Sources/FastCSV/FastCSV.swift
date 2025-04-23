@@ -135,7 +135,7 @@ public class FastCSV {
 
     /// Create an iterator over CSV rows as arrays of CSVValue
     /// - Returns: Iterator that yields rows as arrays of CSVValue
-    public func makeArrayIterator() throws -> CSVArrayIterator {
+    public func makeArrayRows() throws -> CSVArrayIterator {
         let rowIterator = try makeRawIterator()
 
         return CSVArrayIterator(
@@ -147,8 +147,8 @@ public class FastCSV {
 
     /// Create an iterator over CSV rows as dictionaries with header keys
     /// - Returns: Iterator that yields rows as dictionaries of String -> CSVValue
-    public func makeDictionaryIterator() throws -> CSVDictionaryIterator {
-        let valueArrayIterator = try makeArrayIterator()
+    public func makeDictionaryRows() throws -> CSVDictionaryIterator {
+        let valueArrayIterator = try makeArrayRows()
 
         return CSVDictionaryIterator(valueArrayIterator: valueArrayIterator, headers: headers)
     }

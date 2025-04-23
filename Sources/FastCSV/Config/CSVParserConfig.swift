@@ -9,7 +9,7 @@ public struct CSVParserConfig {
     public let readBufferSize: Int
 
     /// Whether to assume that the CSV file does not contain any quoted fields
-    /// ⚠️ - The parser will stop processing if it encounters a quote character and will report an InvalidCSV error.
+    /// ⚠️ - The parser will stop processing if it encounters a quote character and will report an InvalidCSV error if this setting is true.
     public let assumeNoQuotes: Bool
 
     /// Initialize a new CSV parser configuration

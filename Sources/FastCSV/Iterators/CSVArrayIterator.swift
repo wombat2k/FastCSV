@@ -69,8 +69,8 @@ public extension FastCSV {
                 valueBuffer[i].update(buffer: fieldPointer.isEmpty ? nil : fieldPointer)
             }
 
-            // Determine the error
             var error = result.parsingError
+
             if headerCount > 0 && fieldCount != headerCount && error == nil {
                 error = CSVError.rowError(
                     row: rowNumber,
@@ -87,7 +87,6 @@ public extension FastCSV {
         /// Call this method when done iterating to ensure all resources are properly released
         /// ℹ️ - this method is safe to be called multiple times
         public mutating func cleanup() {
-            // Propagate cleanup to the raw iterator to free buffers and close file handles
             rowIterator.cleanup()
         }
     }
@@ -99,7 +98,7 @@ public extension FastCSV {
     /// ⚠️ - This method is not thread-safe. It only should be used in a single-threaded context.
     /// ℹ️ - This method will automatically clean up resources after the last row is processed (including when encountering a fatal exception)
     func forEach(_ callback: (CSVArrayResult) throws -> Void) throws {
-        var iterator = try makeArrayIterator()
+        var iterator = try makeArrayRows()
         defer {
             iterator.cleanup()
         }

@@ -21,11 +21,6 @@ extension FastCSV {
         // A reference type to track cleanup state
         private let cleanupState: CleanupTracker
 
-        // Helper class to track cleanup state across copies
-        private final class CleanupTracker {
-            var hasBeenCleaned: Bool = false
-        }
-
         init(columnCount: Int, fileHandle: FileHandle, delimiter: Delimiter,
              readBufferSize: Int, skipFirstRow: Bool)
         {

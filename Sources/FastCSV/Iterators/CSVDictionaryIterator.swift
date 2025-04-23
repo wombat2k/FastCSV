@@ -29,12 +29,13 @@ public extension FastCSV {
         }
 
         /// Cleans up resources used by this iterator and the underlying iterators
-        /// Call this method when done iterating to ensure all resources are properly released
+        /// Call this method when not iterating through all rows.
         public mutating func cleanup() {
-            // Propagate cleanup to the value array iterator which will propagate to the row iterator
             valueArrayIterator.cleanup()
         }
 
+        /// Iterate to the next row of CSV data
+        /// - Returns: A CSVDictionaryResult containing the row values as a dictionary, or nil if there are no more rows
         public mutating func next() -> CSVDictionaryResult? {
             guard let arrayResult = valueArrayIterator.next() else {
                 return nil
@@ -49,7 +50,6 @@ public extension FastCSV {
                 reusableDict[headers[i]] = values[i]
             }
 
-            // Since dictionaries are value types, return a copy for the caller
             return CSVDictionaryResult(values: reusableDict, error: error)
         }
     }
@@ -61,7 +61,7 @@ public extension FastCSV {
     /// ⚠️ - This method is not thread-safe. It only should be used in a single-threaded context.
     /// ℹ️ - This method will automatically clean up resources after the last row is processed (including when encountering a fatal exception)
     func forEach(_ callback: (CSVDictionaryResult) throws -> Void) throws {
-        var iterator = try makeDictionaryIterator()
+        var iterator = try makeDictionaryRows()
         defer {
             iterator.cleanup()
         }

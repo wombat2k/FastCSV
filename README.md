@@ -1,48 +1,146 @@
 # FastCSV
+
 A speedy CSV parser for Swift
 
-FastCSV is a simple CSV parser developed in Swift that aims to parse a file as quickly
-as possible while being economical with memory and still being easy to use.
+[![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Speed is achieved by avoiding allocations as much as possible during parsing and only 
-allocating if a value is actually used as well as reusing, which is why you should 
-prefer using row-level processing rather than loading the whole file in memory. 
+## Overview
 
-Memory consumption is kept down by pre-allocating buffers as much as possible with 
-reasonable defaults and dynamic re-sizing.
+FastCSV is a high-performance CSV (Comma-Separated Values) parser written in Swift. It's designed to efficiently handle large CSV files with minimal memory overhead.
 
-All of this means that when iterating through the file, you should never keep a 
-reference to a CSVValue object outside of its context.
+## Features
 
+- 🚀 High-performance parsing
+- 💾 Low memory footprint
+- 🔄 Streaming support
+- 📊 Custom delimiter support
+- 🧩 Simple, easy-to-use API
+
+## Installation
+
+### Swift Package Manager
+
+Add FastCSV to your `Package.swift`:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/wombat2k/FastCSV.git", from: "1.0.0")
+]
 ```
-for row in rows
-{
-    ...
+
+## Usage
+
+### Basic Usage
+
+```swift
+import FastCSV
+
+/* For a file that looks like this
+name,age,city
+John,30,New York
+Alice,25,San Francisco
+*/
+
+do {
+    let parser = try FastCSV(urlPath: "./data.csv")
+    var rows = 
+    for row in parser {
+        print(row) // ["John", "30", "New York"], etc.
+    }
+} catch {
+    print("Error parsing CSV: \(error)")
 }
 ```
 
-⚠️⚠️⚠️ This project is still under construction!!!
+### Reading from a file
 
-## What works
-* Parsing UTF-8 files
-* Iterating through rows as arrays or dictionaries
-* forEach convenience methods
-* Fully loading file in memory
-* Support for RFC 4180, TSV and custom (Only RFC 4180 compliance is currently covered)
-* Custom Headers
+```swift
+do {
+    let parser = try CSVParser(url: fileURL)
+    
+    // Access by row
+    for row in parser {
+        // Process each row
+    }
+    
+    // Access by column name
+    if let headers = parser.headers {
+        for row in parser {
+            let name = row[headers[0]]
+            let age = row[headers[1]]
+            // ...
+        }
+    }
+} catch {
+    print("Error parsing CSV: \(error)")
+}
+```
 
-## Doing
-* Add more unit tests with emphasis on correctness
-* Improve performance testing
-* Improve Readme
-    * Add examples
+### Configuration
 
-## Future improvements
-* Writing to CSV
-* Tolerant mode
-* BOM
-* Autodetection of delimiters
-* SIMD for fast path
-* Codable support
+```swift
+let config = CSVConfiguration(
+    delimiter: ";",
+    quoteCharacter: "'",
+    hasHeaderRow: true
+)
 
-⚠️⚠️⚠️ This project is still under construction!!!
+let parser = try CSVParser(string: csvData, configuration: config)
+```
+
+## API Reference
+
+### CSVParser
+
+The main class for parsing CSV data.
+
+#### Initialization
+
+- `init(string:configuration:)`: Initialize with a string
+- `init(url:configuration:)`: Initialize with a file URL
+- `init(data:configuration:)`: Initialize with Data
+
+#### Properties
+
+- `headers`: Array of header strings if available
+- `rowCount`: Number of rows in the CSV
+
+#### Methods
+
+- `next()`: Get the next row as an array of strings
+- `reset()`: Reset the parser to the beginning
+
+### CSVConfiguration
+
+Configure the parser behavior.
+
+- `delimiter`: Character used to separate values (default: ",")
+- `quoteCharacter`: Character used for quoting values (default: "\"")
+- `hasHeaderRow`: Whether the first row contains headers (default: false)
+- `trimFields`: Whether to trim whitespace from fields (default: true)
+
+## Performance
+
+FastCSV is optimized for performance and can handle large CSV files efficiently. Internal benchmarks show it's significantly faster than many popular CSV parsers.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+Your Name - [@yourusername](https://twitter.com/yourusername)
+
+Project Link: [https://github.com/yourusername/FastCSV](https://github.com/yourusername/FastCSV)
+

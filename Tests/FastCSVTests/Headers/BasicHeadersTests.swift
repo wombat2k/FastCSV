@@ -43,7 +43,7 @@ struct HeaderTests {
             hasHeaders: true
         )
 
-        var iterator = try parser.makeArrayIterator()
+        var iterator = try parser.makeArrayRows()
 
         var results: [CSVArrayResult] = []
         while let row = iterator.next() {
@@ -77,7 +77,7 @@ struct HeaderTests {
             hasHeaders: true
         )
 
-        var iterator = try parser.makeArrayIterator()
+        var iterator = try parser.makeArrayRows()
 
         var results: [CSVArrayResult] = []
         while let row = iterator.next() {

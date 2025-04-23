@@ -97,7 +97,7 @@ enum TestUtils {
                     throw ParserTestError(message: "Type mismatch: expected [CSVArrayResult] for array format")
                 }
 
-                let rows = try parser.makeArrayIterator()
+                let rows = try parser.makeArrayRows()
 
                 for result in rows {
                     // Make a safe copy of the values to avoid invalidation
@@ -125,7 +125,7 @@ enum TestUtils {
                     throw ParserTestError(message: "Type mismatch: expected [CSVDictionaryResult] for dictionary format. Got \(T.self)")
                 }
 
-                let rows = try parser.makeDictionaryIterator()
+                let rows = try parser.makeDictionaryRows()
 
                 for result in rows {
                     // Make a safef copy of the dictionary to avoid invalidation

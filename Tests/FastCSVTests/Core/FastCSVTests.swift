@@ -14,7 +14,7 @@ struct name {
         }
 
         let parser = try FastCSV(fileURL: fileURL)
-        var iterator = try parser.makeArrayIterator()
+        var iterator = try parser.makeArrayRows()
 
         // First read
         for _ in iterator {}
