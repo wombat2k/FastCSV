@@ -13,13 +13,13 @@ extension FastCSV {
         ///   - fileHandle: FileHandle to read CSV data from
         ///   - skipFirstRow: Whether to skip the first row during iteration (default: true)
         ///   - config: Configuration options for CSV parsing
-        init(fileHandle: FileHandle, skipFirstRow: Bool = true, columnCount: Int = 0, config: CSVParserConfig) {
+        init(reader: ByteStreamReader, skipFirstRow: Bool = true, columnCount: Int = 0, config: CSVParserConfig) {
             // Create the appropriate parser based on configuration
             if columnCount > 0 {
                 if !config.assumeNoQuotes {
                     parser = FixedColumnParser(
                         columnCount: columnCount,
-                        fileHandle: fileHandle,
+                        reader: reader,
                         delimiter: config.delimiter,
                         readBufferSize: config.readBufferSize,
                         skipFirstRow: skipFirstRow
@@ -27,7 +27,7 @@ extension FastCSV {
                 } else {
                     parser = FixedColumnNoQuotesParser(
                         columnCount: columnCount,
-                        fileHandle: fileHandle,
+                        reader: reader,
                         delimiter: config.delimiter,
                         readBufferSize: config.readBufferSize,
                         skipFirstRow: skipFirstRow
@@ -36,7 +36,7 @@ extension FastCSV {
             } else {
                 // Use dynamic column parser for unknown column count
                 parser = DynamicColumnParser(
-                    fileHandle: fileHandle,
+                    reader: reader,
                     delimiter: config.delimiter,
                     readBufferSize: config.readBufferSize,
                     skipFirstRow: skipFirstRow

@@ -6,7 +6,7 @@ extension FastCSV {
         /// Collection of field pointers
         private var fieldPointers: [UnsafeBufferPointer<UInt8>]
         /// File chunk reader
-        private var chunkReader: FileChunkReader
+        private var chunkReader: ByteChunkReader
         /// CSV delimiter configuration
         private let delimiter: Delimiter
         /// Current row number being processed
@@ -16,7 +16,7 @@ extension FastCSV {
         /// Current field start position
         private var fieldStartPosition: Int = 0
 
-        init(fileHandle: FileHandle, delimiter: Delimiter, readBufferSize: Int,
+        init(reader: ByteStreamReader, delimiter: Delimiter, readBufferSize: Int,
              skipFirstRow: Bool, initialCapacity: Int = 0)
         {
             self.delimiter = delimiter
@@ -30,7 +30,7 @@ extension FastCSV {
             }
 
             // Initialize chunk reader
-            chunkReader = FileChunkReader(fileHandle: fileHandle, readBufferSize: readBufferSize)
+            chunkReader = ByteChunkReader(reader: reader, readBufferSize: readBufferSize)
 
             // Skip the header row if requested
             if skipFirstRow {

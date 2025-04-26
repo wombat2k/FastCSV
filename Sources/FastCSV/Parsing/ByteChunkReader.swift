@@ -1,12 +1,12 @@
 import Foundation
 
 extension FastCSV {
-    /// Helper class for parsers that provides common file reading and chunk management
+    /// Helper class for parsers that provides common byte stream reading and chunk management
     /// Parsers can choose to use this or implement their own state management
-    final class FileChunkReader {
-        /// File handle to read from
-        private let fileHandle: FileHandle
-        /// Maximum size of buffer chunks to request when reading from file
+    final class ByteChunkReader {
+        /// Stream reader to read bytes from
+        private let reader: ByteStreamReader
+        /// Maximum size of buffer chunks to request when reading
         private let readBufferSize: Int
 
         /// Whether parsing has finished
@@ -17,15 +17,15 @@ extension FastCSV {
         private(set) var currentReadBufferSize: Int = 0
         /// Pointer to the current byte array being processed
         private(set) var currentBytes: UnsafePointer<UInt8>?
-        /// Current buffer of data read from file
-        private var currentReadBuffer: Data?
+        /// Current buffer of data read from stream
+        private var currentReadBuffer: UnsafeMutablePointer<UInt8>?
         /// Flag to track if we've already checked for BOM
         private var bomChecked: Bool = false
         /// Tracker to prevent double cleanup
         private let cleanupTracker: CleanupTracker
 
-        init(fileHandle: FileHandle, readBufferSize: Int) {
-            self.fileHandle = fileHandle
+        init(reader: ByteStreamReader, readBufferSize: Int) {
+            self.reader = reader
             self.readBufferSize = readBufferSize
             cleanupTracker = CleanupTracker()
             loadNextChunkIfNeeded()
@@ -51,38 +51,40 @@ extension FastCSV {
         /// Internal method to load the next chunk of data
         private func loadNextChunk() {
             // Release previous chunk data
+            if let buffer = currentReadBuffer {
+                buffer.deallocate()
+                currentReadBuffer = nil
+            }
             currentBytes = nil
-            currentReadBuffer = nil
 
-            do {
-                if let newData = try fileHandle.read(upToCount: readBufferSize), !newData.isEmpty {
-                    currentReadBuffer = newData
-                    currentReadBufferSize = newData.count
-                    currentPosition = 0
+            // Allocate new buffer
+            let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: readBufferSize)
 
-                    // Create safe pointer to bytes
-                    currentBytes = newData.withUnsafeBytes { pointer in
-                        pointer.bindMemory(to: UInt8.self).baseAddress
+            // Read from the stream
+            let bytesRead = reader.readBytes(into: buffer, maxLength: readBufferSize)
+
+            if bytesRead > 0 {
+                currentReadBuffer = buffer
+                currentBytes = UnsafePointer(buffer)
+                currentReadBufferSize = bytesRead
+                currentPosition = 0
+
+                // Check for UTF-8 BOM in the first chunk only
+                if !bomChecked, currentReadBufferSize >= 3 {
+                    bomChecked = true
+
+                    // Check for UTF-8 BOM (EF BB BF)
+                    if currentBytes![0] == 0xEF,
+                       currentBytes![1] == 0xBB,
+                       currentBytes![2] == 0xBF
+                    {
+                        // Skip the BOM by advancing position
+                        currentPosition = 3
                     }
-
-                    // Check for UTF-8 BOM in the first chunk only
-                    if !bomChecked, currentReadBufferSize >= 3 {
-                        bomChecked = true
-
-                        // Check for UTF-8 BOM (EF BB BF)
-                        if currentBytes![0] == 0xEF,
-                           currentBytes![1] == 0xBB,
-                           currentBytes![2] == 0xBF
-                        {
-                            // Skip the BOM by advancing position
-                            currentPosition = 3
-                        }
-                    }
-                } else {
-                    // No more data
-                    isFinished = true
                 }
-            } catch {
+            } else {
+                // No more data
+                buffer.deallocate()
                 isFinished = true
             }
         }
@@ -105,7 +107,7 @@ extension FastCSV {
         /// Clean up resources
         func cleanup() {
             if !cleanupTracker.hasBeenCleaned {
-                try? fileHandle.close()
+                reader.cleanup()
                 forceFinish()
                 cleanupTracker.hasBeenCleaned = true
             }
@@ -117,8 +119,8 @@ extension FastCSV {
 
             currentBytes = nil
 
-            if currentReadBuffer != nil {
-                currentReadBuffer?.removeAll()
+            if let buffer = currentReadBuffer {
+                buffer.deallocate()
                 currentReadBuffer = nil
             }
 

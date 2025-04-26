@@ -88,7 +88,7 @@ public class FastCSV {
         defer { try? fileHandle.close() }
 
         // Read the first row to determine column count
-        let rowIterator = CSVRowIterator(fileHandle: fileHandle, skipFirstRow: false, config: finalConfig)
+        let rowIterator = CSVRowIterator(reader: fileHandle, skipFirstRow: false, config: finalConfig)
         var valueArrayIterator = CSVArrayIterator(rowIterator: rowIterator, headerCount: 0)
 
         defer { valueArrayIterator.cleanup() }
@@ -131,7 +131,7 @@ public class FastCSV {
         let initParams = try initialize(fileURL: fileURL, hasHeaders: hasHeaders, headers: headers, config: config)
 
         let fileHandle = try FileHandle(forReadingFrom: initParams.fileURL)
-        let rowIterator = CSVRowIterator(fileHandle: fileHandle, skipFirstRow: initParams.skipFirstRow, columnCount: initParams.headerCount, config: initParams.config)
+        let rowIterator = CSVRowIterator(reader: fileHandle, skipFirstRow: initParams.skipFirstRow, columnCount: initParams.headerCount, config: initParams.config)
 
         return CSVArrayIterator(
             rowIterator: rowIterator,
