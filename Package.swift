@@ -26,19 +26,29 @@ let package = Package(
                 // Debug logging is disabled by default
                 // Uncomment the next line to enable debug logs during development
                 // .define("ENABLE_LOGGING"),
+                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .debug)),
+                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .release)),
             ]
         ),
         .testTarget(
             name: "FastCSVTests",
             dependencies: ["FastCSV"],
             path: "Tests/FastCSVTests",
-            exclude: []
+            exclude: [],
+            swiftSettings: [
+                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .debug)),
+                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .release)),
+            ]
         ),
         .executableTarget(
             name: "CSVBenchmark",
             dependencies: [
                 "FastCSV",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
+            ],
+            swiftSettings: [
+                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .debug)),
+                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .release)),
             ]
         ),
     ]
