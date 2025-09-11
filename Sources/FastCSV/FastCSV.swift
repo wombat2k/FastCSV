@@ -14,7 +14,7 @@ public class FastCSV {
     private static func processHeaders(firstRow: [CSVValue], hasHeaders: Bool, customHeaders: [String]) throws ->
         (headers: [String], skipFirstRow: Bool, headerCount: Int)
     {
-        // Process directly with the first row (BOM handling moved elsewhere)
+        // Process directly with the first row
         if !customHeaders.isEmpty {
             // If custom headers are provided, use them and validate count
             if customHeaders.count != firstRow.count {
