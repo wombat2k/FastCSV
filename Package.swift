@@ -1,4 +1,4 @@
-// swift-tools-version: 5.5
+// swift-tools-version: 6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -26,29 +26,19 @@ let package = Package(
                 // Debug logging is disabled by default
                 // Uncomment the next line to enable debug logs during development
                 // .define("ENABLE_LOGGING"),
-                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .debug)),
-                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .release)),
             ]
         ),
         .testTarget(
             name: "FastCSVTests",
             dependencies: ["FastCSV"],
             path: "Tests/FastCSVTests",
-            exclude: [],
-            swiftSettings: [
-                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .debug)),
-                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .release)),
-            ]
+            exclude: []
         ),
         .executableTarget(
             name: "CSVBenchmark",
             dependencies: [
                 "FastCSV",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-            ],
-            swiftSettings: [
-                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .debug)),
-                .define("SWIFT_STRICT_CONCURRENCY", .when(configuration: .release)),
             ]
         ),
     ]

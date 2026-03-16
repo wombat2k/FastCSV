@@ -106,6 +106,9 @@ extension FastCSV {
         }
 
         mutating func parseNextRow() -> CSVIteratorResult? {
+            // Release any buffers retained from a previous row's chunk extensions
+            chunkReader.releaseRetainedBuffers()
+
             // Clear any previous parsing error before starting a new row
             parsingError = nil
 
@@ -224,6 +227,11 @@ extension FastCSV {
                         chunkReader.advancePosition()
                     }
                 }
+
+                // Inner loop exhausted the chunk without completing a field.
+                // Retain the old buffer (field pointers reference it) and load new data.
+                chunkReader.extendIntoNextChunk(from: fieldStartPosition)
+                fieldStartPosition = 0
             }
         }
 

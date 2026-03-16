@@ -19,6 +19,8 @@ extension FastCSV {
         private(set) var currentBytes: UnsafePointer<UInt8>?
         /// Current buffer of data read from stream
         private var currentReadBuffer: UnsafeMutablePointer<UInt8>?
+        /// Previous buffers kept alive because field pointers may reference them
+        private var retainedBuffers: [UnsafeMutablePointer<UInt8>] = []
         /// Flag to track if we've already checked for BOM
         private var bomChecked: Bool = false
         /// Tracker to prevent double cleanup
@@ -104,6 +106,62 @@ extension FastCSV {
             currentPosition = position
         }
 
+        /// Extends the current buffer when a row spans a chunk boundary.
+        /// The old buffer is retained (not freed) so that existing field pointers
+        /// into it remain valid. Only the incomplete field's bytes are copied into
+        /// the new buffer. Call `releaseRetainedBuffers()` after the row is consumed.
+        ///
+        /// - Parameter from: The start position of the current incomplete field.
+        func extendIntoNextChunk(from preserveStart: Int) {
+            guard let oldBuffer = currentReadBuffer else {
+                loadNextChunkIfNeeded()
+                return
+            }
+
+            let preserveCount = currentReadBufferSize - preserveStart
+
+            // Retain the old buffer — completed field pointers reference it
+            retainedBuffers.append(oldBuffer)
+
+            // Allocate a new buffer: preserved tail + a full read
+            let newBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: preserveCount + readBufferSize)
+
+            // Copy the incomplete field's bytes from the old buffer
+            if preserveCount > 0 {
+                newBuffer.initialize(from: oldBuffer.advanced(by: preserveStart), count: preserveCount)
+            }
+
+            // Read fresh data after the preserved bytes
+            let bytesRead = reader.readBytes(into: newBuffer.advanced(by: preserveCount), maxLength: readBufferSize)
+
+            if bytesRead > 0 {
+                currentReadBuffer = newBuffer
+                currentBytes = UnsafePointer(newBuffer)
+                currentReadBufferSize = preserveCount + bytesRead
+                currentPosition = preserveCount
+            } else if preserveCount > 0 {
+                // No more data from stream, but we still have preserved bytes to process
+                currentReadBuffer = newBuffer
+                currentBytes = UnsafePointer(newBuffer)
+                currentReadBufferSize = preserveCount
+                currentPosition = preserveCount
+            } else {
+                // Nothing preserved and nothing read — we're done
+                newBuffer.deallocate()
+                currentReadBuffer = nil
+                isFinished = true
+            }
+        }
+
+        /// Releases any buffers retained during chunk extensions.
+        /// Call this after the parser has finished consuming a row's field pointers.
+        func releaseRetainedBuffers() {
+            for buffer in retainedBuffers {
+                buffer.deallocate()
+            }
+            retainedBuffers.removeAll(keepingCapacity: true)
+        }
+
         /// Clean up resources
         func cleanup() {
             if !cleanupTracker.hasBeenCleaned {
@@ -124,6 +182,7 @@ extension FastCSV {
                 currentReadBuffer = nil
             }
 
+            releaseRetainedBuffers()
             currentReadBufferSize = 0
         }
     }
