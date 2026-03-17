@@ -109,6 +109,12 @@ extension FastCSV {
             // Release any buffers retained from a previous row's chunk extensions
             chunkReader.releaseRetainedBuffers()
 
+            // If we already reached EOF on a previous call, clean up and return nil
+            if chunkReader.isFinished {
+                cleanup()
+                return nil
+            }
+
             // Clear any previous parsing error before starting a new row
             parsingError = nil
 
@@ -125,6 +131,14 @@ extension FastCSV {
                 chunkReader.loadNextChunkIfNeeded()
 
                 if chunkReader.isFinished {
+                    // Detect unclosed quotes
+                    if inQuote && parsingError == nil {
+                        parsingError = .rowError(
+                            row: currentRowNumber,
+                            message: "Row \(currentRowNumber) has an unclosed quote."
+                        )
+                    }
+
                     // Process any final field at EOF if needed
                     if chunkReader.currentPosition > fieldStartPosition && chunkReader.currentBytes != nil {
                         let fieldPointer = createFieldPointer(
@@ -135,9 +149,9 @@ extension FastCSV {
                         fieldPointers.append(fieldPointer)
                     }
 
-                    // We're at the end of file, clean up resources automatically
-                    cleanup()
-
+                    // Don't cleanup here — the returned result's field pointers
+                    // reference chunk buffers. Cleanup happens on the next call
+                    // to parseNextRow (which returns nil) or via explicit cleanup.
                     return fieldPointers.isEmpty ? nil : CSVIteratorResult(fieldPointers: fieldPointers, parsingError: parsingError)
                 }
 

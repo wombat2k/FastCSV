@@ -131,6 +131,7 @@ swift run CSVBenchmark path/to/file.csv --assume-no-quotes --iterations 10
 ### Roadmap to 1.0
 
 - Enhanced documentation and examples
+- Codable support
 - Expanded test coverage
 - Generalized streaming support (string streams)
 - CSV writer functionality

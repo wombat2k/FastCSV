@@ -79,11 +79,11 @@ struct InvalidCSVTests {
         )
     }
 
-    @Test("Invalid quotes", .disabled())
+    @Test("Invalid quotes")
     func testInvalidQuotes() async throws {
         let headers = ["header1", "header2", "header3"]
         let rows = [
-            ["value1", "value with \"unfinished quote", "value3"],
+            ["value1", "\"value with unfinished quote", "value3"],
         ]
 
         try await TestUtils.runTest(

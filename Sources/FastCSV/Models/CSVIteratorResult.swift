@@ -1,40 +1,42 @@
 struct CSVIteratorResult {
-    public let fieldPointers: [UnsafeBufferPointer<UInt8>]
-    public let parsingError: CSVError?
-    // Add an underlying storage property to avoid temporary array creation
-    private let fixedStorage: UnsafeBufferPointer<UnsafeBufferPointer<UInt8>>?
-    private let fieldCount: Int
+    let parsingError: CSVError?
 
-    // Add a constructor that allows direct passing of existing arrays for zero-copy field pointers
-    init(fieldPointers: [UnsafeBufferPointer<UInt8>], parsingError: CSVError?) {
-        self.fieldPointers = fieldPointers
-        self.parsingError = parsingError
-        fixedStorage = nil
-        fieldCount = fieldPointers.count
+    private enum Storage {
+        case direct(UnsafeBufferPointer<UnsafeBufferPointer<UInt8>>, count: Int)
+        case array([UnsafeBufferPointer<UInt8>])
     }
 
-    // Optimized constructor that avoids array creation by keeping a reference to the buffer
+    private let storage: Storage
+
+    /// Create a result backed by a pre-allocated buffer (zero-copy, used by fixed-column parsers)
     init(directStorage: UnsafeBufferPointer<UnsafeBufferPointer<UInt8>>, count: Int, parsingError: CSVError?) {
-        fixedStorage = directStorage
-        fieldCount = count
-        // Create a custom array facade that accesses the underlying buffer directly
-        fieldPointers = []
+        self.storage = .direct(directStorage, count: count)
         self.parsingError = parsingError
     }
 
-    // Add subscript accessor to support direct access without array copying
-    subscript(index: Int) -> UnsafeBufferPointer<UInt8> {
-        precondition(index >= 0 && index < fieldCount, "Index out of bounds")
-
-        if let storage = fixedStorage {
-            return storage[index]
-        }
-
-        return fieldPointers[index]
+    /// Create a result backed by an array (used by dynamic-column parser)
+    init(fieldPointers: [UnsafeBufferPointer<UInt8>], parsingError: CSVError?) {
+        self.storage = .array(fieldPointers)
+        self.parsingError = parsingError
     }
 
-    // Add count property to support looping without array copying
+    subscript(index: Int) -> UnsafeBufferPointer<UInt8> {
+        precondition(index >= 0 && index < count, "Index out of bounds")
+
+        switch storage {
+        case let .direct(buffer, _):
+            return buffer[index]
+        case let .array(pointers):
+            return pointers[index]
+        }
+    }
+
     var count: Int {
-        return fieldCount
+        switch storage {
+        case let .direct(_, count):
+            return count
+        case let .array(pointers):
+            return pointers.count
+        }
     }
 }

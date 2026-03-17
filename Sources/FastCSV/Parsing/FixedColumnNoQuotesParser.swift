@@ -87,8 +87,9 @@ extension FastCSV {
             // Release any buffers retained from a previous row's chunk extensions
             chunkReader.releaseRetainedBuffers()
 
-            // Check if already done parsing instead of checking an explicit flag
+            // If we already reached EOF on a previous call, clean up and return nil
             if chunkReader.isFinished {
+                cleanup()
                 return nil
             }
 
@@ -120,26 +121,13 @@ extension FastCSV {
                         }
                     }
 
-                    if currentFieldIndex > 0 {
-                        // Create a copy of the fields rather than using direct storage
-                        var fieldsCopy: [UnsafeBufferPointer<UInt8>] = []
-                        fieldsCopy.reserveCapacity(currentFieldIndex)
-
-                        for i in 0 ..< currentFieldIndex {
-                            fieldsCopy.append(storage[i])
-                        }
-
-                        // Clean up and then return the result with copied fields
-                        cleanup()
-
-                        return CSVIteratorResult(
-                            fieldPointers: fieldsCopy,
-                            parsingError: parsingError
-                        )
-                    } else {
-                        cleanup()
-                        return nil
-                    }
+                    // Don't cleanup here — the returned result's field pointers
+                    // reference storage and chunk buffers. Cleanup happens on the
+                    // next call to parseNextRow (which returns nil) or via explicit cleanup.
+                    return currentFieldIndex > 0 ?
+                        CSVIteratorResult(directStorage: UnsafeBufferPointer(storage),
+                                          count: currentFieldIndex,
+                                          parsingError: parsingError) : nil
                 }
 
                 guard let bytes = chunkReader.currentBytes else {
@@ -204,19 +192,14 @@ extension FastCSV {
 
                         fieldStartPosition = chunkReader.currentPosition
 
-                        // Create a copy of the fields
-                        var fieldsCopy: [UnsafeBufferPointer<UInt8>] = []
-                        fieldsCopy.reserveCapacity(currentFieldIndex)
-
-                        for i in 0 ..< currentFieldIndex {
-                            fieldsCopy.append(storage[i])
-                        }
-
-                        currentRowNumber += 1
-                        return CSVIteratorResult(
-                            fieldPointers: fieldsCopy,
+                        let result = CSVIteratorResult(
+                            directStorage: UnsafeBufferPointer(storage),
+                            count: currentFieldIndex,
                             parsingError: parsingError
                         )
+
+                        currentRowNumber += 1
+                        return result
                     } else if byte == UInt8(ascii: "\"") {
                         // Create error result first with a completely separate buffer
                         let emptyFields: [UnsafeBufferPointer<UInt8>] = []
