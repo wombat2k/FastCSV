@@ -207,11 +207,18 @@ extension FastCSV {
                         chunkReader.advancePosition()
                         fieldStartPosition = chunkReader.currentPosition
                     } else if !inQuote && byte == delimiter.row {
-                        // End of row - finalize the current field
-                        if chunkReader.currentPosition > fieldStartPosition {
+                        // End of row — strip trailing \r if this is a \r\n sequence
+                        var fieldEnd = chunkReader.currentPosition
+                        if byte == UInt8(ascii: "\n") && fieldEnd > fieldStartPosition &&
+                            bytes[fieldEnd - 1] == UInt8(ascii: "\r")
+                        {
+                            fieldEnd -= 1
+                        }
+
+                        if fieldEnd > fieldStartPosition {
                             fieldPointers.append(createFieldPointer(
                                 from: fieldStartPosition,
-                                to: chunkReader.currentPosition,
+                                to: fieldEnd,
                                 in: bytes
                             ))
                         } else {
@@ -219,15 +226,7 @@ extension FastCSV {
                             fieldPointers.append(UnsafeBufferPointer<UInt8>(start: nil, count: 0))
                         }
 
-                        // Move past the row delimiter
                         chunkReader.advancePosition()
-
-                        // Handle CR+LF sequence
-                        if byte == UInt8(ascii: "\r") && chunkReader.currentPosition < chunkReader.currentReadBufferSize &&
-                            bytes[chunkReader.currentPosition] == UInt8(ascii: "\n")
-                        {
-                            chunkReader.advancePosition()
-                        }
 
                         fieldStartPosition = chunkReader.currentPosition
 

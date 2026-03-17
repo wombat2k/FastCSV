@@ -233,13 +233,19 @@ extension FastCSV {
                         chunkReader.advancePosition()
                         fieldStartPosition = chunkReader.currentPosition
                     } else if !inQuote && byte == delimiter.row {
-                        // End of row - simplified logic that assumes storage has adequate capacity
+                        // End of row — strip trailing \r if this is a \r\n sequence
+                        var fieldEnd = chunkReader.currentPosition
+                        if byte == UInt8(ascii: "\n") && fieldEnd > fieldStartPosition &&
+                            bytes[fieldEnd - 1] == UInt8(ascii: "\r")
+                        {
+                            fieldEnd -= 1
+                        }
+
                         if currentFieldIndex < columnCount {
-                            // Store field directly without extra checks
-                            if chunkReader.currentPosition > fieldStartPosition {
+                            if fieldEnd > fieldStartPosition {
                                 storage[currentFieldIndex] = createFieldPointer(
                                     from: fieldStartPosition,
-                                    to: chunkReader.currentPosition,
+                                    to: fieldEnd,
                                     in: bytes
                                 )
                             } else {
@@ -247,20 +253,13 @@ extension FastCSV {
                             }
                             currentFieldIndex += 1
                         } else if parsingError == nil {
-                            // Only set error if not already set
                             parsingError = .rowError(
                                 row: currentRowNumber,
                                 message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount)."
                             )
                         }
 
-                        // Move past the row delimiter and handle CR+LF
                         chunkReader.advancePosition()
-                        if byte == UInt8(ascii: "\r") && chunkReader.currentPosition < chunkReader.currentReadBufferSize &&
-                            bytes[chunkReader.currentPosition] == UInt8(ascii: "\n")
-                        {
-                            chunkReader.advancePosition()
-                        }
 
                         fieldStartPosition = chunkReader.currentPosition
 

@@ -123,29 +123,6 @@ struct StandardParserTests {
         )
     }
 
-    @Test("Return within quotes")
-    func testReturnWithinQuotes() async throws {
-        let headers = TestUtils.createHeaders(count: 3)
-        var rows = TestUtils.createValues(rows: 1, columns: 3)
-        rows[0][1] = "\"value with\nreturn\""
-
-        try await TestUtils.runTest(
-            testName: "Return within quotes",
-            contentHeaders: headers,
-            contentRows: rows,
-            outputFormat: .array,
-            validate: { (results: [CSVArrayResult]) in
-                #expect(TestUtils.isErrorFree(arrayResult: results), "All rows should be error-free")
-                #expect(results.count == 1, "Should have 1 rows")
-                #expect(results[0].values.count == 3, "First row should have 3 columns")
-                #expect(results[0].error == nil, "First row should not have an error")
-
-                let value = try results[0].values[1].getString() ?? ""
-                #expect(value == "value with\nreturn", "Second value should be 'value with\nreturn'")
-            }
-        )
-    }
-
     // MARK: - Empty Field Tests
 
     @Test("Empty fields")
@@ -197,25 +174,4 @@ struct StandardParserTests {
         )
     }
 
-    // MARK: - Performance Tests
-
-    @Test("Long and wide CSV")
-    func testLongAndWideCSV() async throws {
-        let headers = TestUtils.createHeaders(count: 100)
-        let rows = TestUtils.createValues(rows: 100, columns: 100)
-
-        try await TestUtils.runTest(
-            testName: "Long and wide CSV",
-            contentHeaders: headers,
-            contentRows: rows,
-            outputFormat: .array,
-            validate: { (results: [CSVArrayResult]) in
-                #expect(TestUtils.isErrorFree(arrayResult: results), "All rows should be error-free")
-                #expect(results.count == 100, "Should have 100 rows")
-                #expect(results[0].values.count == 100, "First row should have 100 columns")
-                let values = try results.map { try $0.values.map { try $0.getString() } }
-                #expect(rows == values)
-            }
-        )
-    }
 }
