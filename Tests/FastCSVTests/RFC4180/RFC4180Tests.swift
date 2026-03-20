@@ -15,6 +15,21 @@ import Testing
 /// 8. Spaces are considered part of a field (not trimmed)
 @Suite("RFC 4180 Conformance Tests")
 struct RFC4180Tests {
+    /// Writes raw CSV bytes to a temp file, parses as array, returns safe-copied results.
+    private func parseRawCSV(_ csv: String, hasHeaders: Bool = true) throws -> [CSVArrayResult] {
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_\(UUID().uuidString).csv")
+        try csv.data(using: .utf8)!.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let rows = try FastCSV.makeArrayRows(fileURL: tempURL, hasHeaders: hasHeaders)
+        var results: [CSVArrayResult] = []
+        for result in rows {
+            results.append(CSVArrayResult(values: result.copyArray(), error: result.error))
+        }
+        return results
+    }
+
     // MARK: - Basic Record Parsing (Rules 1, 3, 4)
 
     @Test("Basic CSV as array")
@@ -157,90 +172,138 @@ struct RFC4180Tests {
     }
 
     // MARK: - Empty Fields
+    // Empty field positions (leading, middle, trailing, multiple consecutive)
+    // are thoroughly tested in Parsing/EmptyFieldTests.swift
 
-    @Test("Empty fields")
-    func testEmptyFields() async throws {
-        let headers = TestUtils.createHeaders(count: 3)
-        var rows = TestUtils.createValues(rows: 1, columns: 3)
-        rows[0][1] = ""
-
-        try await TestUtils.runTest(
-            testName: "Empty fields",
-            contentHeaders: headers,
-            contentRows: rows,
-            outputFormat: .array,
-            validate: { (results: [CSVArrayResult]) in
-                #expect(TestUtils.isErrorFree(arrayResult: results), "All rows should be error-free")
-                #expect(results.count == 1, "Should have 1 row")
-                #expect(results[0].error == nil, "First row should not have an error")
-
-                let value = try results[0].values[1].getString()
-                #expect(value == nil, "Second column in first row should be empty")
-            }
-        )
-    }
-
-    @Test("Empty headers in dictionaries")
-    func testEmptyHeadersInDictionaries() async throws {
-        var headers = TestUtils.createHeaders(count: 3)
-        headers[1] = ""
-        let rows = TestUtils.createValues(rows: 1, columns: 3)
-
-        try await TestUtils.runTest(
-            testName: "Empty headers in dictionaries",
-            contentHeaders: headers,
-            contentRows: rows,
-            outputFormat: .dictionary,
-            validate: { (results: [CSVDictionaryResult]) in
-                #expect(TestUtils.isErrorFree(dictionaryResult: results), "All rows should be error-free")
-                #expect(results.count == 1, "Should have 1 row")
-                #expect(results[0].values.count == 3, "First row should have 3 columns")
-                #expect(results[0].error == nil, "First row should not have an error")
-
-                let value1 = try results[0].values["header1"]?.getString() ?? ""
-                #expect(value1 == "row1_col1", "First value should be 'row1_col1'")
-                let value2 = try results[0].values["column_2"]?.getString() ?? ""
-                #expect(value2 == "row1_col2", "Second value should be 'row1_col2'")
-                let value3 = try results[0].values["header3"]?.getString() ?? ""
-                #expect(value3 == "row1_col3", "Third value should be 'row1_col3'")
-            }
-        )
-    }
+    // MARK: - Empty Headers
+    // Empty header auto-naming behavior is tested in Headers/EmptyHeadersTests.swift
 
     // MARK: - Line Endings (Rule 1)
 
+    @Test("Pure CRLF line endings")
+    func testPureCRLF() throws {
+        let csv = "header1,header2\r\n" +
+                  "value1,value2\r\n" +
+                  "value3,value4\r\n"
+
+        let results = try parseRawCSV(csv)
+
+        #expect(results.count == 2, "Should have 2 data rows")
+        for result in results {
+            #expect(result.error == nil)
+            #expect(result.values.count == 2)
+        }
+
+        let v1 = try results[0].values[0].getString() ?? "<nil>"
+        let v2 = try results[0].values[1].getString() ?? "<nil>"
+        let v3 = try results[1].values[0].getString() ?? "<nil>"
+        let v4 = try results[1].values[1].getString() ?? "<nil>"
+        #expect(v1 == "value1")
+        #expect(v2 == "value2")
+        #expect(v3 == "value3")
+        #expect(v4 == "value4")
+    }
+
     @Test("Mixed line endings (LF, CRLF)")
-    func testMixedLineEndings() async throws {
-        // Build CSV manually with mixed line endings
-        let csv = "header1,header2,header3\n" +     // LF
+    func testMixedLineEndings() throws {
+        let csv = "header1,header2,header3\n" +        // LF
                   "row1_col1,row1_col2,row1_col3\r\n" + // CRLF
                   "row2_col1,row2_col2,row2_col3\n" +    // LF
                   "row3_col1,row3_col2,row3_col3\r\n"    // CRLF
 
-        let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("test_mixed_endings_\(UUID().uuidString).csv")
-        try csv.data(using: .utf8)!.write(to: tempURL)
-        defer { try? FileManager.default.removeItem(at: tempURL) }
+        let results = try parseRawCSV(csv)
 
-        let rows = try FastCSV.makeArrayRows(fileURL: tempURL, hasHeaders: true)
-
-        var results: [CSVArrayResult] = []
-        for result in rows {
-            let safe = result.copyArray()
-            results.append(CSVArrayResult(values: safe, error: result.error))
-        }
-
-        #expect(results.count == 3, "Should have 3 data rows, got \(results.count)")
+        #expect(results.count == 3, "Should have 3 data rows")
 
         for (rowIndex, result) in results.enumerated() {
             #expect(result.error == nil, "Row \(rowIndex + 1) should not have an error")
-            #expect(result.values.count == 3, "Row \(rowIndex + 1) should have 3 columns, got \(result.values.count)")
+            #expect(result.values.count == 3, "Row \(rowIndex + 1) should have 3 columns")
 
             for colIndex in 0..<3 {
                 let expected = "row\(rowIndex + 1)_col\(colIndex + 1)"
                 let actual = try result.values[colIndex].getString() ?? "<nil>"
-                #expect(actual == expected, "Row \(rowIndex + 1), Col \(colIndex + 1): expected '\(expected)', got '\(actual)'")
+                #expect(actual == expected)
             }
         }
+    }
+
+    // MARK: - Trailing Line Break Optional (Rule 2)
+
+    @Test("Last record without trailing line break")
+    func testNoTrailingLineBreak() throws {
+        let csv = "header1,header2\n" +
+                  "value1,value2\n" +
+                  "value3,value4"  // no trailing newline
+
+        let results = try parseRawCSV(csv)
+
+        #expect(results.count == 2, "Should have 2 data rows")
+        #expect(TestUtils.isErrorFree(arrayResult: results))
+
+        let v3 = try results[1].values[0].getString() ?? "<nil>"
+        let v4 = try results[1].values[1].getString() ?? "<nil>"
+        #expect(v3 == "value3")
+        #expect(v4 == "value4")
+    }
+
+    // MARK: - Comma Within Quoted Field (Rule 6)
+
+    @Test("Comma within quoted field")
+    func testCommaWithinQuotedField() throws {
+        let csv = "header1,header2,header3\n" +
+                  "\"value1,with,commas\",normal,\"also,commas\"\n"
+
+        let results = try parseRawCSV(csv)
+
+        #expect(results.count == 1)
+        #expect(results[0].error == nil)
+        #expect(results[0].values.count == 3)
+
+        let v1 = try results[0].values[0].getString() ?? "<nil>"
+        let v2 = try results[0].values[1].getString() ?? "<nil>"
+        let v3 = try results[0].values[2].getString() ?? "<nil>"
+        #expect(v1 == "value1,with,commas")
+        #expect(v2 == "normal")
+        #expect(v3 == "also,commas")
+    }
+
+    // MARK: - CRLF Within Quoted Field (Rule 6)
+
+    @Test("CRLF within quoted field")
+    func testCRLFWithinQuotedField() throws {
+        let csv = "header1,header2\r\n" +
+                  "\"line1\r\nline2\",normal\r\n"
+
+        let results = try parseRawCSV(csv)
+
+        #expect(results.count == 1)
+        #expect(results[0].error == nil)
+        #expect(results[0].values.count == 2)
+
+        let v1 = try results[0].values[0].getString() ?? "<nil>"
+        let v2 = try results[0].values[1].getString() ?? "<nil>"
+        #expect(v1 == "line1\r\nline2")
+        #expect(v2 == "normal")
+    }
+
+    // MARK: - Spaces Preserved (Rule 8)
+
+    @Test("Spaces are part of the field, not trimmed")
+    func testSpacesPreserved() throws {
+        let csv = "header1,header2,header3\n" +
+                  " leading,trailing ,\" quoted with spaces \"\n"
+
+        let results = try parseRawCSV(csv)
+
+        #expect(results.count == 1)
+        #expect(results[0].error == nil)
+        #expect(results[0].values.count == 3)
+
+        let v1 = try results[0].values[0].getString() ?? "<nil>"
+        let v2 = try results[0].values[1].getString() ?? "<nil>"
+        let v3 = try results[0].values[2].getString() ?? "<nil>"
+        #expect(v1 == " leading", "Leading spaces should be preserved")
+        #expect(v2 == "trailing ", "Trailing spaces should be preserved")
+        #expect(v3 == " quoted with spaces ", "Spaces in quoted fields should be preserved")
     }
 }

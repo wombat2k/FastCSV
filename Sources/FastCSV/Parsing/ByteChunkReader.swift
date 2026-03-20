@@ -52,20 +52,16 @@ extension FastCSV {
 
         /// Internal method to load the next chunk of data
         private func loadNextChunk() {
-            // Release previous chunk data
-            if let buffer = currentReadBuffer {
-                buffer.deallocate()
-                currentReadBuffer = nil
-            }
-            currentBytes = nil
-
-            // Allocate new buffer
+            // Allocate new buffer and try to read
             let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: readBufferSize)
-
-            // Read from the stream
             let bytesRead = reader.readBytes(into: buffer, maxLength: readBufferSize)
 
             if bytesRead > 0 {
+                // Stream has more data — safe to release the previous buffer
+                if let oldBuffer = currentReadBuffer {
+                    oldBuffer.deallocate()
+                }
+
                 currentReadBuffer = buffer
                 currentBytes = UnsafePointer(buffer)
                 currentReadBufferSize = bytesRead
@@ -85,7 +81,9 @@ extension FastCSV {
                     }
                 }
             } else {
-                // No more data
+                // EOF — deallocate the unused new buffer but keep the current
+                // buffer alive. The parser may still need to capture a final
+                // field from it. Cleanup handles the final deallocation.
                 buffer.deallocate()
                 isFinished = true
             }
