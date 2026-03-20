@@ -2,8 +2,8 @@
 import Foundation
 import Testing
 
-@Suite("FastCSV Tests")
-struct name {
+@Suite("Cleanup Tests")
+struct CleanupTests {
     @Test("Double cleanup succeeds")
     func doubleCleanupSucceeds() async throws {
         let headers = TestUtils.createHeaders(count: 10)

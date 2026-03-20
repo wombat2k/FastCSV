@@ -2,8 +2,8 @@
 import Foundation
 import Testing
 
-@Suite("Empty Values Tests")
-struct EdgeDelimiterTests {
+@Suite("Empty Field Tests")
+struct EmptyFieldTests {
     // MARK: Header Tests
 
     @Test("Empty value at beginning of headers")

@@ -2,9 +2,20 @@
 import Foundation
 import Testing
 
-@Suite("RFC 4180 Standard Parser Tests")
-struct StandardParserTests {
-    // MARK: - Basic Functionality Tests
+/// Tests for RFC 4180 conformance.
+///
+/// RFC 4180 defines the following rules:
+/// 1. Records are delimited by line breaks (CRLF)
+/// 2. The last record may or may not have a trailing line break
+/// 3. An optional header line may appear as the first line
+/// 4. Each line should contain the same number of fields
+/// 5. Fields may be enclosed in double quotes
+/// 6. Fields containing line breaks, double quotes, or commas must be enclosed in double quotes
+/// 7. Double quotes inside fields are escaped by doubling them ("")
+/// 8. Spaces are considered part of a field (not trimmed)
+@Suite("RFC 4180 Conformance Tests")
+struct RFC4180Tests {
+    // MARK: - Basic Record Parsing (Rules 1, 3, 4)
 
     @Test("Basic CSV as array")
     func testBasicCSV() async throws {
@@ -68,7 +79,7 @@ struct StandardParserTests {
         )
     }
 
-    // MARK: - Special Character Handling Tests
+    // MARK: - Quoting (Rules 5, 6, 7)
 
     @Test("Quoted fields")
     func testQuotedFields() async throws {
@@ -123,7 +134,29 @@ struct StandardParserTests {
         )
     }
 
-    // MARK: - Empty Field Tests
+    @Test("Newline within quoted field")
+    func testNewlineWithinQuotes() async throws {
+        let headers = TestUtils.createHeaders(count: 3)
+        var rows = TestUtils.createValues(rows: 1, columns: 3)
+        rows[0][1] = "\"value with\nreturn\""
+
+        try await TestUtils.runTest(
+            testName: "Newline within quotes",
+            contentHeaders: headers,
+            contentRows: rows,
+            outputFormat: .array,
+            validate: { (results: [CSVArrayResult]) in
+                #expect(TestUtils.isErrorFree(arrayResult: results), "All rows should be error-free")
+                #expect(results.count == 1, "Should have 1 row")
+                #expect(results[0].values.count == 3, "First row should have 3 columns")
+
+                let value = try results[0].values[1].getString() ?? ""
+                #expect(value == "value with\nreturn", "Second value should be 'value with\\nreturn'")
+            }
+        )
+    }
+
+    // MARK: - Empty Fields
 
     @Test("Empty fields")
     func testEmptyFields() async throws {
@@ -174,4 +207,40 @@ struct StandardParserTests {
         )
     }
 
+    // MARK: - Line Endings (Rule 1)
+
+    @Test("Mixed line endings (LF, CRLF)")
+    func testMixedLineEndings() async throws {
+        // Build CSV manually with mixed line endings
+        let csv = "header1,header2,header3\n" +     // LF
+                  "row1_col1,row1_col2,row1_col3\r\n" + // CRLF
+                  "row2_col1,row2_col2,row2_col3\n" +    // LF
+                  "row3_col1,row3_col2,row3_col3\r\n"    // CRLF
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("test_mixed_endings_\(UUID().uuidString).csv")
+        try csv.data(using: .utf8)!.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let rows = try FastCSV.makeArrayRows(fileURL: tempURL, hasHeaders: true)
+
+        var results: [CSVArrayResult] = []
+        for result in rows {
+            let safe = result.copyArray()
+            results.append(CSVArrayResult(values: safe, error: result.error))
+        }
+
+        #expect(results.count == 3, "Should have 3 data rows, got \(results.count)")
+
+        for (rowIndex, result) in results.enumerated() {
+            #expect(result.error == nil, "Row \(rowIndex + 1) should not have an error")
+            #expect(result.values.count == 3, "Row \(rowIndex + 1) should have 3 columns, got \(result.values.count)")
+
+            for colIndex in 0..<3 {
+                let expected = "row\(rowIndex + 1)_col\(colIndex + 1)"
+                let actual = try result.values[colIndex].getString() ?? "<nil>"
+                #expect(actual == expected, "Row \(rowIndex + 1), Col \(colIndex + 1): expected '\(expected)', got '\(actual)'")
+            }
+        }
+    }
 }
