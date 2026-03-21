@@ -64,11 +64,13 @@ public struct CSVValue {
 
 public extension CSVValue {
     /// Get the value as a String
-    func getString() throws -> String? {
+    /// - Parameter quoteChar: The quote character used to wrap field values. Defaults to double quote (`"`).
+    ///   Required when using a non-standard quote delimiter (e.g. single quote), otherwise quoted fields won't be unwrapped.
+    func getString(quoteChar: UInt8 = UInt8(ascii: "\"")) throws -> String? {
         guard let str = try getRawString() else {
             return nil
         }
-        return processQuotes(str)
+        return processQuotes(str, quoteChar: quoteChar)
     }
 
     /// Get the value as an Int
@@ -182,14 +184,16 @@ public extension CSVValue {
     }
 
     /// Process quotes in CSV string values
-    private func processQuotes(_ str: String) -> String {
+    private func processQuotes(_ str: String, quoteChar: UInt8) -> String {
+        let quote = String(UnicodeScalar(quoteChar))
+
         // If surrounded by quotes, remove them and process escaped quotes
-        if str.count >= 2 && str.hasPrefix("\"") && str.hasSuffix("\"") {
+        if str.count >= 2 && str.hasPrefix(quote) && str.hasSuffix(quote) {
             // Remove surrounding quotes
             let content = str.dropFirst().dropLast()
 
-            // Replace "" with " for escaped quotes
-            return String(content).replacingOccurrences(of: "\"\"", with: "\"")
+            // Replace doubled quotes with single quote (escape sequence)
+            return String(content).replacingOccurrences(of: quote + quote, with: quote)
         }
 
         return str
