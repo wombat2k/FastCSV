@@ -4,9 +4,12 @@ import Testing
 
 @Suite("Chunk Boundary Tests")
 struct ChunkBoundaryTests {
+    private static let tinyBufferSize = 32
+    private static let bufferSizes = [8, 16, 32, 64, 128]
+
     @Test("Minimal chunk boundary test - no headers")
     func testMinimalChunkBoundary() async throws {
-        let config = CSVParserConfig(readBufferSize: 32)
+        let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // 3 columns, 2 rows, no headers — simple enough to trace by hand
         // Row: "row1_col1,row1_col2,row1_col3\n" = 30 bytes + newline = 31 bytes
         let rows = TestUtils.createValues(rows: 2, columns: 3)
@@ -36,7 +39,7 @@ struct ChunkBoundaryTests {
 
     @Test("Single wide row spanning multiple chunks")
     func testSingleWideRow() async throws {
-        let config = CSVParserConfig(readBufferSize: 32)
+        let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // Single row, 5 columns, no headers — row is ~50 bytes, needs 2 chunks
         let rows = TestUtils.createValues(rows: 1, columns: 5)
 
@@ -61,14 +64,14 @@ struct ChunkBoundaryTests {
         )
     }
 
-    @Test("Fields spanning chunk boundaries preserve values")
-    func testFieldsSpanningChunkBoundaries() async throws {
-        let config = CSVParserConfig(readBufferSize: 32)
+    @Test("Fields spanning chunk boundaries preserve values", arguments: bufferSizes)
+    func testFieldsSpanningChunkBoundaries(bufferSize: Int) async throws {
+        let config = CSVParserConfig(readBufferSize: bufferSize)
         let headers = TestUtils.createHeaders(count: 5)
         let rows = TestUtils.createValues(rows: 10, columns: 5)
 
         try await TestUtils.runTest(
-            testName: "Chunk boundary - basic values",
+            testName: "Chunk boundary - basic values (buffer: \(bufferSize))",
             contentHeaders: headers,
             contentRows: rows,
             config: config,
@@ -92,7 +95,7 @@ struct ChunkBoundaryTests {
 
     @Test("Dictionary access with tiny buffer")
     func testDictionaryChunkBoundaries() async throws {
-        let config = CSVParserConfig(readBufferSize: 32)
+        let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         let headers = TestUtils.createHeaders(count: 5)
         let rows = TestUtils.createValues(rows: 10, columns: 5)
 

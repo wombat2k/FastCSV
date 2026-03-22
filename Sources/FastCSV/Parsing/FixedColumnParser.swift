@@ -124,7 +124,6 @@ extension FastCSV {
             parsingError = nil
 
             var currentFieldIndex = 0
-            fieldStartPosition = chunkReader.currentPosition
 
             // State tracking for quotes
             var inQuote = false
@@ -132,6 +131,13 @@ extension FastCSV {
             // Parse until we find a complete row
             while true {
                 chunkReader.loadNextChunkIfNeeded()
+
+                // Sync fieldStartPosition after a potential chunk load —
+                // if the previous row ended at a chunk boundary, currentPosition
+                // was reset to 0 but fieldStartPosition still pointed to the old chunk.
+                if fieldStartPosition > chunkReader.currentPosition {
+                    fieldStartPosition = chunkReader.currentPosition
+                }
 
                 if chunkReader.isFinished {
                     // Detect unclosed quotes

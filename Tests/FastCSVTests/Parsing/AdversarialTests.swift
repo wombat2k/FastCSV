@@ -4,6 +4,7 @@ import Testing
 
 @Suite("Adversarial Input Tests")
 struct AdversarialTests {
+    private static let tinyBufferSize = 32
 
     // MARK: - Malformed Structure
 
@@ -99,9 +100,16 @@ struct AdversarialTests {
             validate: { (results: [CSVArrayResult]) in
                 #expect(results.count == 1, "Should have 1 row")
 
-                // Check if any row has errors
-                let hasErrors = !TestUtils.isErrorFree(arrayResult: results)
-                #expect(hasErrors, "Should have at least one row with errors")
+                if let error = results[0].error {
+                    switch error {
+                    case let .rowError(_, message):
+                        #expect(message.contains("unclosed quote"), "Error should mention unclosed quote")
+                    default:
+                        #expect(Bool(false), "Expected rowError but got \(error)")
+                    }
+                } else {
+                    #expect(Bool(false), "Should have an error for unclosed quote")
+                }
             }
         )
     }
@@ -123,10 +131,18 @@ struct AdversarialTests {
             outputFormat: .array,
             validate: { (results: [CSVArrayResult]) in
                 #expect(results.count == 2, "Should have 2 rows")
+                #expect(results[0].error == nil, "First row should not have an error")
 
-                // Check if any row has errors
-                let hasErrors = !TestUtils.isErrorFree(arrayResult: results)
-                #expect(hasErrors, "Should have at least one row with errors")
+                if let error = results[1].error {
+                    switch error {
+                    case let .invalidCSV(message):
+                        #expect(message.contains("no-quotes mode"), "Error should mention no-quotes mode")
+                    default:
+                        #expect(Bool(false), "Expected invalidCSV but got \(error)")
+                    }
+                } else {
+                    #expect(Bool(false), "Should have an error for quotes in no-quotes mode")
+                }
             }
         )
     }
@@ -166,7 +182,7 @@ struct AdversarialTests {
 
     @Test("Huge field spanning many chunks")
     func testHugeField() async throws {
-        let config = CSVParserConfig(readBufferSize: 32)
+        let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // Create a field that's ~500 bytes — spans ~16 chunks at 32 bytes each
         let hugeValue = String(repeating: "x", count: 500)
         let headers = TestUtils.createHeaders(count: 3)
@@ -199,7 +215,7 @@ struct AdversarialTests {
 
     @Test("Huge quoted field spanning many chunks")
     func testHugeQuotedField() async throws {
-        let config = CSVParserConfig(readBufferSize: 32)
+        let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // Quoted field with commas and newlines inside, ~300 bytes
         let innerContent = String(repeating: "data,with,commas\nand\nnewlines\n", count: 10)
         let quotedValue = "\"\(innerContent)\""
@@ -228,20 +244,27 @@ struct AdversarialTests {
         )
     }
 
-    @Test("Long and wide CSV")
-    func testLongAndWideCSV() async throws {
-        let headers = TestUtils.createHeaders(count: 100)
-        let rows = TestUtils.createValues(rows: 100, columns: 100)
+    private static let gridSizes = [
+        (rows: 10, columns: 10),
+        (rows: 100, columns: 100),
+        (rows: 10, columns: 1000),
+        (rows: 1000, columns: 10),
+    ]
+
+    @Test("Long and wide CSV", arguments: gridSizes)
+    func testLongAndWideCSV(rows rowCount: Int, columns colCount: Int) async throws {
+        let headers = TestUtils.createHeaders(count: colCount)
+        let rows = TestUtils.createValues(rows: rowCount, columns: colCount)
 
         try await TestUtils.runTest(
-            testName: "Long and wide CSV",
+            testName: "Long and wide CSV (\(rowCount)x\(colCount))",
             contentHeaders: headers,
             contentRows: rows,
             outputFormat: .array,
             validate: { (results: [CSVArrayResult]) in
                 #expect(TestUtils.isErrorFree(arrayResult: results), "All rows should be error-free")
-                #expect(results.count == 100, "Should have 100 rows")
-                #expect(results[0].values.count == 100, "First row should have 100 columns")
+                #expect(results.count == rowCount, "Should have \(rowCount) rows")
+                #expect(results[0].values.count == colCount, "First row should have \(colCount) columns")
                 let values = try results.map { try $0.values.map { try $0.getString() } }
                 #expect(rows == values)
             }

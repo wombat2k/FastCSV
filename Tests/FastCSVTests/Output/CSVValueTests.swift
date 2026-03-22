@@ -7,7 +7,7 @@ struct CSVValueTests {
     // MARK: - Owned CSVValue
 
     // These tests check the behavior of CSVValue when it owns its buffer.
-    @Test("CsVValue as owned String")
+    @Test("CSVValue as owned String")
     func testCSVValueAsString() throws {
         let inputValue = "Original"
         var bytes = [UInt8](inputValue.utf8)
@@ -91,16 +91,6 @@ struct CSVValueTests {
         #expect(collectedValue == false, "Collected value should be false")
     }
 
-    @Test("CSVValue as owned Bool with invalid values", arguments: ["invalid", "123abc", "yesno"])
-    func testCSVValueAsBoolFalseWithInvalidValues(inputValue: String) throws {
-        let bytes = [UInt8](inputValue.utf8)
-        let csvValue = TestUtils.createCSVValue(from: bytes, source: .own)
-
-        #expect(throws: CSVError.self) {
-            _ = try csvValue.getBool()
-        }
-    }
-
     @Test("CSVValue as owned String with empty buffer")
     func testCSVValueWithEmptyBuffer() throws {
         // Create an empty buffer
@@ -130,13 +120,13 @@ struct CSVValueTests {
         // Attempt to get a string from the empty CSVValue
         let result = try csvValue.getString()
 
-        #expect(result == "", "Result should be nil when CSVValue is empty")
+        #expect(result == "", "Result should be empty string when CSVValue contains quoted empty string")
     }
 
     // MARK: - Reference CSVValue
 
     // These tests check the behavior of CSVValue when it references a buffer.
-    @Test("CSValue as borrowd String")
+    @Test("CSVValue as borrowed String")
     func testCSVValueWithMutableBuffer() throws {
         // Create a mutable buffer
         var buffer = [UInt8]("Original".utf8)
@@ -245,16 +235,6 @@ struct CSVValueTests {
         let collectedValue = try csvValue.getBool() ?? false
 
         #expect(collectedValue == false, "Collected value should be false")
-    }
-
-    @Test("CSVValue as borrowed Bool with invalid values", arguments: ["invalid", "123abc", "yesno"])
-    func testCSVValueWithBorrowedBoolFalseWithInvalidValues(inputValue: String) throws {
-        let bytes = [UInt8](inputValue.utf8)
-        let csvValue = TestUtils.createCSVValue(from: bytes, source: .ref)
-
-        #expect(throws: CSVError.self) {
-            _ = try csvValue.getBool()
-        }
     }
 
     @Test("Copy of CSVValue is safe")

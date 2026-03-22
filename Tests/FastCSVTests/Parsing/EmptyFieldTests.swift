@@ -70,7 +70,7 @@ struct EmptyFieldTests {
                 #expect(results[0].error == nil, "First row should not have an error")
 
                 let value = try results[0].values["column_3"]?.getString() ?? ""
-                #expect(value != "value1", "Last header should have default name 'column_3'.")
+                #expect(value == "value3", "Value under default header 'column_3' should be 'value3'")
             }
         )
     }

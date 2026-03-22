@@ -97,11 +97,17 @@ extension FastCSV {
             parsingError = nil
 
             var currentFieldIndex = 0
-            fieldStartPosition = chunkReader.currentPosition
 
             // Parse until we find a complete row
             while true {
                 chunkReader.loadNextChunkIfNeeded()
+
+                // Sync fieldStartPosition after a potential chunk load —
+                // if the previous row ended at a chunk boundary, currentPosition
+                // was reset to 0 but fieldStartPosition still pointed to the old chunk.
+                if fieldStartPosition > chunkReader.currentPosition {
+                    fieldStartPosition = chunkReader.currentPosition
+                }
 
                 if chunkReader.isFinished {
                     // Process any final field at EOF if needed
