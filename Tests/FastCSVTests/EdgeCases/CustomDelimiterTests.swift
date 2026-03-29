@@ -13,7 +13,7 @@ struct CustomDelimiterTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let config = CSVParserConfig(delimiter: CSVFormat.tsv.delimiter)
-        let rows = try FastCSV.makeDictionaryRows(fileURL: url, hasHeaders: true, config: config)
+        let rows = try FastCSV.makeDictionaryRows(fromURL: url, hasHeaders: true, config: config)
         var results: [CSVDictionaryResult] = []
         for result in rows {
             results.append(CSVDictionaryResult(values: result.copyDictionary(), error: result.error))
@@ -35,7 +35,7 @@ struct CustomDelimiterTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let config = CSVParserConfig(delimiter: CSVFormat.tsv.delimiter)
-        let rows = try FastCSV.makeDictionaryRows(fileURL: url, hasHeaders: true, config: config)
+        let rows = try FastCSV.makeDictionaryRows(fromURL: url, hasHeaders: true, config: config)
         var results: [CSVDictionaryResult] = []
         for result in rows {
             results.append(CSVDictionaryResult(values: result.copyDictionary(), error: result.error))
@@ -55,7 +55,7 @@ struct CustomDelimiterTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let config = CSVParserConfig(delimiter: CSVFormat.tsv.delimiter)
-        let rows = try FastCSV.makeArrayRows(fileURL: url, hasHeaders: true, config: config)
+        let rows = try FastCSV.makeArrayRows(fromURL: url, hasHeaders: true, config: config)
         var results: [CSVArrayResult] = []
         for result in rows {
             results.append(CSVArrayResult(values: result.copyArray(), error: result.error))
@@ -81,7 +81,7 @@ struct CustomDelimiterTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let config = CSVParserConfig(delimiter: CSVFormat.semiColonSeparated.delimiter)
-        let rows = try FastCSV.makeDictionaryRows(fileURL: url, hasHeaders: true, config: config)
+        let rows = try FastCSV.makeDictionaryRows(fromURL: url, hasHeaders: true, config: config)
         var results: [CSVDictionaryResult] = []
         for result in rows {
             results.append(CSVDictionaryResult(values: result.copyDictionary(), error: result.error))
@@ -104,7 +104,7 @@ struct CustomDelimiterTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         let config = CSVParserConfig(delimiter: CSVFormat.semiColonSeparated.delimiter)
-        let rows = try FastCSV.makeDictionaryRows(fileURL: url, hasHeaders: true, config: config)
+        let rows = try FastCSV.makeDictionaryRows(fromURL: url, hasHeaders: true, config: config)
         var results: [CSVDictionaryResult] = []
         for result in rows {
             results.append(CSVDictionaryResult(values: result.copyDictionary(), error: result.error))
@@ -127,7 +127,7 @@ struct CustomDelimiterTests {
 
         let delimiter = Delimiter(field: UInt8(ascii: "|"))
         let config = CSVParserConfig(delimiter: delimiter)
-        let rows = try FastCSV.makeDictionaryRows(fileURL: url, hasHeaders: true, config: config)
+        let rows = try FastCSV.makeDictionaryRows(fromURL: url, hasHeaders: true, config: config)
         var results: [CSVDictionaryResult] = []
         for result in rows {
             results.append(CSVDictionaryResult(values: result.copyDictionary(), error: result.error))
@@ -150,7 +150,7 @@ struct CustomDelimiterTests {
 
         let delimiter = Delimiter(field: UInt8(ascii: "|"))
         let config = CSVParserConfig(delimiter: delimiter)
-        let rows = try FastCSV.makeArrayRows(fileURL: url, hasHeaders: true, config: config)
+        let rows = try FastCSV.makeArrayRows(fromURL: url, hasHeaders: true, config: config)
         var results: [CSVArrayResult] = []
         for result in rows {
             results.append(CSVArrayResult(values: result.copyArray(), error: result.error))
@@ -175,7 +175,7 @@ struct CustomDelimiterTests {
 
         let delimiter = Delimiter(quote: UInt8(ascii: "'"))
         let config = CSVParserConfig(delimiter: delimiter)
-        let rows = try FastCSV.makeDictionaryRows(fileURL: url, hasHeaders: true, config: config)
+        let rows = try FastCSV.makeDictionaryRows(fromURL: url, hasHeaders: true, config: config)
         var results: [CSVDictionaryResult] = []
         for result in rows {
             results.append(CSVDictionaryResult(values: result.copyDictionary(), error: result.error))

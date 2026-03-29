@@ -47,7 +47,7 @@ struct Person: Decodable {
     let age: Int
 }
 
-var people = try FastCSV.makeRows(Person.self, from: "data.csv")
+var people = try FastCSV.makeRows(Person.self, fromPath: "data.csv")
 try people.forEach { person in
     print(person.name, person.age)
 }
@@ -65,7 +65,7 @@ struct PersonWithOptional: Decodable {
 For per-row error handling, use the `Result`-based `for-in` loop:
 
 ```swift
-for result in try FastCSV.makeRows(Person.self, from: "data.csv") {
+for result in try FastCSV.makeRows(Person.self, fromPath: "data.csv") {
     switch result {
     case .success(let person):
         print(person.name)
@@ -80,7 +80,7 @@ for result in try FastCSV.makeRows(Person.self, from: "data.csv") {
 ```swift
 import FastCSV
 
-let rows = try FastCSV.makeArrayRows(fileURL: URL(fileURLWithPath: "data.csv"))
+let rows = try FastCSV.makeArrayRows(fromPath: "data.csv")
 
 for row in rows {
     if let error = row.error {
@@ -100,7 +100,7 @@ for row in rows {
 ```swift
 import FastCSV
 
-let rows = try FastCSV.makeDictionaryRows(fileURL: URL(fileURLWithPath: "data.csv"), hasHeaders: true)
+let rows = try FastCSV.makeDictionaryRows(fromPath: "data.csv", hasHeaders: true)
 
 for row in rows {
     if let error = row.error {
@@ -129,7 +129,7 @@ let config = CSVParserConfig(
 
 var people = try FastCSV.makeRows(
     Person.self,
-    from: "data.tsv",
+    fromPath: "data.tsv",
     config: config
 )
 ```
@@ -139,7 +139,7 @@ Custom headers can be provided for files without a header row:
 ```swift
 var people = try FastCSV.makeRows(
     Person.self,
-    from: "data.csv",
+    fromPath: "data.csv",
     hasHeaders: false,
     headers: ["name", "age", "city"]
 )

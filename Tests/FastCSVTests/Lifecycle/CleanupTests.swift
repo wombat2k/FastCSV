@@ -13,7 +13,7 @@ struct CleanupTests {
             try? FileManager.default.removeItem(at: fileURL)
         }
 
-        var rows = try FastCSV.makeArrayRows(fileURL: fileURL)
+        var rows = try FastCSV.makeArrayRows(fromURL: fileURL)
 
         // First read
         for _ in rows {}

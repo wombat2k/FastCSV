@@ -13,7 +13,7 @@ struct MinimalInputTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         #expect(throws: CSVError.self) {
-            _ = try FastCSV.makeArrayRows(fileURL: url)
+            _ = try FastCSV.makeArrayRows(fromURL: url)
         }
     }
 
@@ -24,7 +24,7 @@ struct MinimalInputTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         // The newline is consumed as a single empty header row, leaving no data rows
-        let rows = try FastCSV.makeArrayRows(fileURL: url)
+        let rows = try FastCSV.makeArrayRows(fromURL: url)
         var count = 0
         for _ in rows { count += 1 }
         #expect(count == 0, "Newline-only file should yield 0 data rows")
@@ -37,7 +37,7 @@ struct MinimalInputTests {
         defer { try? FileManager.default.removeItem(at: url) }
 
         // The CRLF is consumed as a single empty header row, leaving no data rows
-        let rows = try FastCSV.makeArrayRows(fileURL: url)
+        let rows = try FastCSV.makeArrayRows(fromURL: url)
         var count = 0
         for _ in rows { count += 1 }
         #expect(count == 0, "CRLF-only file should yield 0 data rows")
@@ -51,7 +51,7 @@ struct MinimalInputTests {
 
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let rows = try FastCSV.makeArrayRows(fileURL: url, hasHeaders: true)
+        let rows = try FastCSV.makeArrayRows(fromURL: url, hasHeaders: true)
         var count = 0
         for _ in rows { count += 1 }
         #expect(count == 0, "Header-only file should yield 0 data rows")
@@ -63,7 +63,7 @@ struct MinimalInputTests {
 
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let rows = try FastCSV.makeDictionaryRows(fileURL: url, hasHeaders: true)
+        let rows = try FastCSV.makeDictionaryRows(fromURL: url, hasHeaders: true)
         var count = 0
         for _ in rows { count += 1 }
         #expect(count == 0, "Header-only file should yield 0 data rows")
@@ -75,7 +75,7 @@ struct MinimalInputTests {
 
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let rows = try FastCSV.makeArrayRows(fileURL: url, hasHeaders: true)
+        let rows = try FastCSV.makeArrayRows(fromURL: url, hasHeaders: true)
         var count = 0
         for _ in rows { count += 1 }
         #expect(count == 0, "Header-only file (no trailing newline) should yield 0 data rows")
@@ -89,7 +89,7 @@ struct MinimalInputTests {
 
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let rows = try FastCSV.makeArrayRows(fileURL: url, hasHeaders: true)
+        let rows = try FastCSV.makeArrayRows(fromURL: url, hasHeaders: true)
         var results: [CSVArrayResult] = []
         for result in rows {
             results.append(CSVArrayResult(values: result.copyArray(), error: result.error))
@@ -110,7 +110,7 @@ struct MinimalInputTests {
 
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let rows = try FastCSV.makeDictionaryRows(fileURL: url, hasHeaders: true)
+        let rows = try FastCSV.makeDictionaryRows(fromURL: url, hasHeaders: true)
         var results: [CSVDictionaryResult] = []
         for result in rows {
             results.append(CSVDictionaryResult(values: result.copyDictionary(), error: result.error))
@@ -131,7 +131,7 @@ struct MinimalInputTests {
 
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let rows = try FastCSV.makeArrayRows(fileURL: url, hasHeaders: false)
+        let rows = try FastCSV.makeArrayRows(fromURL: url, hasHeaders: false)
         var results: [CSVArrayResult] = []
         for result in rows {
             results.append(CSVArrayResult(values: result.copyArray(), error: result.error))
@@ -152,7 +152,7 @@ struct MinimalInputTests {
 
         defer { try? FileManager.default.removeItem(at: url) }
 
-        let rows = try FastCSV.makeArrayRows(fileURL: url, hasHeaders: true)
+        let rows = try FastCSV.makeArrayRows(fromURL: url, hasHeaders: true)
         var results: [CSVArrayResult] = []
         for result in rows {
             results.append(CSVArrayResult(values: result.copyArray(), error: result.error))

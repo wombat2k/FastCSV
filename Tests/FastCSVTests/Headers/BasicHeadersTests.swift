@@ -15,9 +15,7 @@ struct HeaderTests {
         )
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
-        let csvRows = try FastCSV.makeDictionaryRows(
-            fileURL: tempURL
-        )
+        let csvRows = try FastCSV.makeDictionaryRows(fromURL: tempURL)
 
         let resultHeaders = csvRows.headers
 
@@ -38,10 +36,7 @@ struct HeaderTests {
         )
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
-        let csvRows = try FastCSV.makeDictionaryRows(
-            fileURL: tempURL,
-            hasHeaders: true
-        )
+        let csvRows = try FastCSV.makeDictionaryRows(fromURL: tempURL, hasHeaders: true)
 
         for _ in csvRows {}
 
@@ -65,10 +60,7 @@ struct HeaderTests {
         )
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
-        let csvRows = try FastCSV.makeDictionaryRows(
-            fileURL: tempURL,
-            hasHeaders: true
-        )
+        let csvRows = try FastCSV.makeDictionaryRows(fromURL: tempURL, hasHeaders: true)
 
         let resultHeaders = csvRows.headers
 

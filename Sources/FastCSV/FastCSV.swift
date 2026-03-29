@@ -115,20 +115,20 @@ public class FastCSV {
     ///   - config: Configuration options for CSV parsing (default: nil)
     /// - Returns: Iterator that yields rows as arrays of CSVValue
     /// - Throws: Error if the file cannot be accessed or is invalid
-    public static func makeArrayRows(from path: String, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVArrayIterator {
-        try makeArrayRows(fileURL: URL(fileURLWithPath: path), hasHeaders: hasHeaders, headers: headers, config: config)
+    public static func makeArrayRows(fromPath path: String, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVArrayIterator {
+        try makeArrayRows(fromURL: URL(fileURLWithPath: path), hasHeaders: hasHeaders, headers: headers, config: config)
     }
 
     /// Static method to create an iterator over CSV rows as arrays of CSVValue
     /// - Parameters:
-    ///   - fileURL: URL to the CSV file
+    ///   - url: URL to the CSV file
     ///   - hasHeaders: Whether the first row contains headers (default: true)
     ///   - headers: Custom headers to use (default: empty)
     ///   - config: Configuration options for CSV parsing (default: nil)
     /// - Returns: Iterator that yields rows as arrays of CSVValue
     /// - Throws: Error if the file cannot be accessed or is invalid
-    public static func makeArrayRows(fileURL: URL, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVArrayIterator {
-        let initParams = try initialize(fileURL: fileURL, hasHeaders: hasHeaders, headers: headers, config: config)
+    public static func makeArrayRows(fromURL url: URL, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVArrayIterator {
+        let initParams = try initialize(fileURL: url, hasHeaders: hasHeaders, headers: headers, config: config)
 
         let fileHandle = try FileHandle(forReadingFrom: initParams.fileURL)
         let rowIterator = CSVRowIterator(reader: fileHandle, skipFirstRow: initParams.skipFirstRow, columnCount: initParams.headerCount, config: initParams.config)
@@ -148,21 +148,21 @@ public class FastCSV {
     ///   - config: Configuration options for CSV parsing (default: nil)
     /// - Returns: Iterator that yields rows as dictionaries of String -> CSVValue
     /// - Throws: Error if the file cannot be accessed or is invalid
-    public static func makeDictionaryRows(from path: String, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVDictionaryIterator {
-        try makeDictionaryRows(fileURL: URL(fileURLWithPath: path), hasHeaders: hasHeaders, headers: headers, config: config)
+    public static func makeDictionaryRows(fromPath path: String, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVDictionaryIterator {
+        try makeDictionaryRows(fromURL: URL(fileURLWithPath: path), hasHeaders: hasHeaders, headers: headers, config: config)
     }
 
     /// Static method to create an iterator over CSV rows as dictionaries with header keys
     /// - Parameters:
-    ///   - fileURL: URL to the CSV file
+    ///   - url: URL to the CSV file
     ///   - hasHeaders: Whether the first row contains headers (default: true)
     ///   - headers: Custom headers to use (default: empty)
     ///   - config: Configuration options for CSV parsing (default: nil)
     /// - Returns: Iterator that yields rows as dictionaries of String -> CSVValue
     /// - Throws: Error if the file cannot be accessed or is invalid
-    public static func makeDictionaryRows(fileURL: URL, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVDictionaryIterator {
-        let initParams = try initialize(fileURL: fileURL, hasHeaders: hasHeaders, headers: headers, config: config)
-        let valueArrayIterator = try makeArrayRows(fileURL: fileURL, hasHeaders: hasHeaders, headers: headers, config: config)
+    public static func makeDictionaryRows(fromURL url: URL, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVDictionaryIterator {
+        let initParams = try initialize(fileURL: url, hasHeaders: hasHeaders, headers: headers, config: config)
+        let valueArrayIterator = try makeArrayRows(fromURL: url, hasHeaders: hasHeaders, headers: headers, config: config)
 
         return CSVDictionaryIterator(valueArrayIterator: valueArrayIterator, headers: initParams.headers)
     }
@@ -181,19 +181,19 @@ public class FastCSV {
     /// - Throws: Error if the file cannot be accessed or is invalid
     public static func makeRows<T: Decodable>(
         _ type: T.Type,
-        from path: String,
+        fromPath path: String,
         hasHeaders: Bool = true,
         headers: [String] = [],
         config: CSVParserConfig? = nil
     ) throws -> CSVDecodableIterator<T> {
-        try makeRows(type, from: URL(fileURLWithPath: path), hasHeaders: hasHeaders, headers: headers, config: config)
+        try makeRows(type, fromURL: URL(fileURLWithPath: path), hasHeaders: hasHeaders, headers: headers, config: config)
     }
 
     /// Create a lazy sequence that decodes CSV rows into Decodable structs.
     /// Only columns matching the type's CodingKeys are decoded — extra columns are skipped.
     /// - Parameters:
     ///   - type: The Decodable type to decode each row into
-    ///   - fileURL: URL to the CSV file
+    ///   - url: URL to the CSV file
     ///   - hasHeaders: Whether the first row contains headers (default: true)
     ///   - headers: Custom headers to use (default: empty)
     ///   - config: Configuration options for CSV parsing (default: nil)
@@ -201,13 +201,13 @@ public class FastCSV {
     /// - Throws: Error if the file cannot be accessed or is invalid
     public static func makeRows<T: Decodable>(
         _ type: T.Type,
-        from fileURL: URL,
+        fromURL url: URL,
         hasHeaders: Bool = true,
         headers: [String] = [],
         config: CSVParserConfig? = nil
     ) throws -> CSVDecodableIterator<T> {
-        let initParams = try initialize(fileURL: fileURL, hasHeaders: hasHeaders, headers: headers, config: config)
-        let valueArrayIterator = try makeArrayRows(fileURL: fileURL, hasHeaders: hasHeaders, headers: headers, config: config)
+        let initParams = try initialize(fileURL: url, hasHeaders: hasHeaders, headers: headers, config: config)
+        let valueArrayIterator = try makeArrayRows(fromURL: url, hasHeaders: hasHeaders, headers: headers, config: config)
 
         return CSVDecodableIterator<T>(
             valueArrayIterator: valueArrayIterator,

@@ -44,7 +44,7 @@ struct CSVDecodableTests {
         )
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var people = try FastCSV.makeRows(Person.self, from: fileURL)
+        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
         var results: [Person] = []
         try people.forEach { results.append($0) }
 
@@ -59,7 +59,7 @@ struct CSVDecodableTests {
         )
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var people = try FastCSV.makeRows(PersonSubset.self, from: fileURL)
+        var people = try FastCSV.makeRows(PersonSubset.self, fromURL: fileURL)
         var results: [PersonSubset] = []
         try people.forEach { results.append($0) }
 
@@ -71,7 +71,7 @@ struct CSVDecodableTests {
         let fileURL = try TestUtils.createRawCSVFile(content: "name,age\nAlice,\nBob,25\n")
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var people = try FastCSV.makeRows(PersonWithOptional.self, from: fileURL)
+        var people = try FastCSV.makeRows(PersonWithOptional.self, fromURL: fileURL)
         var results: [PersonWithOptional] = []
         try people.forEach { results.append($0) }
 
@@ -87,7 +87,7 @@ struct CSVDecodableTests {
         )
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var people = try FastCSV.makeRows(Person.self, from: fileURL)
+        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
         guard let result = people.next() else {
             Issue.record("Expected a row")
             return
@@ -106,7 +106,7 @@ struct CSVDecodableTests {
         )
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var people = try FastCSV.makeRows(Person.self, from: fileURL)
+        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
         guard let result = people.next() else {
             Issue.record("Expected a row")
             return
@@ -124,7 +124,7 @@ struct CSVDecodableTests {
 
         var people = try FastCSV.makeRows(
             Person.self,
-            from: fileURL,
+            fromURL: fileURL,
             hasHeaders: false,
             headers: ["name", "age"]
         )
@@ -144,7 +144,7 @@ struct CSVDecodableTests {
         )
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var people = try FastCSV.makeRows(Person.self, from: fileURL, config: tsvConfig)
+        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL, config: tsvConfig)
         var results: [Person] = []
         try people.forEach { results.append($0) }
 
@@ -157,7 +157,7 @@ struct CSVDecodableTests {
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
         #expect(throws: CSVError.self) {
-            try FastCSV.makeRows(Person.self, from: fileURL)
+            try FastCSV.makeRows(Person.self, fromURL: fileURL)
         }
     }
 
@@ -173,7 +173,7 @@ struct CSVDecodableTests {
         )
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var flags = try FastCSV.makeRows(Flags.self, from: fileURL)
+        var flags = try FastCSV.makeRows(Flags.self, fromURL: fileURL)
         var results: [Bool] = []
         try flags.forEach { results.append($0.flag) }
 
@@ -189,7 +189,7 @@ struct CSVDecodableTests {
         )
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var people = try FastCSV.makeRows(Person.self, from: fileURL)
+        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
         var count = 0
         try people.forEach { _ in count += 1 }
 
@@ -201,7 +201,7 @@ struct CSVDecodableTests {
         let fileURL = try TestUtils.createRawCSVFile(content: "name,age\n\"Alice, Jr.\",30\n")
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var people = try FastCSV.makeRows(Person.self, from: fileURL)
+        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
         var results: [Person] = []
         try people.forEach { results.append($0) }
 
@@ -216,7 +216,7 @@ struct CSVDecodableTests {
         )
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var items = try FastCSV.makeRows(TypeRich.self, from: fileURL)
+        var items = try FastCSV.makeRows(TypeRich.self, fromURL: fileURL)
         var results: [TypeRich] = []
         try items.forEach { results.append($0) }
 
@@ -235,7 +235,7 @@ struct CSVDecodableTests {
         )
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var items = try FastCSV.makeRows(WithDecimal.self, from: fileURL)
+        var items = try FastCSV.makeRows(WithDecimal.self, fromURL: fileURL)
         var results: [WithDecimal] = []
         try items.forEach { results.append($0) }
 
@@ -250,7 +250,7 @@ struct CSVDecodableTests {
         )
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        let people = try FastCSV.makeRows(Person.self, from: fileURL)
+        let people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
         for result in people {
             let person = try result.get()
             #expect(person == Person(name: "Alice", age: 30))
@@ -262,7 +262,7 @@ struct CSVDecodableTests {
         let fileURL = try TestUtils.createRawCSVFile(content: "name,age\n,30\n")
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var people = try FastCSV.makeRows(Person.self, from: fileURL)
+        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
         guard let result = people.next() else {
             Issue.record("Expected a row")
             return
@@ -281,7 +281,7 @@ struct CSVDecodableTests {
         )
         defer { try? FileManager.default.removeItem(at: fileURL) }
 
-        var people = try FastCSV.makeRows(Person.self, from: fileURL.path)
+        var people = try FastCSV.makeRows(Person.self, fromPath: fileURL.path)
         var results: [Person] = []
         try people.forEach { results.append($0) }
 

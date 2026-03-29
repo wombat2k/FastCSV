@@ -91,7 +91,7 @@ enum TestUtils {
                     throw ParserTestError(message: "Type mismatch: expected [CSVArrayResult] for array format")
                 }
 
-                let rows = try FastCSV.makeArrayRows(fileURL: fileURL,
+                let rows = try FastCSV.makeArrayRows(fromURL: fileURL,
                                                      hasHeaders: hasHeaders,
                                                      headers: customHeaders,
                                                      config: actualConfig)
@@ -109,7 +109,7 @@ enum TestUtils {
                     throw ParserTestError(message: "Type mismatch: expected [CSVDictionaryResult] for dictionary format. Got \(T.self)")
                 }
 
-                let rows = try FastCSV.makeDictionaryRows(fileURL: fileURL,
+                let rows = try FastCSV.makeDictionaryRows(fromURL: fileURL,
                                                           hasHeaders: hasHeaders,
                                                           headers: customHeaders,
                                                           config: actualConfig)

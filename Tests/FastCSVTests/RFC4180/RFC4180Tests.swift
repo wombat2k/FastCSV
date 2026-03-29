@@ -22,7 +22,7 @@ struct RFC4180Tests {
         try csv.data(using: .utf8)!.write(to: tempURL)
         defer { try? FileManager.default.removeItem(at: tempURL) }
 
-        let rows = try FastCSV.makeArrayRows(fileURL: tempURL, hasHeaders: hasHeaders)
+        let rows = try FastCSV.makeArrayRows(fromURL: tempURL, hasHeaders: hasHeaders)
         var results: [CSVArrayResult] = []
         for result in rows {
             results.append(CSVArrayResult(values: result.copyArray(), error: result.error))
