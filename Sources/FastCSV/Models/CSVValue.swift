@@ -6,6 +6,12 @@ import Foundation
 /// If you need to store values beyond the lifetime of the iterator, use the `copy()` method
 /// to create a safely owned copy of the value.
 public struct CSVValue {
+    private static let defaultDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
     /// The internal storage mechanism for the value - optimized for smaller enum size
     /// and faster switching logic
     enum ValueSource {
@@ -62,109 +68,180 @@ public struct CSVValue {
     }
 }
 
+// MARK: - Non-Optional Accessors (throw on empty or invalid)
+
 public extension CSVValue {
-    /// Get the value as a String
+    /// The value as a String using the default quote character. Throws if the field is empty.
+    var string: String {
+        get throws { try string() }
+    }
+
+    /// The value as a String. Throws if the field is empty.
     /// - Parameter quoteChar: The quote character used to wrap field values. Defaults to double quote (`"`).
-    ///   Required when using a non-standard quote delimiter (e.g. single quote), otherwise quoted fields won't be unwrapped.
-    func getString(quoteChar: UInt8 = UInt8(ascii: "\"")) throws -> String? {
+    func string(quoteChar: UInt8 = UInt8(ascii: "\"")) throws -> String {
+        guard let result = try stringIfPresent(quoteChar: quoteChar) else {
+            throw CSVError.invalidValueConversion(message: "Expected String but field is empty")
+        }
+        return result
+    }
+
+    /// The value as an Int. Throws if the field is empty or cannot be converted.
+    var int: Int {
+        get throws {
+            guard let result = try intIfPresent else {
+                throw CSVError.invalidValueConversion(message: "Expected Int but field is empty")
+            }
+            return result
+        }
+    }
+
+    /// The value as a Decimal. Throws if the field is empty or cannot be converted.
+    var decimal: Decimal {
+        get throws {
+            guard let result = try decimalIfPresent else {
+                throw CSVError.invalidValueConversion(message: "Expected Decimal but field is empty")
+            }
+            return result
+        }
+    }
+
+    /// The value as a Double. Throws if the field is empty or cannot be converted.
+    var double: Double {
+        get throws {
+            guard let result = try doubleIfPresent else {
+                throw CSVError.invalidValueConversion(message: "Expected Double but field is empty")
+            }
+            return result
+        }
+    }
+
+    /// The value as a Float. Throws if the field is empty or cannot be converted.
+    var float: Float {
+        get throws {
+            guard let result = try floatIfPresent else {
+                throw CSVError.invalidValueConversion(message: "Expected Float but field is empty")
+            }
+            return result
+        }
+    }
+
+    /// The value as a Bool. Throws if the field is empty or cannot be converted.
+    /// Accepts "true"/"yes"/"1"/"y" and "false"/"no"/"0"/"n" (case insensitive).
+    var bool: Bool {
+        get throws {
+            guard let result = try boolIfPresent else {
+                throw CSVError.invalidValueConversion(message: "Expected Bool but field is empty")
+            }
+            return result
+        }
+    }
+
+    /// The value as a Date. Throws if the field is empty or cannot be converted.
+    func date(formatter: DateFormatter? = nil) throws -> Date {
+        guard let result = try dateIfPresent(formatter: formatter) else {
+            throw CSVError.invalidValueConversion(message: "Expected Date but field is empty")
+        }
+        return result
+    }
+}
+
+// MARK: - Optional Accessors (nil on empty, throw on invalid)
+
+public extension CSVValue {
+    /// The value as a String using the default quote character, or nil if the field is empty.
+    var stringIfPresent: String? {
+        get throws { try stringIfPresent() }
+    }
+
+    /// The value as a String, or nil if the field is empty.
+    /// - Parameter quoteChar: The quote character used to wrap field values. Defaults to double quote (`"`).
+    func stringIfPresent(quoteChar: UInt8 = UInt8(ascii: "\"")) throws -> String? {
         guard let str = try getRawString() else {
             return nil
         }
         return processQuotes(str, quoteChar: quoteChar)
     }
 
-    /// Get the value as an Int
-    /// - Throws: CSVError.invalidValueConversion if conversion fails
-    /// - Returns: The int value, or nil if empty
-    func getInt() throws -> Int? {
-        guard let str = try getRawString() else {
-            return nil
-        }
-
-        guard let int = Int(str) else {
-            throw CSVError.invalidValueConversion(message: "Could not convert \(str) to int")
-        }
-        return int
-    }
-
-    /// Get the value as a Decimal
-    /// - Throws: CSVError.invalidValueConversion if conversion fails
-    /// - Returns: The decimal value, or nil if empty
-    func getDecimal() throws -> Decimal? {
-        guard let str = try getRawString() else {
-            return nil
-        }
-
-        guard let decimal = Decimal(string: str) else {
-            throw CSVError.invalidValueConversion(message: "Could not convert value '\(str)' to decimal")
-        }
-        return decimal
-    }
-
-    /// Get the value as a Double
-    /// - Throws: CSVError.invalidValueConversion if conversion fails
-    /// - Returns: The double value, or nil if empty
-    /// - Note: This method uses `Double(str)` for conversion, which may not be as precise as `Decimal`.
-    func getDouble() throws -> Double? {
-        guard let str = try getRawString() else {
-            return nil
-        }
-
-        guard let double = Double(str) else {
-            throw CSVError.invalidValueConversion(message: "Could not convert \(str) to double")
-        }
-        return double
-    }
-
-    /// Get the value as a Float
-    /// - Throws: CSVError.invalidValueConversion if conversion fails
-    /// - Returns: The float value, or nil if empty
-    /// - Note: This method uses `Float(str)` for conversion, which may not be as precise as `Double`.
-    func getFloat() throws -> Float? {
-        guard let str = try getRawString() else {
-            return nil
-        }
-
-        guard let float = Float(str) else {
-            throw CSVError.invalidValueConversion(message: "Could not convert \(str) to float")
-        }
-        return float
-    }
-
-    /// Get the value as a Bool
-    /// - Throws: CSVError.invalidValueConversion if conversion fails
-    /// - Returns: true if the value is "true", "yes", "1", "y" (case insensitive)
-    ///          false if the value is "false", "no", "0", "n" (case insensitive)
-    ///          nil if the value is empty or not convertible
-    func getBool() throws -> Bool? {
-        guard let str = try getRawString()?.lowercased() else {
-            return nil
-        }
-
-        switch str {
-        case "true", "yes", "1", "y":
-            return true
-        case "false", "no", "0", "n":
-            return false
-        default:
-            throw CSVError.invalidValueConversion(message: "Could not convert \(str) to Bool")
+    /// The value as an Int, or nil if the field is empty. Throws on invalid conversion.
+    var intIfPresent: Int? {
+        get throws {
+            guard let str = try getRawString() else {
+                return nil
+            }
+            guard let int = Int(str) else {
+                throw CSVError.invalidValueConversion(message: "Could not convert '\(str)' to Int")
+            }
+            return int
         }
     }
 
-    /// Get the value as a Date
-    func getDate(formatter: DateFormatter? = nil) throws -> Date? {
+    /// The value as a Decimal, or nil if the field is empty. Throws on invalid conversion.
+    var decimalIfPresent: Decimal? {
+        get throws {
+            guard let str = try getRawString() else {
+                return nil
+            }
+            guard let decimal = Decimal(string: str) else {
+                throw CSVError.invalidValueConversion(message: "Could not convert '\(str)' to Decimal")
+            }
+            return decimal
+        }
+    }
+
+    /// The value as a Double, or nil if the field is empty. Throws on invalid conversion.
+    /// - Note: Uses `Double(str)` for conversion, which may not be as precise as `Decimal`.
+    var doubleIfPresent: Double? {
+        get throws {
+            guard let str = try getRawString() else {
+                return nil
+            }
+            guard let double = Double(str) else {
+                throw CSVError.invalidValueConversion(message: "Could not convert '\(str)' to Double")
+            }
+            return double
+        }
+    }
+
+    /// The value as a Float, or nil if the field is empty. Throws on invalid conversion.
+    /// - Note: Uses `Float(str)` for conversion, which may not be as precise as `Double`.
+    var floatIfPresent: Float? {
+        get throws {
+            guard let str = try getRawString() else {
+                return nil
+            }
+            guard let float = Float(str) else {
+                throw CSVError.invalidValueConversion(message: "Could not convert '\(str)' to Float")
+            }
+            return float
+        }
+    }
+
+    /// The value as a Bool, or nil if the field is empty. Throws on invalid conversion.
+    /// Accepts "true"/"yes"/"1"/"y" and "false"/"no"/"0"/"n" (case insensitive).
+    var boolIfPresent: Bool? {
+        get throws {
+            guard let str = try getRawString()?.lowercased() else {
+                return nil
+            }
+            switch str {
+            case "true", "yes", "1", "y":
+                return true
+            case "false", "no", "0", "n":
+                return false
+            default:
+                throw CSVError.invalidValueConversion(message: "Could not convert '\(str)' to Bool")
+            }
+        }
+    }
+
+    /// The value as a Date, or nil if the field is empty. Throws on invalid conversion.
+    func dateIfPresent(formatter: DateFormatter? = nil) throws -> Date? {
         guard let str = try getRawString() else {
             return nil
         }
-
-        let dateFormatter = formatter ?? {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            return formatter
-        }()
-
+        let dateFormatter = formatter ?? Self.defaultDateFormatter
         guard let date = dateFormatter.date(from: str) else {
-            throw CSVError.invalidValueConversion(message: "Could not convert \(str) to Date")
+            throw CSVError.invalidValueConversion(message: "Could not convert '\(str)' to Date")
         }
         return date
     }
@@ -193,7 +270,7 @@ public extension CSVValue {
             let content = str.dropFirst().dropLast()
 
             // Replace doubled quotes with single quote (escape sequence)
-            return String(content).replacingOccurrences(of: quote + quote, with: quote)
+            return String(content).replacing(quote + quote, with: quote)
         }
 
         return str

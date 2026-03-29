@@ -92,7 +92,7 @@ struct HeaderTests {
                 #expect(results.count == 1, "Should have 1 row")
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
 
-                let value1 = try results[0].values[0].getString() ?? ""
+                let value1 = try results[0].values[0].stringIfPresent() ?? ""
                 #expect(value1 == "row1_col1", "First value should be 'row1_col1'")
             }
         )

@@ -23,15 +23,15 @@ struct CustomHeadersTests {
                 #expect(results[0].error == nil, "First row should not have an error")
 
                 let expectedValue1 = "row1_col1"
-                let value1 = try results[0].values[0].getString() ?? ""
+                let value1 = try results[0].values[0].stringIfPresent() ?? ""
                 #expect(value1 == expectedValue1, "First value should be '\(expectedValue1)'")
 
                 let expectedValue2 = "row1_col2"
-                let value2 = try results[0].values[1].getString() ?? ""
+                let value2 = try results[0].values[1].stringIfPresent() ?? ""
                 #expect(value2 == expectedValue2, "Second value should be '\(expectedValue2)'")
 
                 let expectedValue3 = "row1_col3"
-                let value3 = try results[0].values[2].getString() ?? ""
+                let value3 = try results[0].values[2].stringIfPresent() ?? ""
                 #expect(value3 == expectedValue3, "Third value should be '\(expectedValue3)'")
             }
         )
@@ -55,13 +55,13 @@ struct CustomHeadersTests {
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
                 #expect(results[0].error == nil, "First row should not have an error")
 
-                let value1 = try results[0].values["custom1"]?.getString() ?? ""
+                let value1 = try results[0].values["custom1"]?.stringIfPresent() ?? ""
                 #expect(value1 == "row1_col1", "First value should be 'row1_col1'")
 
-                let value2 = try results[0].values["custom2"]?.getString() ?? ""
+                let value2 = try results[0].values["custom2"]?.stringIfPresent() ?? ""
                 #expect(value2 == "row1_col2", "Second value should be 'row1_col2'")
 
-                let value3 = try results[0].values["custom3"]?.getString() ?? ""
+                let value3 = try results[0].values["custom3"]?.stringIfPresent() ?? ""
                 #expect(value3 == "row1_col3", "Third value should be 'row1_col3'")
 
                 #expect(results[0].values["header1"] == nil, "Header 'header1' should not exist")
@@ -87,13 +87,13 @@ struct CustomHeadersTests {
                 #expect(results.count == 1, "Should have 1 row")
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
 
-                let value1 = try results[0].values["custom1"]?.getString() ?? ""
+                let value1 = try results[0].values["custom1"]?.stringIfPresent() ?? ""
                 #expect(value1 == "row1_col1", "First value should be 'row1_col1'")
 
-                let value2 = try results[0].values["custom2"]?.getString() ?? ""
+                let value2 = try results[0].values["custom2"]?.stringIfPresent() ?? ""
                 #expect(value2 == "row1_col2", "Second value should be 'row1_col2'")
 
-                let value3 = try results[0].values["custom3"]?.getString() ?? ""
+                let value3 = try results[0].values["custom3"]?.stringIfPresent() ?? ""
                 #expect(value3 == "row1_col3", "Third value should be 'row1_col3'")
 
                 #expect(results[0].values["row1_col1"] == nil, "Header 'value1' should not exist")

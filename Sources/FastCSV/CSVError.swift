@@ -1,6 +1,8 @@
 import Foundation
 
 public enum CSVError: Error {
+    /// Error indicating that the delimiter character is invalid (not an ASCII character).
+    case invalidDelimiter(message: String)
     /// Error indicating that the CSV file is empty or that there is a problem reading the file.
     /// This is a fatal error and is not recoverable.
     case invalidFile(message: String)

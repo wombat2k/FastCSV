@@ -28,7 +28,7 @@ public class FastCSV {
             return (processedHeaders, hasHeaders, processedHeaders.count)
         } else if hasHeaders {
             // If hasHeaders=true, use first row as headers
-            let extractedHeaders = try firstRow.map { try $0.getString() ?? "" }
+            let extractedHeaders = try firstRow.map { try $0.stringIfPresent() ?? "" }
 
             let processedHeaders = processEmptyHeaders(headers: extractedHeaders)
 
@@ -49,7 +49,7 @@ public class FastCSV {
 
         // Check if there's at least one field and if the first field contains a BOM
         if !result.isEmpty,
-           let firstValue = try? result[0].getString(),
+           let firstValue = try? result[0].stringIfPresent(),
            firstValue.hasPrefix("\u{FEFF}")
         {
             // Remove BOM from the first field
@@ -212,7 +212,7 @@ public class FastCSV {
         return CSVDecodableIterator<T>(
             valueArrayIterator: valueArrayIterator,
             headers: initParams.headers,
-            quoteChar: initParams.config.delimiter.value
+            quoteChar: initParams.config.delimiter.quote
         )
     }
 }

@@ -29,7 +29,7 @@ struct ChunkBoundaryTests {
 
                     for (colIndex, value) in result.values.enumerated() {
                         let expected = "row\(rowIndex + 1)_col\(colIndex + 1)"
-                        let actual = try value.getString() ?? "<nil>"
+                        let actual = try value.stringIfPresent() ?? "<nil>"
                         #expect(actual == expected, "Row \(rowIndex + 1), Col \(colIndex + 1): expected '\(expected)', got '\(actual)'")
                     }
                 }
@@ -57,7 +57,7 @@ struct ChunkBoundaryTests {
 
                 for (colIndex, value) in result.values.enumerated() {
                     let expected = "row1_col\(colIndex + 1)"
-                    let actual = try value.getString() ?? "<nil>"
+                    let actual = try value.stringIfPresent() ?? "<nil>"
                     #expect(actual == expected, "Col \(colIndex + 1): expected '\(expected)', got '\(actual)'")
                 }
             }
@@ -85,7 +85,7 @@ struct ChunkBoundaryTests {
 
                     for (colIndex, value) in result.values.enumerated() {
                         let expected = "row\(rowIndex + 1)_col\(colIndex + 1)"
-                        let actual = try value.getString() ?? "<nil>"
+                        let actual = try value.stringIfPresent() ?? "<nil>"
                         #expect(actual == expected, "Row \(rowIndex + 1), Col \(colIndex + 1): expected '\(expected)', got '\(actual)'")
                     }
                 }
@@ -115,7 +115,7 @@ struct ChunkBoundaryTests {
                     for colIndex in 1...5 {
                         let key = "header\(colIndex)"
                         let expected = "row\(rowIndex + 1)_col\(colIndex)"
-                        let actual = try result[key]?.getString() ?? "<nil>"
+                        let actual = try result[key]?.stringIfPresent() ?? "<nil>"
                         #expect(actual == expected, "Row \(rowIndex + 1), '\(key)': expected '\(expected)', got '\(actual)'")
                     }
                 }

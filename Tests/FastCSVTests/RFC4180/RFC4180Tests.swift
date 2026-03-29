@@ -49,15 +49,15 @@ struct RFC4180Tests {
                 #expect(results[0].error == nil, "First row should not have an error")
 
                 let expectedValue1 = "row1_col1"
-                let value1 = try results[0].values[0].getString() ?? ""
+                let value1 = try results[0].values[0].stringIfPresent() ?? ""
                 #expect(value1 == expectedValue1, "First value should be '\(expectedValue1)'")
 
                 let expectedValue2 = "row1_col2"
-                let value2 = try results[0].values[1].getString() ?? ""
+                let value2 = try results[0].values[1].stringIfPresent() ?? ""
                 #expect(value2 == expectedValue2, "Second value should be '\(expectedValue2)'")
 
                 let expectedValue3 = "row1_col3"
-                let value3 = try results[0].values[2].getString() ?? ""
+                let value3 = try results[0].values[2].stringIfPresent() ?? ""
                 #expect(value3 == expectedValue3, "Third value should be '\(expectedValue3)'")
             }
         )
@@ -80,15 +80,15 @@ struct RFC4180Tests {
                 #expect(results[0].error == nil, "First row should not have an error")
 
                 let expectedValue1 = "row1_col1"
-                let value1 = try results[0].values["header1"]?.getString() ?? ""
+                let value1 = try results[0].values["header1"]?.stringIfPresent() ?? ""
                 #expect(value1 == expectedValue1, "First value should be '\(expectedValue1)'")
 
                 let expectedValue2 = "row1_col2"
-                let value2 = try results[0].values["header2"]?.getString() ?? ""
+                let value2 = try results[0].values["header2"]?.stringIfPresent() ?? ""
                 #expect(value2 == expectedValue2, "Second value should be '\(expectedValue2)'")
 
                 let expectedValue3 = "row1_col3"
-                let value3 = try results[0].values["header3"]?.getString() ?? ""
+                let value3 = try results[0].values["header3"]?.stringIfPresent() ?? ""
                 #expect(value3 == expectedValue3, "Third value should be '\(expectedValue3)'")
             }
         )
@@ -113,13 +113,13 @@ struct RFC4180Tests {
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
                 #expect(results[0].error == nil, "First row should not have an error")
 
-                let value1 = try results[0].values[0].getString() ?? ""
+                let value1 = try results[0].values[0].stringIfPresent() ?? ""
                 #expect(value1 == "quoted value", "First value should be 'quoted value'")
 
-                let value2 = try results[0].values[1].getString() ?? ""
+                let value2 = try results[0].values[1].stringIfPresent() ?? ""
                 #expect(value2 == "row1_col2", "Second value should be 'row1_col2'")
 
-                let value3 = try results[0].values[2].getString() ?? ""
+                let value3 = try results[0].values[2].stringIfPresent() ?? ""
                 #expect(value3 == "row1_col3", "Third value should be 'row1_col3'")
             }
         )
@@ -142,7 +142,7 @@ struct RFC4180Tests {
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
                 #expect(results[0].error == nil, "First row should not have an error")
 
-                let value = try results[0].values[1].getString() ?? ""
+                let value = try results[0].values[1].stringIfPresent() ?? ""
                 let expected = #"value with "escaped" quotes"#
                 #expect(value == expected, "Second value should be '\(expected)'")
             }
@@ -165,7 +165,7 @@ struct RFC4180Tests {
                 #expect(results.count == 1, "Should have 1 row")
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
 
-                let value = try results[0].values[1].getString() ?? ""
+                let value = try results[0].values[1].stringIfPresent() ?? ""
                 #expect(value == "value with\nreturn", "Second value should be 'value with\\nreturn'")
             }
         )
@@ -194,10 +194,10 @@ struct RFC4180Tests {
             #expect(result.values.count == 2)
         }
 
-        let v1 = try results[0].values[0].getString() ?? "<nil>"
-        let v2 = try results[0].values[1].getString() ?? "<nil>"
-        let v3 = try results[1].values[0].getString() ?? "<nil>"
-        let v4 = try results[1].values[1].getString() ?? "<nil>"
+        let v1 = try results[0].values[0].stringIfPresent() ?? "<nil>"
+        let v2 = try results[0].values[1].stringIfPresent() ?? "<nil>"
+        let v3 = try results[1].values[0].stringIfPresent() ?? "<nil>"
+        let v4 = try results[1].values[1].stringIfPresent() ?? "<nil>"
         #expect(v1 == "value1")
         #expect(v2 == "value2")
         #expect(v3 == "value3")
@@ -221,7 +221,7 @@ struct RFC4180Tests {
 
             for colIndex in 0..<3 {
                 let expected = "row\(rowIndex + 1)_col\(colIndex + 1)"
-                let actual = try result.values[colIndex].getString() ?? "<nil>"
+                let actual = try result.values[colIndex].stringIfPresent() ?? "<nil>"
                 #expect(actual == expected)
             }
         }
@@ -240,8 +240,8 @@ struct RFC4180Tests {
         #expect(results.count == 2, "Should have 2 data rows")
         #expect(TestUtils.isErrorFree(arrayResult: results))
 
-        let v3 = try results[1].values[0].getString() ?? "<nil>"
-        let v4 = try results[1].values[1].getString() ?? "<nil>"
+        let v3 = try results[1].values[0].stringIfPresent() ?? "<nil>"
+        let v4 = try results[1].values[1].stringIfPresent() ?? "<nil>"
         #expect(v3 == "value3")
         #expect(v4 == "value4")
     }
@@ -259,9 +259,9 @@ struct RFC4180Tests {
         #expect(results[0].error == nil)
         #expect(results[0].values.count == 3)
 
-        let v1 = try results[0].values[0].getString() ?? "<nil>"
-        let v2 = try results[0].values[1].getString() ?? "<nil>"
-        let v3 = try results[0].values[2].getString() ?? "<nil>"
+        let v1 = try results[0].values[0].stringIfPresent() ?? "<nil>"
+        let v2 = try results[0].values[1].stringIfPresent() ?? "<nil>"
+        let v3 = try results[0].values[2].stringIfPresent() ?? "<nil>"
         #expect(v1 == "value1,with,commas")
         #expect(v2 == "normal")
         #expect(v3 == "also,commas")
@@ -280,8 +280,8 @@ struct RFC4180Tests {
         #expect(results[0].error == nil)
         #expect(results[0].values.count == 2)
 
-        let v1 = try results[0].values[0].getString() ?? "<nil>"
-        let v2 = try results[0].values[1].getString() ?? "<nil>"
+        let v1 = try results[0].values[0].stringIfPresent() ?? "<nil>"
+        let v2 = try results[0].values[1].stringIfPresent() ?? "<nil>"
         #expect(v1 == "line1\r\nline2")
         #expect(v2 == "normal")
     }
@@ -299,9 +299,9 @@ struct RFC4180Tests {
         #expect(results[0].error == nil)
         #expect(results[0].values.count == 3)
 
-        let v1 = try results[0].values[0].getString() ?? "<nil>"
-        let v2 = try results[0].values[1].getString() ?? "<nil>"
-        let v3 = try results[0].values[2].getString() ?? "<nil>"
+        let v1 = try results[0].values[0].stringIfPresent() ?? "<nil>"
+        let v2 = try results[0].values[1].stringIfPresent() ?? "<nil>"
+        let v3 = try results[0].values[2].stringIfPresent() ?? "<nil>"
         #expect(v1 == " leading", "Leading spaces should be preserved")
         #expect(v2 == "trailing ", "Trailing spaces should be preserved")
         #expect(v3 == " quoted with spaces ", "Spaces in quoted fields should be preserved")

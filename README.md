@@ -89,7 +89,7 @@ for row in rows {
     }
 
     for value in row.values {
-        let stringValue = try value.getString()
+        let stringValue = try value.stringIfPresent()
         print(stringValue ?? "")
     }
 }
@@ -108,7 +108,7 @@ for row in rows {
         continue
     }
 
-    if let name = try row.values["name"]?.getString() {
+    if let name = try row.values["name"]?.stringIfPresent() {
         print("Name: \(name)")
     }
 }

@@ -98,8 +98,8 @@ struct MinimalInputTests {
         #expect(results.count == 1, "Should have exactly 1 data row")
         #expect(TestUtils.isErrorFree(arrayResult: results))
 
-        let name = try results[0].values[0].getString()
-        let age = try results[0].values[1].getString()
+        let name = try results[0].values[0].stringIfPresent()
+        let age = try results[0].values[1].stringIfPresent()
         #expect(name == "Alice")
         #expect(age == "30")
     }
@@ -119,8 +119,8 @@ struct MinimalInputTests {
         #expect(results.count == 1, "Should have exactly 1 data row")
         #expect(TestUtils.isErrorFree(dictionaryResult: results))
 
-        let name = try results[0].values["name"]?.getString()
-        let age = try results[0].values["age"]?.getString()
+        let name = try results[0].values["name"]?.stringIfPresent()
+        let age = try results[0].values["age"]?.stringIfPresent()
         #expect(name == "Alice")
         #expect(age == "30")
     }
@@ -140,8 +140,8 @@ struct MinimalInputTests {
         #expect(results.count == 1, "Should have exactly 1 data row")
         #expect(TestUtils.isErrorFree(arrayResult: results))
 
-        let val0 = try results[0].values[0].getString()
-        let val1 = try results[0].values[1].getString()
+        let val0 = try results[0].values[0].stringIfPresent()
+        let val1 = try results[0].values[1].stringIfPresent()
         #expect(val0 == "Alice")
         #expect(val1 == "30")
     }
@@ -161,7 +161,7 @@ struct MinimalInputTests {
         #expect(results.count == 1, "Should have exactly 1 data row")
         #expect(TestUtils.isErrorFree(arrayResult: results))
 
-        let name = try results[0].values[0].getString()
+        let name = try results[0].values[0].stringIfPresent()
         #expect(name == "Alice")
     }
 }

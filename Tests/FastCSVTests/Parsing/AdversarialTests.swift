@@ -166,13 +166,13 @@ struct AdversarialTests {
                 #expect(results[0].error == nil, "Should not have an error")
                 #expect(results[0].values.count == 3, "Should have 3 columns")
 
-                let value1 = try results[0].values[0].getString() ?? "<nil>"
+                let value1 = try results[0].values[0].stringIfPresent() ?? "<nil>"
                 #expect(value1 == "before\0after", "Null byte should be preserved in field")
 
-                let value2 = try results[0].values[1].getString() ?? "<nil>"
+                let value2 = try results[0].values[1].stringIfPresent() ?? "<nil>"
                 #expect(value2 == "normal", "Normal field should be unaffected")
 
-                let value3 = try results[0].values[2].getString() ?? "<nil>"
+                let value3 = try results[0].values[2].stringIfPresent() ?? "<nil>"
                 #expect(value3 == "also\0has\0nulls", "Multiple null bytes should be preserved")
             }
         )
@@ -201,13 +201,13 @@ struct AdversarialTests {
                 #expect(results[0].error == nil, "Should not have an error: \(String(describing: results[0].error))")
                 #expect(results[0].values.count == 3, "Should have 3 columns, got \(results[0].values.count)")
 
-                let value1 = try results[0].values[0].getString() ?? "<nil>"
+                let value1 = try results[0].values[0].stringIfPresent() ?? "<nil>"
                 #expect(value1 == "small", "First field should be 'small'")
 
-                let value2 = try results[0].values[1].getString() ?? "<nil>"
+                let value2 = try results[0].values[1].stringIfPresent() ?? "<nil>"
                 #expect(value2 == hugeValue, "Huge field should be preserved (got \(value2.count) chars)")
 
-                let value3 = try results[0].values[2].getString() ?? "<nil>"
+                let value3 = try results[0].values[2].stringIfPresent() ?? "<nil>"
                 #expect(value3 == "also_small", "Third field should be 'also_small'")
             }
         )
@@ -235,10 +235,10 @@ struct AdversarialTests {
                 #expect(results[0].error == nil, "Should not have an error: \(String(describing: results[0].error))")
                 #expect(results[0].values.count == 2, "Should have 2 columns, got \(results[0].values.count)")
 
-                let value1 = try results[0].values[0].getString() ?? "<nil>"
+                let value1 = try results[0].values[0].stringIfPresent() ?? "<nil>"
                 #expect(value1 == innerContent, "Quoted field content should be preserved")
 
-                let value2 = try results[0].values[1].getString() ?? "<nil>"
+                let value2 = try results[0].values[1].stringIfPresent() ?? "<nil>"
                 #expect(value2 == "normal", "Second field should be 'normal'")
             }
         )
@@ -265,7 +265,7 @@ struct AdversarialTests {
                 #expect(TestUtils.isErrorFree(arrayResult: results), "All rows should be error-free")
                 #expect(results.count == rowCount, "Should have \(rowCount) rows")
                 #expect(results[0].values.count == colCount, "First row should have \(colCount) columns")
-                let values = try results.map { try $0.values.map { try $0.getString() } }
+                let values = try results.map { try $0.values.map { try $0.stringIfPresent() } }
                 #expect(rows == values)
             }
         )

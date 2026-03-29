@@ -77,7 +77,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
     func decode(_ type: String.Type, forKey key: Key) throws -> String {
         let csvValue = try value(for: key)
-        guard let result = try csvValue.getString(quoteChar: decoder.quoteChar) else {
+        guard let result = try csvValue.stringIfPresent(quoteChar: decoder.quoteChar) else {
             throw DecodingError.valueNotFound(String.self, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected String but found empty field for '\(key.stringValue)'"
@@ -90,7 +90,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
     func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {
         let csvValue = try value(for: key)
-        guard let result = try csvValue.getBool() else {
+        guard let result = try csvValue.boolIfPresent else {
             throw DecodingError.valueNotFound(Bool.self, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected Bool but found empty field for '\(key.stringValue)'"
@@ -103,7 +103,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
     func decode(_ type: Int.Type, forKey key: Key) throws -> Int {
         let csvValue = try value(for: key)
-        guard let result = try csvValue.getInt() else {
+        guard let result = try csvValue.intIfPresent else {
             throw DecodingError.valueNotFound(Int.self, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected Int but found empty field for '\(key.stringValue)'"
@@ -116,7 +116,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
     func decode(_ type: Double.Type, forKey key: Key) throws -> Double {
         let csvValue = try value(for: key)
-        guard let result = try csvValue.getDouble() else {
+        guard let result = try csvValue.doubleIfPresent else {
             throw DecodingError.valueNotFound(Double.self, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected Double but found empty field for '\(key.stringValue)'"
@@ -129,7 +129,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
     func decode(_ type: Float.Type, forKey key: Key) throws -> Float {
         let csvValue = try value(for: key)
-        guard let result = try csvValue.getFloat() else {
+        guard let result = try csvValue.floatIfPresent else {
             throw DecodingError.valueNotFound(Float.self, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected Float but found empty field for '\(key.stringValue)'"
@@ -178,7 +178,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
     private func decodeIntegerWidth<T: FixedWidthInteger>(key: Key) throws -> T {
         let csvValue = try value(for: key)
-        guard let str = try csvValue.getString(quoteChar: decoder.quoteChar) else {
+        guard let str = try csvValue.stringIfPresent(quoteChar: decoder.quoteChar) else {
             throw DecodingError.valueNotFound(T.self, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected \(T.self) but found empty field for '\(key.stringValue)'"
@@ -199,7 +199,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
         // Handle types with direct CSVValue support
         if type == Date.self {
             let csvValue = try value(for: key)
-            guard let result = try csvValue.getDate() else {
+            guard let result = try csvValue.dateIfPresent() else {
                 throw DecodingError.valueNotFound(Date.self, DecodingError.Context(
                     codingPath: [key],
                     debugDescription: "Expected Date but found empty field for '\(key.stringValue)'"
@@ -210,7 +210,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
         if type == Decimal.self {
             let csvValue = try value(for: key)
-            guard let result = try csvValue.getDecimal() else {
+            guard let result = try csvValue.decimalIfPresent else {
                 throw DecodingError.valueNotFound(Decimal.self, DecodingError.Context(
                     codingPath: [key],
                     debugDescription: "Expected Decimal but found empty field for '\(key.stringValue)'"
@@ -232,7 +232,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
         // Fallback: decode from string value via single-value decoder
         let csvValue = try value(for: key)
-        guard let str = try csvValue.getString(quoteChar: decoder.quoteChar) else {
+        guard let str = try csvValue.stringIfPresent(quoteChar: decoder.quoteChar) else {
             throw DecodingError.valueNotFound(type, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected \(type) but found empty field for '\(key.stringValue)'"

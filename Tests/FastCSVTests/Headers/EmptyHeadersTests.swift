@@ -18,15 +18,15 @@ struct EmptyHeadersTests {
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
 
                 let expectedValue1 = "row1_col1"
-                let value1 = try results[0].values["column_1"]?.getString() ?? ""
+                let value1 = try results[0].values["column_1"]?.stringIfPresent() ?? ""
                 #expect(value1 == expectedValue1, "First value should be '\(expectedValue1)'")
 
                 let expectedValue2 = "row1_col2"
-                let value2 = try results[0].values["column_2"]?.getString() ?? ""
+                let value2 = try results[0].values["column_2"]?.stringIfPresent() ?? ""
                 #expect(value2 == expectedValue2, "Second value should be '\(expectedValue2)'")
 
                 let expectedValue3 = "row1_col3"
-                let value3 = try results[0].values["column_3"]?.getString() ?? ""
+                let value3 = try results[0].values["column_3"]?.stringIfPresent() ?? ""
                 #expect(value3 == expectedValue3, "Third value should be '\(expectedValue3)'")
             }
         )
@@ -48,13 +48,13 @@ struct EmptyHeadersTests {
                 #expect(results.count == 1, "Should have 1 row")
                 #expect(results[0].values.count == 3, "First row should have 3 columns")
 
-                let value1 = try results[0].values["header1"]?.getString() ?? ""
+                let value1 = try results[0].values["header1"]?.stringIfPresent() ?? ""
                 #expect(value1 == "row1_col1", "First value should be 'row1_col1'")
 
-                let value2 = try results[0].values["column_2"]?.getString() ?? ""
+                let value2 = try results[0].values["column_2"]?.stringIfPresent() ?? ""
                 #expect(value2 == "row1_col2", "Second value should be 'row1_col2'")
 
-                let value3 = try results[0].values["header3"]?.getString() ?? ""
+                let value3 = try results[0].values["header3"]?.stringIfPresent() ?? ""
                 #expect(value3 == "row1_col3", "Third value should be 'row1_col3'")
             }
         )

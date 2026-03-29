@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "FastCSV",
     platforms: [
-        .macOS(.v12),
+        .macOS(.v13),
         .iOS(.v15),
     ],
     products: [

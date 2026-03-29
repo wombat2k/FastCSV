@@ -56,7 +56,7 @@ extension FastCSV {
                     let byte = bytes[chunkReader.currentPosition]
 
                     // Handle quote character
-                    if byte == delimiter.value {
+                    if byte == delimiter.quote {
                         if !inQuote && chunkReader.currentPosition == fieldStartPosition {
                             // Opening quote at start of field
                             inQuote = true
@@ -65,7 +65,7 @@ extension FastCSV {
                         } else if inQuote {
                             // Check for escaped quote
                             if chunkReader.currentPosition + 1 < chunkReader.currentReadBufferSize &&
-                                bytes[chunkReader.currentPosition + 1] == delimiter.value
+                                bytes[chunkReader.currentPosition + 1] == delimiter.quote
                             {
                                 chunkReader.advancePosition(by: 2)
                                 continue
@@ -170,7 +170,7 @@ extension FastCSV {
                     let byte = bytes[chunkReader.currentPosition]
 
                     // Handle quote character
-                    if byte == delimiter.value {
+                    if byte == delimiter.quote {
                         // Only treat as opening quote if at the start of a field and not in a quoted context
                         if !inQuote && chunkReader.currentPosition == fieldStartPosition {
                             // Opening quote at start of field
@@ -180,7 +180,7 @@ extension FastCSV {
                             continue
                         } else if inQuote {
                             // Check for escaped quote (double quote) inside quoted field
-                            if chunkReader.currentPosition + 1 < chunkReader.currentReadBufferSize && bytes[chunkReader.currentPosition + 1] == delimiter.value {
+                            if chunkReader.currentPosition + 1 < chunkReader.currentReadBufferSize && bytes[chunkReader.currentPosition + 1] == delimiter.quote {
                                 // Skip one of the quotes, keeping the other in the field
                                 chunkReader.advancePosition(by: 2)
                                 continue
