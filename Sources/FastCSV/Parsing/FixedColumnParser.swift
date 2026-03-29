@@ -46,68 +46,11 @@ extension FastCSV {
 
         /// Skips a single row in the CSV data
         private mutating func skipRow() {
-            // State tracking for quotes
-            var inQuote = false
-
-            while true {
-                chunkReader.loadNextChunkIfNeeded()
-
-                if chunkReader.isFinished { return }
-
-                guard let bytes = chunkReader.currentBytes else { return }
-
-                // Process the current chunk to find the end of row
-                while chunkReader.currentPosition < chunkReader.currentReadBufferSize {
-                    let byte = bytes[chunkReader.currentPosition]
-
-                    // Handle quote character
-                    if byte == delimiter.quote {
-                        if !inQuote && chunkReader.currentPosition == fieldStartPosition {
-                            // Opening quote at start of field
-                            inQuote = true
-                            chunkReader.advancePosition()
-                            continue
-                        } else if inQuote {
-                            // Check for escaped quote
-                            if chunkReader.currentPosition + 1 < chunkReader.currentReadBufferSize &&
-                                bytes[chunkReader.currentPosition + 1] == delimiter.quote
-                            {
-                                chunkReader.advancePosition(by: 2)
-                                continue
-                            } else {
-                                // Closing quote
-                                inQuote = false
-                                chunkReader.advancePosition()
-                                continue
-                            }
-                        } else {
-                            // Normal character in field
-                            chunkReader.advancePosition()
-                            continue
-                        }
-                    } else if !inQuote && byte == delimiter.row {
-                        // End of row found
-                        chunkReader.advancePosition()
-
-                        // Handle CR+LF sequence
-                        if byte == UInt8(ascii: "\r") &&
-                            chunkReader.currentPosition < chunkReader.currentReadBufferSize &&
-                            bytes[chunkReader.currentPosition] == UInt8(ascii: "\n")
-                        {
-                            chunkReader.advancePosition()
-                        }
-
-                        fieldStartPosition = chunkReader.currentPosition
-                        return
-                    } else {
-                        // Normal character
-                        chunkReader.advancePosition()
-                    }
-                }
-
-                // If we get here, we need to load more data
-                fieldStartPosition = 0
-            }
+            FastCSV.skipQuotedRow(
+                chunkReader: &chunkReader,
+                delimiter: delimiter,
+                fieldStartPosition: &fieldStartPosition
+            )
         }
 
         mutating func parseNextRow() -> CSVIteratorResult? {
@@ -240,12 +183,10 @@ extension FastCSV {
                         fieldStartPosition = chunkReader.currentPosition
                     } else if !inQuote && byte == delimiter.row {
                         // End of row — strip trailing \r if this is a \r\n sequence
-                        var fieldEnd = chunkReader.currentPosition
-                        if byte == UInt8(ascii: "\n") && fieldEnd > fieldStartPosition &&
-                            bytes[fieldEnd - 1] == UInt8(ascii: "\r")
-                        {
-                            fieldEnd -= 1
-                        }
+                        let fieldEnd = adjustFieldEndForCRLF(
+                            byte: byte, fieldEnd: chunkReader.currentPosition,
+                            fieldStart: fieldStartPosition, bytes: bytes
+                        )
 
                         if currentFieldIndex < columnCount {
                             if fieldEnd > fieldStartPosition {

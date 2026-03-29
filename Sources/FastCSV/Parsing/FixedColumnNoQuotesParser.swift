@@ -170,12 +170,10 @@ extension FastCSV {
                         fieldStartPosition = chunkReader.currentPosition
                     } else if byte == delimiter.row {
                         // End of row — strip trailing \r if this is a \r\n sequence
-                        var fieldEnd = chunkReader.currentPosition
-                        if byte == UInt8(ascii: "\n") && fieldEnd > fieldStartPosition &&
-                            bytes[fieldEnd - 1] == UInt8(ascii: "\r")
-                        {
-                            fieldEnd -= 1
-                        }
+                        let fieldEnd = adjustFieldEndForCRLF(
+                            byte: byte, fieldEnd: chunkReader.currentPosition,
+                            fieldStart: fieldStartPosition, bytes: bytes
+                        )
 
                         if currentFieldIndex < columnCount {
                             if fieldEnd > fieldStartPosition {
