@@ -114,6 +114,20 @@ for row in rows {
 }
 ```
 
+### String and Data input
+
+All three API tiers also accept in-memory input — no file needed:
+
+```swift
+// From a string
+let csv = "name,age\nAlice,30\nBob,25\n"
+var people = try FastCSV.makeRows(Person.self, fromString: csv)
+
+// From Data
+let data = Data(csv.utf8)
+var people = try FastCSV.makeRows(Person.self, fromData: data)
+```
+
 ### Configuration
 
 All three API tiers accept the same configuration options:

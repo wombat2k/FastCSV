@@ -82,13 +82,19 @@ public class FastCSV {
     private static func initialize(fileURL: URL, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws ->
         (fileURL: URL, config: CSVParserConfig, headers: [String], skipFirstRow: Bool, headerCount: Int)
     {
-        let finalConfig = config ?? CSVParserConfig()
-
         let fileHandle = try FileHandle(forReadingFrom: fileURL)
         defer { try? fileHandle.close() }
 
-        // Read the first row to determine column count
-        let rowIterator = CSVRowIterator(reader: fileHandle, skipFirstRow: false, config: finalConfig)
+        let result = try initializeFromReader(reader: fileHandle, hasHeaders: hasHeaders, headers: headers, config: config)
+        return (fileURL, result.config, result.headers, result.skipFirstRow, result.headerCount)
+    }
+
+    private static func initializeFromReader(reader: ByteStreamReader, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws ->
+        (config: CSVParserConfig, headers: [String], skipFirstRow: Bool, headerCount: Int)
+    {
+        let finalConfig = config ?? CSVParserConfig()
+
+        let rowIterator = CSVRowIterator(reader: reader, skipFirstRow: false, config: finalConfig)
         var valueArrayIterator = CSVArrayIterator(rowIterator: rowIterator, headerCount: 0)
 
         defer { valueArrayIterator.cleanup() }
@@ -101,10 +107,9 @@ public class FastCSV {
             throw error
         }
 
-        // Process headers
         let headerSettings = try processHeaders(firstRow: firstRowResult.values, hasHeaders: hasHeaders, customHeaders: headers)
 
-        return (fileURL, finalConfig, headerSettings.headers, headerSettings.skipFirstRow, headerSettings.headerCount)
+        return (finalConfig, headerSettings.headers, headerSettings.skipFirstRow, headerSettings.headerCount)
     }
 
     /// Static method to create an iterator over CSV rows as arrays of CSVValue
@@ -214,5 +219,70 @@ public class FastCSV {
             headers: initParams.headers,
             quoteChar: initParams.config.delimiter.quote
         )
+    }
+
+    // MARK: - Data Input
+
+    /// Create an iterator over CSV rows as arrays of CSVValue from in-memory Data.
+    public static func makeArrayRows(fromData data: Data, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVArrayIterator {
+        let initParams = try initializeFromReader(reader: DataStreamReader(data: data), hasHeaders: hasHeaders, headers: headers, config: config)
+
+        let reader = DataStreamReader(data: data)
+        let rowIterator = CSVRowIterator(reader: reader, skipFirstRow: initParams.skipFirstRow, columnCount: initParams.headerCount, config: initParams.config)
+
+        return CSVArrayIterator(
+            rowIterator: rowIterator,
+            headerCount: initParams.headerCount,
+            skipFirstRow: initParams.skipFirstRow
+        )
+    }
+
+    /// Create an iterator over CSV rows as dictionaries from in-memory Data.
+    public static func makeDictionaryRows(fromData data: Data, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVDictionaryIterator {
+        let initParams = try initializeFromReader(reader: DataStreamReader(data: data), hasHeaders: hasHeaders, headers: headers, config: config)
+        let valueArrayIterator = try makeArrayRows(fromData: data, hasHeaders: hasHeaders, headers: headers, config: config)
+
+        return CSVDictionaryIterator(valueArrayIterator: valueArrayIterator, headers: initParams.headers)
+    }
+
+    /// Create a lazy sequence that decodes CSV rows into Decodable structs from in-memory Data.
+    public static func makeRows<T: Decodable>(
+        _ type: T.Type,
+        fromData data: Data,
+        hasHeaders: Bool = true,
+        headers: [String] = [],
+        config: CSVParserConfig? = nil
+    ) throws -> CSVDecodableIterator<T> {
+        let initParams = try initializeFromReader(reader: DataStreamReader(data: data), hasHeaders: hasHeaders, headers: headers, config: config)
+        let valueArrayIterator = try makeArrayRows(fromData: data, hasHeaders: hasHeaders, headers: headers, config: config)
+
+        return CSVDecodableIterator<T>(
+            valueArrayIterator: valueArrayIterator,
+            headers: initParams.headers,
+            quoteChar: initParams.config.delimiter.quote
+        )
+    }
+
+    // MARK: - String Input
+
+    /// Create an iterator over CSV rows as arrays of CSVValue from a CSV string.
+    public static func makeArrayRows(fromString string: String, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVArrayIterator {
+        try makeArrayRows(fromData: Data(string.utf8), hasHeaders: hasHeaders, headers: headers, config: config)
+    }
+
+    /// Create an iterator over CSV rows as dictionaries from a CSV string.
+    public static func makeDictionaryRows(fromString string: String, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVDictionaryIterator {
+        try makeDictionaryRows(fromData: Data(string.utf8), hasHeaders: hasHeaders, headers: headers, config: config)
+    }
+
+    /// Create a lazy sequence that decodes CSV rows into Decodable structs from a CSV string.
+    public static func makeRows<T: Decodable>(
+        _ type: T.Type,
+        fromString string: String,
+        hasHeaders: Bool = true,
+        headers: [String] = [],
+        config: CSVParserConfig? = nil
+    ) throws -> CSVDecodableIterator<T> {
+        try makeRows(type, fromData: Data(string.utf8), hasHeaders: hasHeaders, headers: headers, config: config)
     }
 }

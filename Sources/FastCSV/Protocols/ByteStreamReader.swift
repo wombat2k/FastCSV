@@ -38,3 +38,27 @@ extension FileHandle: ByteStreamReader {
         }
     }
 }
+
+/// A ByteStreamReader that reads from in-memory Data.
+/// Used by the fromString/fromData API variants.
+final class DataStreamReader: ByteStreamReader {
+    private let data: Data
+    private var offset: Int = 0
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    func readBytes(into buffer: UnsafeMutablePointer<UInt8>, maxLength: Int) -> Int {
+        let remaining = data.count - offset
+        let count = min(remaining, maxLength)
+        guard count > 0 else { return 0 }
+        data.copyBytes(to: buffer, from: offset ..< (offset + count))
+        offset += count
+        return count
+    }
+
+    func cleanup() {
+        // No resources to release — Data is managed by ARC
+    }
+}
