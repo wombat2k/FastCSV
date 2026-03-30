@@ -423,4 +423,114 @@ struct CSVValueTests {
             _ = try csvValue.dateIfPresent()
         }
     }
+
+    // MARK: - Quoted Values Are Strings
+
+    @Test("Quoted integer is treated as string, not number")
+    func testQuotedIntIsString() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("\"42\"".utf8), source: .own)
+        // Quoted field is a string — intIfPresent should fail because the raw bytes include quotes
+        #expect(throws: CSVError.self) {
+            _ = try csvValue.intIfPresent
+        }
+        // But stringIfPresent strips quotes and returns the string content
+        #expect(try csvValue.stringIfPresent() == "42")
+    }
+
+    // MARK: - Direct Byte Parsing Edge Cases
+
+    @Test("Integer parsing: negative values")
+    func testNegativeInt() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("-42".utf8), source: .own)
+        #expect(try csvValue.intIfPresent == -42)
+    }
+
+    @Test("Integer parsing: positive sign")
+    func testPositiveSignInt() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("+42".utf8), source: .own)
+        #expect(try csvValue.intIfPresent == 42)
+    }
+
+    @Test("Integer parsing: leading zeros")
+    func testLeadingZerosInt() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("007".utf8), source: .own)
+        #expect(try csvValue.intIfPresent == 7)
+    }
+
+    @Test("Integer parsing: overflow throws")
+    func testIntOverflow() throws {
+        // Int8 max is 127
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("128".utf8), source: .own)
+        #expect(throws: CSVError.self) {
+            let _: Int8? = try csvValue.fixedWidthIntegerIfPresent()
+        }
+    }
+
+    @Test("Integer parsing: Int8.min parses correctly")
+    func testInt8Min() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("-128".utf8), source: .own)
+        let result: Int8? = try csvValue.fixedWidthIntegerIfPresent()
+        #expect(result == Int8.min)
+    }
+
+    @Test("Integer parsing: negative unsigned throws")
+    func testNegativeUnsigned() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("-1".utf8), source: .own)
+        #expect(throws: CSVError.self) {
+            let _: UInt? = try csvValue.fixedWidthIntegerIfPresent()
+        }
+    }
+
+    @Test("Integer parsing: bare sign throws")
+    func testBareSign() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("-".utf8), source: .own)
+        #expect(throws: CSVError.self) {
+            _ = try csvValue.intIfPresent
+        }
+    }
+
+    @Test("Integer parsing: non-digit throws")
+    func testNonDigit() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("12a3".utf8), source: .own)
+        #expect(throws: CSVError.self) {
+            _ = try csvValue.intIfPresent
+        }
+    }
+
+    @Test("Double parsing: scientific notation")
+    func testDoubleScientific() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("1.5e2".utf8), source: .own)
+        #expect(try csvValue.doubleIfPresent == 150.0)
+    }
+
+    @Test("Double parsing: negative")
+    func testNegativeDouble() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("-3.14".utf8), source: .own)
+        #expect(try csvValue.doubleIfPresent == -3.14)
+    }
+
+    @Test("Double parsing: infinity")
+    func testDoubleInfinity() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("inf".utf8), source: .own)
+        #expect(try csvValue.doubleIfPresent == Double.infinity)
+    }
+
+    @Test("Double parsing: leading whitespace rejects")
+    func testDoubleLeadingWhitespace() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8](" 3.14".utf8), source: .own)
+        #expect(throws: CSVError.self) {
+            _ = try csvValue.doubleIfPresent
+        }
+    }
+
+    @Test("fixedWidthIntegerIfPresent generic works for multiple types")
+    func testGenericFixedWidthInteger() throws {
+        let csvValue = TestUtils.createCSVValue(from: [UInt8]("42".utf8), source: .own)
+        let i8: Int8? = try csvValue.fixedWidthIntegerIfPresent()
+        let u16: UInt16? = try csvValue.fixedWidthIntegerIfPresent()
+        let i64: Int64? = try csvValue.fixedWidthIntegerIfPresent()
+        #expect(i8 == 42)
+        #expect(u16 == 42)
+        #expect(i64 == 42)
+    }
 }

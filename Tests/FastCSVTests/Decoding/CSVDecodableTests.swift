@@ -287,4 +287,30 @@ struct CSVDecodableTests {
 
         #expect(results == [Person(name: "Alice", age: 30)])
     }
+
+    // MARK: - Quoted Numeric Fields
+
+    @Test("Quoted integers and doubles decode through Decodable")
+    func quotedNumericDecoding() throws {
+        let csv = "str,integer,dbl,flt,flag\n\"hello\",\"42\",\"3.14\",\"2.5\",\"true\"\n"
+        var rows = try FastCSV.makeRows(TypeRich.self, fromString: csv)
+        let result = try rows.next()!.get()
+        #expect(result == TypeRich(str: "hello", integer: 42, dbl: 3.14, flt: 2.5, flag: true))
+    }
+
+    @Test("Quoted Int8 decodes through integer width path")
+    func quotedInt8Decoding() throws {
+        let csv = "name,age\n\"Alice\",\"30\"\n"
+        var rows = try FastCSV.makeRows(Person.self, fromString: csv)
+        let result = try rows.next()!.get()
+        #expect(result == Person(name: "Alice", age: 30))
+    }
+
+    @Test("Quoted Decimal decodes correctly")
+    func quotedDecimalDecoding() throws {
+        let csv = "name,price\n\"Widget\",\"19.99\"\n"
+        var rows = try FastCSV.makeRows(WithDecimal.self, fromString: csv)
+        let result = try rows.next()!.get()
+        #expect(result == WithDecimal(name: "Widget", price: Decimal(string: "19.99")!))
+    }
 }

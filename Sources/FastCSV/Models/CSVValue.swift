@@ -6,7 +6,7 @@ import Foundation
 /// If you need to store values beyond the lifetime of the iterator, use the `copy()` method
 /// to create a safely owned copy of the value.
 public struct CSVValue {
-    private static let defaultDateFormatter: DateFormatter = {
+    static let defaultDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
@@ -64,6 +64,147 @@ public struct CSVValue {
             return true
         case .ref:
             return false
+        }
+    }
+}
+
+// MARK: - Direct Byte Parsing
+
+private extension CSVValue {
+    /// Execute a closure with access to the raw bytes, returning nil for empty values.
+    func withRawBytes<T>(_ body: (UnsafeBufferPointer<UInt8>) throws -> T) rethrows -> T? {
+        switch valueSource {
+        case .none:
+            return nil
+        case let .ref(buffer):
+            return try body(buffer)
+        case let .own(bytes):
+            return try bytes.withUnsafeBufferPointer { try body($0) }
+        }
+    }
+
+    /// Parse an integer directly from ASCII bytes without intermediate String allocation.
+    /// Handles optional leading sign, overflow checking, and T.min for signed types.
+    static func parseInteger<T: FixedWidthInteger>(from bytes: UnsafeBufferPointer<UInt8>) -> T? {
+        guard !bytes.isEmpty else { return nil }
+
+        var i = 0
+        var negate = false
+
+        if bytes[i] == UInt8(ascii: "-") {
+            guard T.isSigned else { return nil }
+            negate = true
+            i += 1
+        } else if bytes[i] == UInt8(ascii: "+") {
+            i += 1
+        }
+
+        guard i < bytes.count else { return nil }
+
+        // Accumulate using subtraction when negative to correctly handle T.min
+        var result: T = 0
+        while i < bytes.count {
+            let byte = bytes[i]
+            guard byte >= UInt8(ascii: "0"), byte <= UInt8(ascii: "9") else { return nil }
+            let digit = T(byte &- UInt8(ascii: "0"))
+
+            let (r1, o1) = result.multipliedReportingOverflow(by: 10)
+            guard !o1 else { return nil }
+
+            if negate {
+                let (r2, o2) = r1.subtractingReportingOverflow(digit)
+                guard !o2 else { return nil }
+                result = r2
+            } else {
+                let (r2, o2) = r1.addingReportingOverflow(digit)
+                guard !o2 else { return nil }
+                result = r2
+            }
+
+            i += 1
+        }
+
+        return result
+    }
+
+    /// Parse a Double directly from ASCII bytes using strtod.
+    /// Uses withUnsafeTemporaryAllocation for a stack-friendly null-terminated buffer.
+    static func parseDouble(from bytes: UnsafeBufferPointer<UInt8>) -> Double? {
+        guard !bytes.isEmpty else { return nil }
+        // Reject leading/trailing whitespace to match Swift's Double.init behavior
+        if bytes[0] == 0x20 || bytes[0] == 0x09 ||
+            bytes[bytes.count - 1] == 0x20 || bytes[bytes.count - 1] == 0x09 {
+            return nil
+        }
+
+        return withUnsafeTemporaryAllocation(byteCount: bytes.count + 1, alignment: 1) { temp in
+            temp.copyBytes(from: bytes)
+            temp[bytes.count] = 0
+
+            let cStr = temp.baseAddress!.assumingMemoryBound(to: CChar.self)
+            var endPtr: UnsafeMutablePointer<CChar>?
+            let result = strtod(cStr, &endPtr)
+
+            guard let end = endPtr, end == cStr + bytes.count else { return nil }
+            return result
+        }
+    }
+
+    /// Parse a Float directly from ASCII bytes using strtof.
+    static func parseFloat(from bytes: UnsafeBufferPointer<UInt8>) -> Float? {
+        guard !bytes.isEmpty else { return nil }
+        if bytes[0] == 0x20 || bytes[0] == 0x09 ||
+            bytes[bytes.count - 1] == 0x20 || bytes[bytes.count - 1] == 0x09 {
+            return nil
+        }
+
+        return withUnsafeTemporaryAllocation(byteCount: bytes.count + 1, alignment: 1) { temp in
+            temp.copyBytes(from: bytes)
+            temp[bytes.count] = 0
+
+            let cStr = temp.baseAddress!.assumingMemoryBound(to: CChar.self)
+            var endPtr: UnsafeMutablePointer<CChar>?
+            let result = strtof(cStr, &endPtr)
+
+            guard let end = endPtr, end == cStr + bytes.count else { return nil }
+            return result
+        }
+    }
+
+    /// Parse a Bool directly from ASCII bytes without intermediate String allocation.
+    /// Case-insensitive matching using bitwise OR for lowercase conversion.
+    static func parseBool(from bytes: UnsafeBufferPointer<UInt8>) -> Bool? {
+        switch bytes.count {
+        case 1:
+            switch bytes[0] {
+            case UInt8(ascii: "1"), UInt8(ascii: "y"), UInt8(ascii: "Y"): return true
+            case UInt8(ascii: "0"), UInt8(ascii: "n"), UInt8(ascii: "N"): return false
+            default: return nil
+            }
+        case 2:
+            if (bytes[0] | 0x20) == UInt8(ascii: "n") &&
+                (bytes[1] | 0x20) == UInt8(ascii: "o") { return false }
+            return nil
+        case 3:
+            if (bytes[0] | 0x20) == UInt8(ascii: "y") &&
+                (bytes[1] | 0x20) == UInt8(ascii: "e") &&
+                (bytes[2] | 0x20) == UInt8(ascii: "s") { return true }
+            return nil
+        case 4:
+            if (bytes[0] | 0x20) == UInt8(ascii: "t") &&
+                (bytes[1] | 0x20) == UInt8(ascii: "r") &&
+                (bytes[2] | 0x20) == UInt8(ascii: "u") &&
+                (bytes[3] | 0x20) == UInt8(ascii: "e") { return true }
+            return nil
+        case 5:
+            if (bytes[0] | 0x20) == UInt8(ascii: "f") &&
+                (bytes[1] | 0x20) == UInt8(ascii: "a") &&
+                (bytes[2] | 0x20) == UInt8(ascii: "l") &&
+                (bytes[3] | 0x20) == UInt8(ascii: "s") &&
+                (bytes[4] | 0x20) == UInt8(ascii: "e") { return false }
+            return nil
+        default:
+            return nil
         }
     }
 }
@@ -165,13 +306,19 @@ public extension CSVValue {
     /// The value as an Int, or nil if the field is empty. Throws on invalid conversion.
     var intIfPresent: Int? {
         get throws {
-            guard let str = try getRawString() else {
-                return nil
+            try fixedWidthIntegerIfPresent()
+        }
+    }
+
+    /// The value as any FixedWidthInteger type, or nil if the field is empty. Throws on invalid conversion.
+    func fixedWidthIntegerIfPresent<T: FixedWidthInteger>() throws -> T? {
+        try withRawBytes { bytes in
+            guard let result: T = Self.parseInteger(from: bytes) else {
+                throw CSVError.invalidValueConversion(
+                    message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to \(T.self)"
+                )
             }
-            guard let int = Int(str) else {
-                throw CSVError.invalidValueConversion(message: "Could not convert '\(str)' to Int")
-            }
-            return int
+            return result
         }
     }
 
@@ -189,30 +336,30 @@ public extension CSVValue {
     }
 
     /// The value as a Double, or nil if the field is empty. Throws on invalid conversion.
-    /// - Note: Uses `Double(str)` for conversion, which may not be as precise as `Decimal`.
     var doubleIfPresent: Double? {
         get throws {
-            guard let str = try getRawString() else {
-                return nil
+            try withRawBytes { bytes in
+                guard let result = Self.parseDouble(from: bytes) else {
+                    throw CSVError.invalidValueConversion(
+                        message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to Double"
+                    )
+                }
+                return result
             }
-            guard let double = Double(str) else {
-                throw CSVError.invalidValueConversion(message: "Could not convert '\(str)' to Double")
-            }
-            return double
         }
     }
 
     /// The value as a Float, or nil if the field is empty. Throws on invalid conversion.
-    /// - Note: Uses `Float(str)` for conversion, which may not be as precise as `Double`.
     var floatIfPresent: Float? {
         get throws {
-            guard let str = try getRawString() else {
-                return nil
+            try withRawBytes { bytes in
+                guard let result = Self.parseFloat(from: bytes) else {
+                    throw CSVError.invalidValueConversion(
+                        message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to Float"
+                    )
+                }
+                return result
             }
-            guard let float = Float(str) else {
-                throw CSVError.invalidValueConversion(message: "Could not convert '\(str)' to Float")
-            }
-            return float
         }
     }
 
@@ -220,16 +367,13 @@ public extension CSVValue {
     /// Accepts "true"/"yes"/"1"/"y" and "false"/"no"/"0"/"n" (case insensitive).
     var boolIfPresent: Bool? {
         get throws {
-            guard let str = try getRawString()?.lowercased() else {
-                return nil
-            }
-            switch str {
-            case "true", "yes", "1", "y":
-                return true
-            case "false", "no", "0", "n":
-                return false
-            default:
-                throw CSVError.invalidValueConversion(message: "Could not convert '\(str)' to Bool")
+            try withRawBytes { bytes in
+                guard let result = Self.parseBool(from: bytes) else {
+                    throw CSVError.invalidValueConversion(
+                        message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to Bool"
+                    )
+                }
+                return result
             }
         }
     }

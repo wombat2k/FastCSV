@@ -1,8 +1,9 @@
 import Foundation
 
 /// Decoder that maps a single CSV row's values to a Decodable type.
-/// Uses a column index map (header name -> array index) for O(1) key lookup,
-/// and delegates type conversion to CSVValue's existing methods.
+/// Uses a column index map (header name -> array index) for O(1) key lookup.
+/// Quote stripping happens here via stringIfPresent — the Decoder's job is to
+/// bridge CSV format conventions to Swift types.
 struct CSVRowDecoder: Decoder {
     let codingPath: [CodingKey] = []
     let userInfo: [CodingUserInfoKey: Any] = [:]
@@ -66,6 +67,12 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
         return decoder.values[index]
     }
 
+    /// Get the quote-stripped string for a key. Returns nil for empty fields.
+    private func stringValue(for key: Key) throws -> String? {
+        let csvValue = try value(for: key)
+        return try csvValue.stringIfPresent(quoteChar: decoder.quoteChar)
+    }
+
     // MARK: - Nil Check
 
     func decodeNil(forKey key: Key) throws -> Bool {
@@ -76,8 +83,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
     // MARK: - String
 
     func decode(_ type: String.Type, forKey key: Key) throws -> String {
-        let csvValue = try value(for: key)
-        guard let result = try csvValue.stringIfPresent(quoteChar: decoder.quoteChar) else {
+        guard let result = try stringValue(for: key) else {
             throw DecodingError.valueNotFound(String.self, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected String but found empty field for '\(key.stringValue)'"
@@ -89,96 +95,83 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
     // MARK: - Bool
 
     func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {
-        let csvValue = try value(for: key)
-        guard let result = try csvValue.boolIfPresent else {
+        guard let str = try stringValue(for: key) else {
             throw DecodingError.valueNotFound(Bool.self, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected Bool but found empty field for '\(key.stringValue)'"
             ))
         }
-        return result
+        switch str.lowercased() {
+        case "true", "yes", "1", "y": return true
+        case "false", "no", "0", "n": return false
+        default:
+            throw DecodingError.typeMismatch(Bool.self, DecodingError.Context(
+                codingPath: [key],
+                debugDescription: "Could not convert '\(str)' to Bool for '\(key.stringValue)'"
+            ))
+        }
     }
 
     // MARK: - Int
 
     func decode(_ type: Int.Type, forKey key: Key) throws -> Int {
-        let csvValue = try value(for: key)
-        guard let result = try csvValue.intIfPresent else {
-            throw DecodingError.valueNotFound(Int.self, DecodingError.Context(
-                codingPath: [key],
-                debugDescription: "Expected Int but found empty field for '\(key.stringValue)'"
-            ))
-        }
-        return result
+        try decodeFromString(key: key)
     }
 
     // MARK: - Double
 
     func decode(_ type: Double.Type, forKey key: Key) throws -> Double {
-        let csvValue = try value(for: key)
-        guard let result = try csvValue.doubleIfPresent else {
-            throw DecodingError.valueNotFound(Double.self, DecodingError.Context(
-                codingPath: [key],
-                debugDescription: "Expected Double but found empty field for '\(key.stringValue)'"
-            ))
-        }
-        return result
+        try decodeFromString(key: key)
     }
 
     // MARK: - Float
 
     func decode(_ type: Float.Type, forKey key: Key) throws -> Float {
-        let csvValue = try value(for: key)
-        guard let result = try csvValue.floatIfPresent else {
-            throw DecodingError.valueNotFound(Float.self, DecodingError.Context(
-                codingPath: [key],
-                debugDescription: "Expected Float but found empty field for '\(key.stringValue)'"
-            ))
-        }
-        return result
+        try decodeFromString(key: key)
     }
 
     // MARK: - Integer Width Variants
 
     func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
-        try decodeIntegerWidth(key: key)
+        try decodeFromString(key: key)
     }
 
     func decode(_ type: Int16.Type, forKey key: Key) throws -> Int16 {
-        try decodeIntegerWidth(key: key)
+        try decodeFromString(key: key)
     }
 
     func decode(_ type: Int32.Type, forKey key: Key) throws -> Int32 {
-        try decodeIntegerWidth(key: key)
+        try decodeFromString(key: key)
     }
 
     func decode(_ type: Int64.Type, forKey key: Key) throws -> Int64 {
-        try decodeIntegerWidth(key: key)
+        try decodeFromString(key: key)
     }
 
     func decode(_ type: UInt.Type, forKey key: Key) throws -> UInt {
-        try decodeIntegerWidth(key: key)
+        try decodeFromString(key: key)
     }
 
     func decode(_ type: UInt8.Type, forKey key: Key) throws -> UInt8 {
-        try decodeIntegerWidth(key: key)
+        try decodeFromString(key: key)
     }
 
     func decode(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 {
-        try decodeIntegerWidth(key: key)
+        try decodeFromString(key: key)
     }
 
     func decode(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 {
-        try decodeIntegerWidth(key: key)
+        try decodeFromString(key: key)
     }
 
     func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 {
-        try decodeIntegerWidth(key: key)
+        try decodeFromString(key: key)
     }
 
-    private func decodeIntegerWidth<T: FixedWidthInteger>(key: Key) throws -> T {
-        let csvValue = try value(for: key)
-        guard let str = try csvValue.stringIfPresent(quoteChar: decoder.quoteChar) else {
+    /// Decode any LosslessStringConvertible type (Int, Double, Float, all integer widths)
+    /// by going through the quote-stripped string.
+    private func decodeFromString<T: LosslessStringConvertible>(key: Key) throws -> T {
+        guard let str = try stringValue(for: key) else {
             throw DecodingError.valueNotFound(T.self, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected \(T.self) but found empty field for '\(key.stringValue)'"
@@ -196,27 +189,37 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
     // MARK: - Generic Decodable
 
     func decode<T: Decodable>(_ type: T.Type, forKey key: Key) throws -> T {
-        // Handle types with direct CSVValue support
+        // Handle types with direct support
         if type == Date.self {
-            let csvValue = try value(for: key)
-            guard let result = try csvValue.dateIfPresent() else {
+            guard let str = try stringValue(for: key) else {
                 throw DecodingError.valueNotFound(Date.self, DecodingError.Context(
                     codingPath: [key],
                     debugDescription: "Expected Date but found empty field for '\(key.stringValue)'"
                 ))
             }
-            return result as! T
+            guard let date = CSVValue.defaultDateFormatter.date(from: str) else {
+                throw DecodingError.typeMismatch(Date.self, DecodingError.Context(
+                    codingPath: [key],
+                    debugDescription: "Could not convert '\(str)' to Date for '\(key.stringValue)'"
+                ))
+            }
+            return date as! T
         }
 
         if type == Decimal.self {
-            let csvValue = try value(for: key)
-            guard let result = try csvValue.decimalIfPresent else {
+            guard let str = try stringValue(for: key) else {
                 throw DecodingError.valueNotFound(Decimal.self, DecodingError.Context(
                     codingPath: [key],
                     debugDescription: "Expected Decimal but found empty field for '\(key.stringValue)'"
                 ))
             }
-            return result as! T
+            guard let decimal = Decimal(string: str) else {
+                throw DecodingError.typeMismatch(Decimal.self, DecodingError.Context(
+                    codingPath: [key],
+                    debugDescription: "Could not convert '\(str)' to Decimal for '\(key.stringValue)'"
+                ))
+            }
+            return decimal as! T
         }
 
         if type == URL.self {
@@ -231,8 +234,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
         }
 
         // Fallback: decode from string value via single-value decoder
-        let csvValue = try value(for: key)
-        guard let str = try csvValue.stringIfPresent(quoteChar: decoder.quoteChar) else {
+        guard let str = try stringValue(for: key) else {
             throw DecodingError.valueNotFound(type, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected \(type) but found empty field for '\(key.stringValue)'"
