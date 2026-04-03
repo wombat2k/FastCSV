@@ -187,10 +187,8 @@ The Decodable layer adds minimal overhead — it wraps the array iterator direct
 **Note**: This project is currently in active development. While all tests pass and core functionality is stable, the API may still change.
 
 ### Upcoming features
-- CSVValue refactor
-- Strict concurrency compliance
-- String input support
 - Performance optimizations
+- Strict concurrency compliance
 
 ## License
 
