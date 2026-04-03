@@ -168,11 +168,7 @@ var people = try FastCSV.makeRows(
 
 ## Performance
 
-FastCSV is optimized for high-throughput scenarios with multiple parser implementations:
-
-- **Dynamic Column Parser**: For files with unknown column counts
-- **Fixed Column Parser**: Optimized when column count is known
-- **Fixed Column No-Quotes Parser**: Maximum performance for quote-free data
+FastCSV is optimized for high-throughput scenarios.
 
 The Decodable layer adds minimal overhead — it wraps the array iterator directly with a pre-built column index map, avoiding the dictionary allocation that the dictionary iterator requires. Only columns matching your struct's properties are decoded.
 
@@ -188,6 +184,7 @@ The Decodable layer adds minimal overhead — it wraps the array iterator direct
 
 ### Upcoming features
 - Performance optimizations
+- Streaming support
 - Strict concurrency compliance
 
 ## License
