@@ -192,6 +192,7 @@ extension FastCSV {
 
         // MARK: - Quote-aware inner loop
 
+        @inline(__always)
         private mutating func parseRowWithQuotes() -> CSVIteratorResult? {
             var inQuote = false
             var currentFieldIndex = 0
@@ -329,6 +330,7 @@ extension FastCSV {
 
         // MARK: - No-quotes inner loop
 
+        @inline(__always)
         private mutating func parseRowNoQuotes() -> CSVIteratorResult? {
             var currentFieldIndex = 0
 
