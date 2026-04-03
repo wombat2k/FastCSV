@@ -3,7 +3,7 @@ import Foundation
 /// This struct controls the delimiters used for parsing CSV files.
 /// It is used by the parser to determine how to split the data.
 /// By default, it is RFC 4180 compliant.
-public struct Delimiter: Sendable {
+public struct Delimiter {
     let row: UInt8
     let field: UInt8
     let quote: UInt8

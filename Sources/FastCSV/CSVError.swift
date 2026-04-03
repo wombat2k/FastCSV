@@ -13,4 +13,6 @@ public enum CSVError: Error {
     case invalidValueConversion(message: String)
     /// Error indicating that the row contains non-fatal errors.
     case rowError(row: Int, message: String)
+    /// Error during CSV writing (file creation failure, state violations, encoding issues).
+    case writeError(message: String)
 }

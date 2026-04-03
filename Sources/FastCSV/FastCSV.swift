@@ -167,4 +167,80 @@ public class FastCSV {
     ) throws -> CSVDecodableIterator<T> {
         try makeRows(type, fromData: Data(string.utf8), hasHeaders: hasHeaders, headers: headers, config: config)
     }
+
+    // MARK: - Writing (Encodable → File)
+
+    /// Write Encodable rows to a file path as CSV.
+    /// Headers are derived automatically from CodingKeys.
+    public static func writeRows<T: Encodable>(
+        _ rows: [T],
+        toPath path: String,
+        config: CSVWriterConfig = CSVWriterConfig()
+    ) throws {
+        try writeRows(rows, toURL: URL(fileURLWithPath: path), config: config)
+    }
+
+    /// Write Encodable rows to a file URL as CSV.
+    /// Headers are derived automatically from CodingKeys.
+    public static func writeRows<T: Encodable>(
+        _ rows: [T],
+        toURL url: URL,
+        config: CSVWriterConfig = CSVWriterConfig()
+    ) throws {
+        let writer = try CSVWriter(toURL: url, config: config)
+        defer { writer.close() }
+        try writer.writeRows(rows)
+    }
+
+    /// Write Encodable rows to a CSV string.
+    /// Headers are derived automatically from CodingKeys.
+    public static func writeString<T: Encodable>(
+        _ rows: [T],
+        config: CSVWriterConfig = CSVWriterConfig()
+    ) throws -> String {
+        let writer = CSVWriter(config: config)
+        try writer.writeRows(rows)
+        return writer.toString()!
+    }
+
+    // MARK: - Writing (String Arrays → File)
+
+    /// Write string array rows to a file path as CSV.
+    public static func writeRows(
+        _ rows: [[String]],
+        headers: [String]? = nil,
+        toPath path: String,
+        config: CSVWriterConfig = CSVWriterConfig()
+    ) throws {
+        try writeRows(rows, headers: headers, toURL: URL(fileURLWithPath: path), config: config)
+    }
+
+    /// Write string array rows to a file URL as CSV.
+    public static func writeRows(
+        _ rows: [[String]],
+        headers: [String]? = nil,
+        toURL url: URL,
+        config: CSVWriterConfig = CSVWriterConfig()
+    ) throws {
+        let writer = try CSVWriter(toURL: url, config: config)
+        defer { writer.close() }
+        if let headers {
+            try writer.writeHeaders(headers)
+        }
+        try writer.writeRows(rows)
+    }
+
+    /// Write string array rows to a CSV string.
+    public static func writeString(
+        _ rows: [[String]],
+        headers: [String]? = nil,
+        config: CSVWriterConfig = CSVWriterConfig()
+    ) throws -> String {
+        let writer = CSVWriter(config: config)
+        if let headers {
+            try writer.writeHeaders(headers)
+        }
+        try writer.writeRows(rows)
+        return writer.toString()!
+    }
 }

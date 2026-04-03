@@ -1,25 +1,32 @@
 # FastCSV
 
-A high-performance CSV parser for Swift
+A high-performance CSV parser and writer for Swift
 
 [![Swift 6](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Overview
 
-FastCSV is a high-performance CSV (Comma-Separated Values) parser written in Swift, designed to efficiently process large CSV files with minimal memory overhead. The library provides streaming capabilities and zero-copy parsing for optimal performance in production environments.
+FastCSV is a high-performance CSV (Comma-Separated Values) parser and writer for Swift. The parser is designed to efficiently process large CSV files with minimal memory overhead through streaming and zero-copy techniques. The writer provides convenient Codable round-tripping — read CSV into structs, transform, write back out.
 
 ## Features
 
+### Reading
 - **Decodable support** — decode CSV rows directly into Swift structs, only materializing the columns you need
-- **High-performance parsing** with specialized parsers for different use cases
-- **Low memory footprint** through streaming and zero-copy techniques
-- **Streaming support** for processing large files without loading entire datasets into memory
+- **High-performance parsing** with zero-copy techniques
+- **Low memory footprint** through chunked streaming — constant memory regardless of file size
 - **Three API tiers** — typed structs via `Decodable`, dictionary access by column name, or raw array iteration
 - **Configurable delimiters** supporting standard CSV, TSV, and custom formats
 - **Quote handling** with optional optimization for quote-free data
 - **Error recovery** allowing processing to continue despite malformed rows
 - **UTF-8 BOM detection** and automatic removal
+
+### Writing
+- **Encodable support** — write Swift structs directly to CSV with automatic header derivation from CodingKeys
+- **RFC 4180 quoting** — fields containing delimiters, quotes, or newlines are quoted automatically
+- **Multiple output targets** — write to file path, URL, or string
+- **Row-by-row or batch** — streaming writes via `CSVWriter` or one-shot via static methods
+- **Round-trip fidelity** — read, transform, and write back with full type preservation
 
 ## Installation
 
@@ -128,9 +135,57 @@ let data = Data(csv.utf8)
 var people = try FastCSV.makeRows(Person.self, fromData: data)
 ```
 
+### Writing CSV (Encodable)
+
+Write an array of `Encodable` structs to CSV. Headers are derived automatically from CodingKeys. Make your structs `Codable` to support both reading and writing:
+
+```swift
+struct Person: Codable {
+    let name: String
+    let age: Int
+}
+
+let people = [
+    Person(name: "Alice", age: 30),
+    Person(name: "Bob", age: 25),
+]
+
+// Write to file
+try FastCSV.writeRows(people, toPath: "output.csv")
+
+// Write to string
+let csv = try FastCSV.writeString(people)
+// "name,age\nAlice,30\nBob,25\n"
+```
+
+Optional fields encode as empty CSV values, bools as `"true"`/`"false"`, dates using the configured formatter (default: `yyyy-MM-dd`).
+
+### Writing CSV (String Arrays)
+
+```swift
+try FastCSV.writeRows(
+    [["Alice", "30"], ["Bob", "25"]],
+    headers: ["name", "age"],
+    toPath: "output.csv"
+)
+```
+
+### Row-by-Row Writing
+
+For streaming writes or when rows are generated incrementally:
+
+```swift
+let writer = try CSVWriter(toPath: "output.csv")
+try writer.writeRow(Person(name: "Alice", age: 30, score: 95.5))
+try writer.writeRow(Person(name: "Bob", age: 25, score: 87.3))
+writer.close()
+```
+
 ### Configuration
 
-All three API tiers accept the same configuration options:
+#### Reading
+
+All three reading API tiers accept the same configuration options:
 
 ```swift
 import FastCSV
@@ -146,6 +201,16 @@ var people = try FastCSV.makeRows(
     fromPath: "data.tsv",
     config: config
 )
+```
+
+#### Writing
+
+```swift
+let config = CSVWriterConfig(
+    delimiter: CSVFormat.tsv.delimiter  // Tab-separated output
+)
+
+try FastCSV.writeRows(people, toPath: "output.tsv", config: config)
 ```
 
 Custom headers can be provided for files without a header row:
@@ -183,9 +248,8 @@ The Decodable layer adds minimal overhead — it wraps the array iterator direct
 **Note**: This project is currently in active development. While all tests pass and core functionality is stable, the API may still change.
 
 ### Upcoming features
-- Performance optimizations
-- Streaming support
-- Strict concurrency compliance
+- Performance optimizations (SIMD exploration)
+- Multi-GB stress testing
 
 ## License
 
