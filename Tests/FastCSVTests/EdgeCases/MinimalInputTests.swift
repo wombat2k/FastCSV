@@ -5,15 +5,15 @@ import Testing
 struct MinimalInputTests {
     // MARK: - Empty Input
 
-    @Test("Empty string throws")
-    func emptyString() throws {
+    @Test
+    func `Empty string throws`() throws {
         #expect(throws: CSVError.self) {
             _ = try FastCSV.makeArrayRows(fromString: "")
         }
     }
 
-    @Test("String with only a newline yields zero data rows")
-    func newlineOnly() throws {
+    @Test
+    func `String with only a newline yields zero data rows`() throws {
         let rows = try FastCSV.makeArrayRows(fromString: "\n")
         var count = 0
         for _ in rows {
@@ -22,8 +22,8 @@ struct MinimalInputTests {
         #expect(count == 0)
     }
 
-    @Test("String with only CRLF yields zero data rows")
-    func cRLFOnly() throws {
+    @Test
+    func `String with only CRLF yields zero data rows`() throws {
         let rows = try FastCSV.makeArrayRows(fromString: "\r\n")
         var count = 0
         for _ in rows {
@@ -34,8 +34,8 @@ struct MinimalInputTests {
 
     // MARK: - Header-Only
 
-    @Test("Header-only yields zero data rows (array)")
-    func headerOnlyArray() throws {
+    @Test
+    func `Header-only yields zero data rows (array)`() throws {
         let rows = try FastCSV.makeArrayRows(fromString: "name,age,city\n")
         var count = 0
         for _ in rows {
@@ -44,8 +44,8 @@ struct MinimalInputTests {
         #expect(count == 0)
     }
 
-    @Test("Header-only yields zero data rows (dictionary)")
-    func headerOnlyDictionary() throws {
+    @Test
+    func `Header-only yields zero data rows (dictionary)`() throws {
         let rows = try FastCSV.makeDictionaryRows(fromString: "name,age,city\n")
         var count = 0
         for _ in rows {
@@ -54,8 +54,8 @@ struct MinimalInputTests {
         #expect(count == 0)
     }
 
-    @Test("Header-only without trailing newline yields zero data rows")
-    func headerOnlyNoTrailingNewline() throws {
+    @Test
+    func `Header-only without trailing newline yields zero data rows`() throws {
         let rows = try FastCSV.makeArrayRows(fromString: "name,age,city")
         var count = 0
         for _ in rows {
@@ -66,8 +66,8 @@ struct MinimalInputTests {
 
     // MARK: - Single Data Row
 
-    @Test("Single row with headers (array)")
-    func singleRowWithHeadersArray() throws {
+    @Test
+    func `Single row with headers (array)`() throws {
         let rows = try FastCSV.makeArrayRows(fromString: "name,age\nAlice,30\n")
         var results: [CSVArrayResult] = []
         for result in rows {
@@ -80,8 +80,8 @@ struct MinimalInputTests {
         #expect(try results[0].values[1].stringIfPresent() == "30")
     }
 
-    @Test("Single row with headers (dictionary)")
-    func singleRowWithHeadersDictionary() throws {
+    @Test
+    func `Single row with headers (dictionary)`() throws {
         let rows = try FastCSV.makeDictionaryRows(fromString: "name,age\nAlice,30\n")
         var results: [CSVDictionaryResult] = []
         for result in rows {
@@ -94,8 +94,8 @@ struct MinimalInputTests {
         #expect(try results[0].values["age"]?.stringIfPresent() == "30")
     }
 
-    @Test("Single row without headers")
-    func singleRowNoHeaders() throws {
+    @Test
+    func `Single row without headers`() throws {
         let rows = try FastCSV.makeArrayRows(fromString: "Alice,30\n", hasHeaders: false)
         var results: [CSVArrayResult] = []
         for result in rows {
@@ -108,8 +108,8 @@ struct MinimalInputTests {
         #expect(try results[0].values[1].stringIfPresent() == "30")
     }
 
-    @Test("Single row without trailing newline")
-    func singleRowNoTrailingNewline() throws {
+    @Test
+    func `Single row without trailing newline`() throws {
         let rows = try FastCSV.makeArrayRows(fromString: "name,age\nAlice,30")
         var results: [CSVArrayResult] = []
         for result in rows {

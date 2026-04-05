@@ -2,6 +2,15 @@
 import Foundation
 import Testing
 
+/// Unwrap the next row from a Decodable iterator, failing the test if no row exists.
+func requireNext<T: Decodable>(_ rows: inout FastCSV.CSVDecodableIterator<T>) throws -> T {
+    guard let result = rows.next() else {
+        Issue.record("Expected a row but iterator was exhausted")
+        throw CSVError.invalidCSV(message: "No row")
+    }
+    return try result.get()
+}
+
 /// A base test suite for testing the FastCSV parser
 enum TestUtils {
     /// Output format for testing
@@ -32,7 +41,7 @@ enum TestUtils {
     static func createTemporaryCSVFile(
         headers: [String] = [],
         rows: [[String]] = [[]],
-        config: CSVParserConfig = CSVParserConfig()
+        config: CSVParserConfig = CSVParserConfig(),
     ) throws -> URL {
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("test_\(UUID().uuidString).csv")
@@ -74,7 +83,7 @@ enum TestUtils {
         config: CSVParserConfig? = nil,
         outputFormat: OutputFormat = .array,
         expectThrow: CSVError? = nil,
-        validate: ([T]) throws -> Void
+        validate: ([T]) throws -> Void,
     ) async throws {
         let actualConfig = config ?? CSVParserConfig()
         let fileURL = try createTemporaryCSVFile(headers: contentHeaders, rows: contentRows, config: actualConfig)
@@ -140,11 +149,11 @@ enum TestUtils {
     }
 
     static func createHeaders(count: Int) -> [String] {
-        return (1 ..< count + 1).map { "header\($0)" }
+        (1 ..< count + 1).map { "header\($0)" }
     }
 
     static func createValues(rows: Int, columns: Int) -> [[String]] {
-        return (1 ..< rows + 1).map { row in
+        (1 ..< rows + 1).map { row in
             (1 ..< columns + 1).map { column in
                 "row\(row)_col\(column)"
             }
@@ -160,15 +169,15 @@ enum TestUtils {
     static func createCSVValue(from bytes: [UInt8], source: SourceType = .own) -> CSVValue {
         switch source {
         case .none:
-            return CSVValue(buffer: nil)
+            CSVValue(buffer: nil)
 
         case .ref:
-            return bytes.withUnsafeBufferPointer { buffer in
+            bytes.withUnsafeBufferPointer { buffer in
                 CSVValue(buffer: buffer)
             }
 
         case .own:
-            return CSVValue(bytes: bytes)
+            CSVValue(bytes: bytes)
         }
     }
 }
@@ -184,6 +193,6 @@ struct ParserTestError: Error, CustomStringConvertible {
     let message: String
 
     var description: String {
-        return message
+        message
     }
 }

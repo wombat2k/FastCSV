@@ -15,7 +15,7 @@ extension FastCSV {
                 reader: reader,
                 delimiter: config.delimiter,
                 readBufferSize: config.readBufferSize,
-                noQuotes: config.assumeNoQuotes
+                noQuotes: config.assumeNoQuotes,
             )
             parser = result.parser
             firstRow = result.firstRow
@@ -23,7 +23,7 @@ extension FastCSV {
 
         /// Get the next row of CSV data (starts at row 2; row 1 is available via `firstRow`)
         mutating func next() -> CSVIteratorResult? {
-            return parser.parseNextRow()
+            parser.parseNextRow()
         }
 
         /// Cleans up the parser and releases any resources it holds.

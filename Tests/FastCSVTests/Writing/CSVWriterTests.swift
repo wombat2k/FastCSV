@@ -29,86 +29,86 @@ private struct WithDate: Codable, Equatable {
 // MARK: - String Array Writing
 
 struct CSVWriterTests {
-    @Test("Write string array rows with headers")
-    func writeStringArrayWithHeaders() throws {
+    @Test
+    func `Write string array rows with headers`() throws {
         let csv = try FastCSV.writeString(
             [["Alice", "30", "95.5"], ["Bob", "25", "87.3"]],
-            headers: ["name", "age", "score"]
+            headers: ["name", "age", "score"],
         )
         #expect(csv == "name,age,score\nAlice,30,95.5\nBob,25,87.3\n")
     }
 
-    @Test("Write string array rows without headers")
-    func writeStringArrayNoHeaders() throws {
+    @Test
+    func `Write string array rows without headers`() throws {
         let csv = try FastCSV.writeString(
-            [["Alice", "30"], ["Bob", "25"]]
+            [["Alice", "30"], ["Bob", "25"]],
         )
         #expect(csv == "Alice,30\nBob,25\n")
     }
 
-    @Test("Write empty rows with headers")
-    func writeEmptyRowsWithHeaders() throws {
+    @Test
+    func `Write empty rows with headers`() throws {
         let writer = CSVWriter()
         try writer.writeHeaders(["name", "age"])
         let csv = try #require(writer.toString())
         #expect(csv == "name,age\n")
     }
 
-    @Test("Write empty Encodable array produces empty string")
-    func writeEmptyEncodableArray() throws {
+    @Test
+    func `Write empty Encodable array produces empty string`() throws {
         let csv = try FastCSV.writeString([Person]())
         #expect(csv == "")
     }
 
     // MARK: - Quoting
 
-    @Test("Field containing delimiter is quoted")
-    func quoteFieldWithDelimiter() throws {
+    @Test
+    func `Field containing delimiter is quoted`() throws {
         let csv = try FastCSV.writeString(
             [["Alice, Jr.", "30"]],
-            headers: ["name", "age"]
+            headers: ["name", "age"],
         )
         #expect(csv == "name,age\n\"Alice, Jr.\",30\n")
     }
 
-    @Test("Field containing quote is quoted and escaped")
-    func quoteFieldWithQuote() throws {
+    @Test
+    func `Field containing quote is quoted and escaped`() throws {
         let csv = try FastCSV.writeString(
             [["She said \"hello\"", "30"]],
-            headers: ["name", "age"]
+            headers: ["name", "age"],
         )
         #expect(csv == "name,age\n\"She said \"\"hello\"\"\",30\n")
     }
 
-    @Test("Field containing newline is quoted")
-    func quoteFieldWithNewline() throws {
+    @Test
+    func `Field containing newline is quoted`() throws {
         let csv = try FastCSV.writeString(
             [["line1\nline2", "30"]],
-            headers: ["name", "age"]
+            headers: ["name", "age"],
         )
         #expect(csv == "name,age\n\"line1\nline2\",30\n")
     }
 
-    @Test("Field containing carriage return is quoted")
-    func quoteFieldWithCR() throws {
+    @Test
+    func `Field containing carriage return is quoted`() throws {
         let csv = try FastCSV.writeString(
-            [["line1\rline2", "30"]]
+            [["line1\rline2", "30"]],
         )
         #expect(csv == "\"line1\rline2\",30\n")
     }
 
-    @Test("Plain field is not quoted")
-    func plainFieldNotQuoted() throws {
+    @Test
+    func `Plain field is not quoted`() throws {
         let csv = try FastCSV.writeString(
-            [["Alice", "30"]]
+            [["Alice", "30"]],
         )
         #expect(csv == "Alice,30\n")
     }
 
     // MARK: - Encodable Writing
 
-    @Test("Encodable rows with auto headers")
-    func encodableAutoHeaders() throws {
+    @Test
+    func `Encodable rows with auto headers`() throws {
         let people = [
             Person(name: "Alice", age: 30, score: 95.5),
             Person(name: "Bob", age: 25, score: 87.3),
@@ -117,8 +117,8 @@ struct CSVWriterTests {
         #expect(csv == "name,age,score\nAlice,30,95.5\nBob,25,87.3\n")
     }
 
-    @Test("Bool encoding as true/false")
-    func boolEncoding() throws {
+    @Test
+    func `Bool encoding as true/false`() throws {
         let employees = [
             Employee(name: "Alice", active: true, salary: 75000),
             Employee(name: "Bob", active: false, salary: 65000),
@@ -128,8 +128,8 @@ struct CSVWriterTests {
         #expect(csv.contains("false"))
     }
 
-    @Test("Decimal encoding")
-    func decimalEncoding() throws {
+    @Test
+    func `Decimal encoding`() throws {
         let employees = try [
             Employee(name: "Alice", active: true, salary: #require(Decimal(string: "75000.50"))),
         ]
@@ -137,8 +137,8 @@ struct CSVWriterTests {
         #expect(csv.contains("75000.5"))
     }
 
-    @Test("Optional nil becomes empty field")
-    func optionalNilEncoding() throws {
+    @Test
+    func `Optional nil becomes empty field`() throws {
         let items = [
             WithOptional(name: "Alice", nickname: nil),
             WithOptional(name: "Bob", nickname: "Bobby"),
@@ -147,15 +147,15 @@ struct CSVWriterTests {
         #expect(csv == "name,nickname\nAlice,\nBob,Bobby\n")
     }
 
-    @Test("Optional with value encodes normally")
-    func optionalValueEncoding() throws {
+    @Test
+    func `Optional with value encodes normally`() throws {
         let items = [WithOptional(name: "Alice", nickname: "Ali")]
         let csv = try FastCSV.writeString(items)
         #expect(csv == "name,nickname\nAlice,Ali\n")
     }
 
-    @Test("Date encoding with default formatter")
-    func dateDefaultFormatter() throws {
+    @Test
+    func `Date encoding with default formatter`() throws {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = TimeZone(identifier: "UTC")
@@ -169,23 +169,23 @@ struct CSVWriterTests {
 
     // MARK: - Custom Delimiters
 
-    @Test("TSV output")
-    func tsvOutput() throws {
+    @Test
+    func `TSV output`() throws {
         let config = CSVWriterConfig(delimiter: CSVFormat.tsv.delimiter)
         let csv = try FastCSV.writeString(
             [["Alice", "30"], ["Bob", "25"]],
             headers: ["name", "age"],
-            config: config
+            config: config,
         )
         #expect(csv == "name\tage\nAlice\t30\nBob\t25\n")
     }
 
-    @Test("TSV with embedded commas not quoted")
-    func tsvCommasNotQuoted() throws {
+    @Test
+    func `TSV with embedded commas not quoted`() throws {
         let config = CSVWriterConfig(delimiter: CSVFormat.tsv.delimiter)
         let csv = try FastCSV.writeString(
             [["Alice, Jr.", "30"]],
-            config: config
+            config: config,
         )
         // Commas don't need quoting in TSV — only tabs would
         #expect(csv == "Alice, Jr.\t30\n")
@@ -193,8 +193,8 @@ struct CSVWriterTests {
 
     // MARK: - CSVWriter Class
 
-    @Test("CSVWriter row-by-row writing")
-    func writerRowByRow() throws {
+    @Test
+    func `CSVWriter row-by-row writing`() throws {
         let writer = CSVWriter()
         try writer.writeHeaders(["a", "b"])
         try writer.writeRow(["1", "2"])
@@ -203,8 +203,8 @@ struct CSVWriterTests {
         #expect(csv == "a,b\n1,2\n3,4\n")
     }
 
-    @Test("CSVWriter Encodable row-by-row")
-    func writerEncodableRowByRow() throws {
+    @Test
+    func `CSVWriter Encodable row-by-row`() throws {
         let writer = CSVWriter()
         try writer.writeRow(Person(name: "Alice", age: 30, score: 95.5))
         try writer.writeRow(Person(name: "Bob", age: 25, score: 87.3))
@@ -212,8 +212,8 @@ struct CSVWriterTests {
         #expect(csv == "name,age,score\nAlice,30,95.5\nBob,25,87.3\n")
     }
 
-    @Test("Headers written twice throws")
-    func headersWrittenTwiceThrows() throws {
+    @Test
+    func `Headers written twice throws`() throws {
         let writer = CSVWriter()
         try writer.writeHeaders(["a", "b"])
         #expect(throws: CSVError.self) {
@@ -223,8 +223,8 @@ struct CSVWriterTests {
 
     // MARK: - File Output
 
-    @Test("Write to file and read back")
-    func writeToFile() throws {
+    @Test
+    func `Write to file and read back`() throws {
         let url = FileManager.default.temporaryDirectory
             .appending(path: "test_write_\(UUID().uuidString).csv")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -242,8 +242,8 @@ struct CSVWriterTests {
 
     // MARK: - Round-Trip
 
-    @Test("Full round-trip: write → read → compare")
-    func roundTrip() throws {
+    @Test
+    func `Full round-trip: write → read → compare`() throws {
         let original = [
             Person(name: "Alice", age: 30, score: 95.5),
             Person(name: "Bob", age: 25, score: 87.3),
@@ -268,8 +268,8 @@ struct CSVWriterTests {
         #expect(decoded == original)
     }
 
-    @Test("Round-trip with quoting: commas in fields survive")
-    func roundTripWithQuoting() throws {
+    @Test
+    func `Round-trip with quoting: commas in fields survive`() throws {
         let original = [
             Person(name: "Smith, Alice", age: 30, score: 95.5),
         ]
@@ -291,8 +291,8 @@ struct CSVWriterTests {
         #expect(decoded == original)
     }
 
-    @Test("Round-trip with optional nil")
-    func roundTripOptionalNil() throws {
+    @Test
+    func `Round-trip with optional nil`() throws {
         let original = [
             WithOptional(name: "Alice", nickname: nil),
             WithOptional(name: "Bob", nickname: "Bobby"),
@@ -314,8 +314,8 @@ struct CSVWriterTests {
         #expect(decoded == original)
     }
 
-    @Test("Round-trip with bool")
-    func roundTripBool() throws {
+    @Test
+    func `Round-trip with bool`() throws {
         let original = [
             Employee(name: "Alice", active: true, salary: 75000),
             Employee(name: "Bob", active: false, salary: 65000),
@@ -337,8 +337,8 @@ struct CSVWriterTests {
         #expect(decoded == original)
     }
 
-    @Test("Round-trip with embedded quotes")
-    func roundTripEmbeddedQuotes() throws {
+    @Test
+    func `Round-trip with embedded quotes`() throws {
         let original = [
             Person(name: "She said \"hello\"", age: 30, score: 95.5),
         ]

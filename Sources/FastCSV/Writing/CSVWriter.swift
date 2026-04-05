@@ -89,7 +89,7 @@ public final class CSVWriter {
 
     /// Write a single Encodable value as a CSV row.
     /// On the first call, CodingKeys define column order and headers are emitted automatically.
-    public func writeRow<T: Encodable>(_ value: T) throws {
+    public func writeRow(_ value: some Encodable) throws {
         let storage = try encodeToStorage(value)
 
         if columnOrder == nil {
@@ -109,7 +109,7 @@ public final class CSVWriter {
     }
 
     /// Write multiple Encodable values.
-    public func writeRows<T: Encodable>(_ values: [T]) throws {
+    public func writeRows(_ values: [some Encodable]) throws {
         for value in values {
             try writeRow(value)
         }
@@ -129,7 +129,7 @@ public final class CSVWriter {
 
     // MARK: - Internal
 
-    private func encodeToStorage<T: Encodable>(_ value: T) throws -> EncodedRowStorage {
+    private func encodeToStorage(_ value: some Encodable) throws -> EncodedRowStorage {
         let storage = EncodedRowStorage(config: config)
         let encoder = CSVRowEncoder(storage: storage)
         try value.encode(to: encoder)

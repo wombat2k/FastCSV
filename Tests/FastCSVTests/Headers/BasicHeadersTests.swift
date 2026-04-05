@@ -3,8 +3,8 @@ import Foundation
 import Testing
 
 struct HeaderTests {
-    @Test("Array with headers before parsing")
-    func testHeaders() throws {
+    @Test
+    func `Array with headers before parsing`() throws {
         let csvRows = try FastCSV.makeDictionaryRows(fromString: "header1,header2,header3\nval1,val2,val3\n")
 
         let resultHeaders = csvRows.headers
@@ -15,8 +15,8 @@ struct HeaderTests {
         #expect(resultHeaders[2] == "header3")
     }
 
-    @Test("Headers after parsing")
-    func headersAfterParsing() throws {
+    @Test
+    func `Headers after parsing`() throws {
         let csvRows = try FastCSV.makeDictionaryRows(fromString: "header1,header2,header3\nval1,val2,val3\n")
 
         for _ in csvRows {}
@@ -29,8 +29,8 @@ struct HeaderTests {
         #expect(resultHeaders[2] == "header3")
     }
 
-    @Test("Headers with BOM")
-    func headersWithBOM() throws {
+    @Test
+    func `Headers with BOM`() throws {
         let csvRows = try FastCSV.makeDictionaryRows(fromString: "\u{FEFF}header1,header2,header3\nval1,val2,val3\n")
 
         let resultHeaders = csvRows.headers
@@ -41,12 +41,12 @@ struct HeaderTests {
         #expect(resultHeaders[2] == "header3")
     }
 
-    @Test("No headers, first row with BOM")
-    func noHeadersWithBOM() throws {
+    @Test
+    func `No headers, first row with BOM`() throws {
         let rows = try FastCSV.makeArrayRows(
             fromString: "\u{FEFF}row1_col1,row1_col2,row1_col3\n",
             hasHeaders: false,
-            headers: ["h1", "h2", "h3"]
+            headers: ["h1", "h2", "h3"],
         )
 
         var results: [CSVArrayResult] = []

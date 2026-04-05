@@ -42,7 +42,7 @@ try rows.forEach { route in
         year: String(parts[2]),
         month: String(parts[0]),
         avgWeekdayRides: route.avgWeekdayRides,
-        monthTotal: route.monthTotal
+        monthTotal: route.monthTotal,
     ))
 }
 

@@ -5,8 +5,8 @@ import Testing
 struct CustomDelimiterTests {
     // MARK: - Tab-Separated Values
 
-    @Test("TSV basic parsing")
-    func tSVBasic() throws {
+    @Test
+    func `TSV basic parsing`() throws {
         let config = CSVParserConfig(delimiter: CSVFormat.tsv.delimiter)
         let rows = try FastCSV.makeDictionaryRows(fromString: "name\tage\tcity\nAlice\t30\tBoston\nBob\t25\tAustin\n", config: config)
         var results: [CSVDictionaryResult] = []
@@ -20,8 +20,8 @@ struct CustomDelimiterTests {
         #expect(try results[1].values["city"]?.stringIfPresent() == "Austin")
     }
 
-    @Test("TSV with embedded commas (commas are literal, not delimiters)")
-    func tSVEmbeddedCommas() throws {
+    @Test
+    func `TSV with embedded commas (commas are literal, not delimiters)`() throws {
         let config = CSVParserConfig(delimiter: CSVFormat.tsv.delimiter)
         let rows = try FastCSV.makeDictionaryRows(fromString: "name\taddress\nAlice\t\"123 Main St, Boston\"\n", config: config)
         var results: [CSVDictionaryResult] = []
@@ -34,8 +34,8 @@ struct CustomDelimiterTests {
         #expect(try results[0].values["address"]?.stringIfPresent() == "123 Main St, Boston")
     }
 
-    @Test("TSV with empty fields")
-    func tSVEmptyFields() throws {
+    @Test
+    func `TSV with empty fields`() throws {
         let config = CSVParserConfig(delimiter: CSVFormat.tsv.delimiter)
         let rows = try FastCSV.makeArrayRows(fromString: "a\tb\tc\n\tmiddle\t\n", config: config)
         var results: [CSVArrayResult] = []
@@ -52,8 +52,8 @@ struct CustomDelimiterTests {
 
     // MARK: - Semicolon-Separated Values
 
-    @Test("Semicolon-separated basic parsing")
-    func semicolonBasic() throws {
+    @Test
+    func `Semicolon-separated basic parsing`() throws {
         let config = CSVParserConfig(delimiter: CSVFormat.semiColonSeparated.delimiter)
         let rows = try FastCSV.makeDictionaryRows(fromString: "name;age;city\nAlice;30;Boston\n", config: config)
         var results: [CSVDictionaryResult] = []
@@ -67,8 +67,8 @@ struct CustomDelimiterTests {
         #expect(try results[0].values["age"]?.stringIfPresent() == "30")
     }
 
-    @Test("Semicolon-separated with embedded commas and semicolons in quotes")
-    func semicolonQuotedDelimiters() throws {
+    @Test
+    func `Semicolon-separated with embedded commas and semicolons in quotes`() throws {
         let config = CSVParserConfig(delimiter: CSVFormat.semiColonSeparated.delimiter)
         let rows = try FastCSV.makeDictionaryRows(fromString: "name;note\nAlice;\"has; semicolons, and commas\"\n", config: config)
         var results: [CSVDictionaryResult] = []
@@ -83,8 +83,8 @@ struct CustomDelimiterTests {
 
     // MARK: - Pipe-Separated (Custom)
 
-    @Test("Pipe-separated basic parsing")
-    func pipeSeparated() throws {
+    @Test
+    func `Pipe-separated basic parsing`() throws {
         let config = CSVParserConfig(delimiter: Delimiter(field: UInt8(ascii: "|")))
         let rows = try FastCSV.makeDictionaryRows(fromString: "name|age|city\nAlice|30|Boston\nBob|25|Austin\n", config: config)
         var results: [CSVDictionaryResult] = []
@@ -98,8 +98,8 @@ struct CustomDelimiterTests {
         #expect(try results[1].values["city"]?.stringIfPresent() == "Austin")
     }
 
-    @Test("Pipe-separated with commas and tabs in data (literal, not delimiters)")
-    func pipeLiteralCommasAndTabs() throws {
+    @Test
+    func `Pipe-separated with commas and tabs in data (literal, not delimiters)`() throws {
         let config = CSVParserConfig(delimiter: Delimiter(field: UInt8(ascii: "|")))
         let rows = try FastCSV.makeArrayRows(fromString: "col1|col2\nhello, world|tab\there\n", config: config)
         var results: [CSVArrayResult] = []
@@ -115,8 +115,8 @@ struct CustomDelimiterTests {
 
     // MARK: - Custom Quote Character
 
-    @Test("Single-quote as quote delimiter")
-    func singleQuoteDelimiter() throws {
+    @Test
+    func `Single-quote as quote delimiter`() throws {
         let config = CSVParserConfig(delimiter: Delimiter(quote: UInt8(ascii: "'")))
         let rows = try FastCSV.makeDictionaryRows(fromString: "name,note\nAlice,'has, commas'\n", config: config)
         var results: [CSVDictionaryResult] = []
@@ -131,8 +131,8 @@ struct CustomDelimiterTests {
 
     // MARK: - File I/O Helper
 
-    @Test("createTemporaryCSVFile respects custom delimiters")
-    func helperWithCustomDelimiters() async throws {
+    @Test
+    func `createTemporaryCSVFile respects custom delimiters`() async throws {
         let delimiter = Delimiter(field: UInt8(ascii: "|"))
         let config = CSVParserConfig(delimiter: delimiter)
 
@@ -147,14 +147,14 @@ struct CustomDelimiterTests {
                 #expect(TestUtils.isErrorFree(arrayResult: results))
                 let name = try results[0].values[0].stringIfPresent()
                 #expect(name == "Alice")
-            }
+            },
         )
     }
 
     // MARK: - String and Character Initializers
 
-    @Test("String initializer with valid single-character delimiters")
-    func stringInitializerValid() throws {
+    @Test
+    func `String initializer with valid single-character delimiters`() throws {
         let delimiter = try Delimiter(row: "\n", field: ",", quote: "\"")
 
         #expect(delimiter.rowByte == UInt8(ascii: "\n"))
@@ -162,8 +162,8 @@ struct CustomDelimiterTests {
         #expect(delimiter.quoteByte == UInt8(ascii: "\""))
     }
 
-    @Test("Character initializer with valid single-character delimiters")
-    func characterInitializerValid() throws {
+    @Test
+    func `Character initializer with valid single-character delimiters`() throws {
         let delimiter = try Delimiter(row: Character("\n"), field: Character(","), quote: Character("\""))
 
         #expect(delimiter.rowByte == UInt8(ascii: "\n"))
@@ -173,8 +173,8 @@ struct CustomDelimiterTests {
 
     // MARK: - Invalid Delimiter Tests
 
-    @Test("String initializer with invalid multi-character delimiters")
-    func stringInitializerInvalidMultiCharacter() throws {
+    @Test
+    func `String initializer with invalid multi-character delimiters`() throws {
         #expect(throws: CSVError.self) {
             _ = try Delimiter(row: "\n\n", field: ",", quote: "\"")
         }
@@ -186,8 +186,8 @@ struct CustomDelimiterTests {
         }
     }
 
-    @Test("String initializer with invalid non-ASCII delimiters")
-    func stringInitializerInvalidNonASCII() throws {
+    @Test
+    func `String initializer with invalid non-ASCII delimiters`() throws {
         #expect(throws: CSVError.self) {
             _ = try Delimiter(row: "😀", field: ",", quote: "\"")
         }
@@ -199,8 +199,8 @@ struct CustomDelimiterTests {
         }
     }
 
-    @Test("Character initializer with invalid non-ASCII delimiters")
-    func characterInitializerInvalidNonASCII() throws {
+    @Test
+    func `Character initializer with invalid non-ASCII delimiters`() throws {
         #expect(throws: CSVError.self) {
             _ = try Delimiter(row: Character("😀"), field: Character(","), quote: Character("\""))
         }
@@ -212,8 +212,8 @@ struct CustomDelimiterTests {
         }
     }
 
-    @Test("String initializer with empty string delimiters")
-    func stringInitializerEmpty() throws {
+    @Test
+    func `String initializer with empty string delimiters`() throws {
         #expect(throws: CSVError.self) {
             _ = try Delimiter(row: "", field: ",", quote: "\"")
         }
@@ -225,8 +225,8 @@ struct CustomDelimiterTests {
         }
     }
 
-    @Test("Default string initializer produces expected delimiters")
-    func defaultInitializer() throws {
+    @Test
+    func `Default string initializer produces expected delimiters`() throws {
         let rowProvided = try Delimiter(row: "\t")
         #expect(rowProvided.fieldByte == UInt8(ascii: ","))
         #expect(rowProvided.quoteByte == UInt8(ascii: "\""))
@@ -240,8 +240,8 @@ struct CustomDelimiterTests {
         #expect(quoteProvided.fieldByte == UInt8(ascii: ","))
     }
 
-    @Test("Default character initializer produces expected delimiters")
-    func defaultCharacterInitializer() throws {
+    @Test
+    func `Default character initializer produces expected delimiters`() throws {
         let rowProvided = try Delimiter(row: Character("\t"))
         #expect(rowProvided.fieldByte == UInt8(ascii: ","))
         #expect(rowProvided.quoteByte == UInt8(ascii: "\""))

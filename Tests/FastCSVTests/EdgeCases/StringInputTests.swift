@@ -10,8 +10,8 @@ private struct Person: Decodable, Equatable {
 struct StringInputTests {
     // MARK: - String Input
 
-    @Test("Array rows from string")
-    func arrayRowsFromString() throws {
+    @Test
+    func `Array rows from string`() throws {
         let rows = try FastCSV.makeArrayRows(fromString: "name,age\nAlice,30\nBob,25\n")
         var results: [CSVArrayResult] = []
         for result in rows {
@@ -24,8 +24,8 @@ struct StringInputTests {
         #expect(try results[1].values[0].string == "Bob")
     }
 
-    @Test("Dictionary rows from string")
-    func dictionaryRowsFromString() throws {
+    @Test
+    func `Dictionary rows from string`() throws {
         let rows = try FastCSV.makeDictionaryRows(fromString: "name,age\nAlice,30\n")
         var results: [CSVDictionaryResult] = []
         for result in rows {
@@ -37,8 +37,8 @@ struct StringInputTests {
         #expect(try results[0].values["age"]?.string == "30")
     }
 
-    @Test("Decodable rows from string")
-    func decodableRowsFromString() throws {
+    @Test
+    func `Decodable rows from string`() throws {
         var people = try FastCSV.makeRows(Person.self, fromString: "name,age\nAlice,30\nBob,25\n")
         var results: [Person] = []
         try people.forEach { results.append($0) }
@@ -46,13 +46,13 @@ struct StringInputTests {
         #expect(results == [Person(name: "Alice", age: 30), Person(name: "Bob", age: 25)])
     }
 
-    @Test("String input with custom headers")
-    func stringInputCustomHeaders() throws {
+    @Test
+    func `String input with custom headers`() throws {
         var people = try FastCSV.makeRows(
             Person.self,
             fromString: "Alice,30\nBob,25\n",
             hasHeaders: false,
-            headers: ["name", "age"]
+            headers: ["name", "age"],
         )
         var results: [Person] = []
         try people.forEach { results.append($0) }
@@ -60,8 +60,8 @@ struct StringInputTests {
         #expect(results == [Person(name: "Alice", age: 30), Person(name: "Bob", age: 25)])
     }
 
-    @Test("String input with quoted fields")
-    func stringInputQuotedFields() throws {
+    @Test
+    func `String input with quoted fields`() throws {
         var people = try FastCSV.makeRows(Person.self, fromString: "name,age\n\"Alice, Jr.\",30\n")
         var results: [Person] = []
         try people.forEach { results.append($0) }
@@ -69,8 +69,8 @@ struct StringInputTests {
         #expect(results[0].name == "Alice, Jr.")
     }
 
-    @Test("Empty string throws")
-    func emptyStringThrows() throws {
+    @Test
+    func `Empty string throws`() throws {
         #expect(throws: CSVError.self) {
             try FastCSV.makeArrayRows(fromString: "")
         }
@@ -78,8 +78,8 @@ struct StringInputTests {
 
     // MARK: - Data Input
 
-    @Test("Array rows from data")
-    func arrayRowsFromData() throws {
+    @Test
+    func `Array rows from data`() throws {
         let data = Data("name,age\nAlice,30\n".utf8)
         let rows = try FastCSV.makeArrayRows(fromData: data)
         var results: [CSVArrayResult] = []
@@ -92,8 +92,8 @@ struct StringInputTests {
         #expect(try results[0].values[1].string == "30")
     }
 
-    @Test("Decodable rows from data")
-    func decodableRowsFromData() throws {
+    @Test
+    func `Decodable rows from data`() throws {
         let data = Data("name,age\nAlice,30\nBob,25\n".utf8)
         var people = try FastCSV.makeRows(Person.self, fromData: data)
         var results: [Person] = []
@@ -102,8 +102,8 @@ struct StringInputTests {
         #expect(results == [Person(name: "Alice", age: 30), Person(name: "Bob", age: 25)])
     }
 
-    @Test("Empty data throws")
-    func emptyDataThrows() throws {
+    @Test
+    func `Empty data throws`() throws {
         #expect(throws: CSVError.self) {
             try FastCSV.makeArrayRows(fromData: Data())
         }
@@ -111,13 +111,13 @@ struct StringInputTests {
 
     // MARK: - TSV from String
 
-    @Test("TSV from string")
-    func tsvFromString() throws {
+    @Test
+    func `TSV from string`() throws {
         let tsvConfig = CSVParserConfig(delimiter: Delimiter(field: UInt8(ascii: "\t")))
         var people = try FastCSV.makeRows(
             Person.self,
             fromString: "name\tage\nAlice\t30\n",
-            config: tsvConfig
+            config: tsvConfig,
         )
         var results: [Person] = []
         try people.forEach { results.append($0) }

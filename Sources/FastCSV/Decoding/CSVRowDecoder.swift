@@ -20,8 +20,8 @@ struct CSVRowDecoder: Decoder {
         throw DecodingError.dataCorrupted(
             DecodingError.Context(
                 codingPath: codingPath,
-                debugDescription: "CSV rows do not support unkeyed decoding"
-            )
+                debugDescription: "CSV rows do not support unkeyed decoding",
+            ),
         )
     }
 
@@ -29,8 +29,8 @@ struct CSVRowDecoder: Decoder {
         throw DecodingError.dataCorrupted(
             DecodingError.Context(
                 codingPath: codingPath,
-                debugDescription: "CSV rows do not support single value decoding"
-            )
+                debugDescription: "CSV rows do not support single value decoding",
+            ),
         )
     }
 }
@@ -55,13 +55,13 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
         guard let index = decoder.columnIndexMap[key.stringValue] else {
             throw DecodingError.keyNotFound(key, DecodingError.Context(
                 codingPath: [key],
-                debugDescription: "No column named '\(key.stringValue)' found in CSV headers"
+                debugDescription: "No column named '\(key.stringValue)' found in CSV headers",
             ))
         }
         guard index < decoder.values.count else {
             throw DecodingError.keyNotFound(key, DecodingError.Context(
                 codingPath: [key],
-                debugDescription: "Column '\(key.stringValue)' at index \(index) is out of bounds for row with \(decoder.values.count) fields"
+                debugDescription: "Column '\(key.stringValue)' at index \(index) is out of bounds for row with \(decoder.values.count) fields",
             ))
         }
         return decoder.values[index]
@@ -86,7 +86,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
         guard let result = try stringValue(for: key) else {
             throw DecodingError.valueNotFound(String.self, DecodingError.Context(
                 codingPath: [key],
-                debugDescription: "Expected String but found empty field for '\(key.stringValue)'"
+                debugDescription: "Expected String but found empty field for '\(key.stringValue)'",
             ))
         }
         return result
@@ -98,7 +98,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
         guard let str = try stringValue(for: key) else {
             throw DecodingError.valueNotFound(Bool.self, DecodingError.Context(
                 codingPath: [key],
-                debugDescription: "Expected Bool but found empty field for '\(key.stringValue)'"
+                debugDescription: "Expected Bool but found empty field for '\(key.stringValue)'",
             ))
         }
         switch str.lowercased() {
@@ -107,7 +107,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
         default:
             throw DecodingError.typeMismatch(Bool.self, DecodingError.Context(
                 codingPath: [key],
-                debugDescription: "Could not convert '\(str)' to Bool for '\(key.stringValue)'"
+                debugDescription: "Could not convert '\(str)' to Bool for '\(key.stringValue)'",
             ))
         }
     }
@@ -174,13 +174,13 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
         guard let str = try stringValue(for: key) else {
             throw DecodingError.valueNotFound(T.self, DecodingError.Context(
                 codingPath: [key],
-                debugDescription: "Expected \(T.self) but found empty field for '\(key.stringValue)'"
+                debugDescription: "Expected \(T.self) but found empty field for '\(key.stringValue)'",
             ))
         }
         guard let result = T(str) else {
             throw DecodingError.typeMismatch(T.self, DecodingError.Context(
                 codingPath: [key],
-                debugDescription: "Could not convert '\(str)' to \(T.self) for '\(key.stringValue)'"
+                debugDescription: "Could not convert '\(str)' to \(T.self) for '\(key.stringValue)'",
             ))
         }
         return result
@@ -194,13 +194,13 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
             guard let str = try stringValue(for: key) else {
                 throw DecodingError.valueNotFound(Date.self, DecodingError.Context(
                     codingPath: [key],
-                    debugDescription: "Expected Date but found empty field for '\(key.stringValue)'"
+                    debugDescription: "Expected Date but found empty field for '\(key.stringValue)'",
                 ))
             }
             guard let date = CSVValue.defaultDateFormatter.date(from: str) else {
                 throw DecodingError.typeMismatch(Date.self, DecodingError.Context(
                     codingPath: [key],
-                    debugDescription: "Could not convert '\(str)' to Date for '\(key.stringValue)'"
+                    debugDescription: "Could not convert '\(str)' to Date for '\(key.stringValue)'",
                 ))
             }
             return date as! T
@@ -210,13 +210,13 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
             guard let str = try stringValue(for: key) else {
                 throw DecodingError.valueNotFound(Decimal.self, DecodingError.Context(
                     codingPath: [key],
-                    debugDescription: "Expected Decimal but found empty field for '\(key.stringValue)'"
+                    debugDescription: "Expected Decimal but found empty field for '\(key.stringValue)'",
                 ))
             }
             guard let decimal = Decimal(string: str) else {
                 throw DecodingError.typeMismatch(Decimal.self, DecodingError.Context(
                     codingPath: [key],
-                    debugDescription: "Could not convert '\(str)' to Decimal for '\(key.stringValue)'"
+                    debugDescription: "Could not convert '\(str)' to Decimal for '\(key.stringValue)'",
                 ))
             }
             return decimal as! T
@@ -227,7 +227,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
             guard let url = URL(string: str) else {
                 throw DecodingError.typeMismatch(URL.self, DecodingError.Context(
                     codingPath: [key],
-                    debugDescription: "Could not convert '\(str)' to URL for '\(key.stringValue)'"
+                    debugDescription: "Could not convert '\(str)' to URL for '\(key.stringValue)'",
                 ))
             }
             return url as! T
@@ -237,7 +237,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
         guard let str = try stringValue(for: key) else {
             throw DecodingError.valueNotFound(type, DecodingError.Context(
                 codingPath: [key],
-                debugDescription: "Expected \(type) but found empty field for '\(key.stringValue)'"
+                debugDescription: "Expected \(type) but found empty field for '\(key.stringValue)'",
             ))
         }
         let singleValueDecoder = CSVSingleValueDecoder(value: str, codingPath: [key])
@@ -249,28 +249,28 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
     func nestedContainer<NestedKey: CodingKey>(keyedBy _: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> {
         throw DecodingError.dataCorrupted(DecodingError.Context(
             codingPath: [key],
-            debugDescription: "CSV does not support nested containers"
+            debugDescription: "CSV does not support nested containers",
         ))
     }
 
     func nestedUnkeyedContainer(forKey key: Key) throws -> UnkeyedDecodingContainer {
         throw DecodingError.dataCorrupted(DecodingError.Context(
             codingPath: [key],
-            debugDescription: "CSV does not support nested containers"
+            debugDescription: "CSV does not support nested containers",
         ))
     }
 
     func superDecoder() throws -> Decoder {
         throw DecodingError.dataCorrupted(DecodingError.Context(
             codingPath: codingPath,
-            debugDescription: "CSV does not support inheritance decoding"
+            debugDescription: "CSV does not support inheritance decoding",
         ))
     }
 
     func superDecoder(forKey key: Key) throws -> Decoder {
         throw DecodingError.dataCorrupted(DecodingError.Context(
             codingPath: [key],
-            debugDescription: "CSV does not support inheritance decoding"
+            debugDescription: "CSV does not support inheritance decoding",
         ))
     }
 }
@@ -287,14 +287,14 @@ private struct CSVSingleValueDecoder: Decoder {
     func container<Key: CodingKey>(keyedBy _: Key.Type) throws -> KeyedDecodingContainer<Key> {
         throw DecodingError.dataCorrupted(DecodingError.Context(
             codingPath: codingPath,
-            debugDescription: "Single CSV value does not support keyed decoding"
+            debugDescription: "Single CSV value does not support keyed decoding",
         ))
     }
 
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
         throw DecodingError.dataCorrupted(DecodingError.Context(
             codingPath: codingPath,
-            debugDescription: "Single CSV value does not support unkeyed decoding"
+            debugDescription: "Single CSV value does not support unkeyed decoding",
         ))
     }
 
@@ -322,7 +322,7 @@ private struct CSVSingleValueDecodingContainer: SingleValueDecodingContainer {
         default:
             throw DecodingError.typeMismatch(Bool.self, DecodingError.Context(
                 codingPath: codingPath,
-                debugDescription: "Could not convert '\(value)' to Bool"
+                debugDescription: "Could not convert '\(value)' to Bool",
             ))
         }
     }
@@ -371,7 +371,7 @@ private struct CSVSingleValueDecodingContainer: SingleValueDecodingContainer {
         guard let result = Double(value) else {
             throw DecodingError.typeMismatch(Double.self, DecodingError.Context(
                 codingPath: codingPath,
-                debugDescription: "Could not convert '\(value)' to Double"
+                debugDescription: "Could not convert '\(value)' to Double",
             ))
         }
         return result
@@ -381,7 +381,7 @@ private struct CSVSingleValueDecodingContainer: SingleValueDecodingContainer {
         guard let result = Float(value) else {
             throw DecodingError.typeMismatch(Float.self, DecodingError.Context(
                 codingPath: codingPath,
-                debugDescription: "Could not convert '\(value)' to Float"
+                debugDescription: "Could not convert '\(value)' to Float",
             ))
         }
         return result
@@ -396,7 +396,7 @@ private struct CSVSingleValueDecodingContainer: SingleValueDecodingContainer {
         guard let result = T(value) else {
             throw DecodingError.typeMismatch(T.self, DecodingError.Context(
                 codingPath: codingPath,
-                debugDescription: "Could not convert '\(value)' to \(T.self)"
+                debugDescription: "Could not convert '\(value)' to \(T.self)",
             ))
         }
         return result

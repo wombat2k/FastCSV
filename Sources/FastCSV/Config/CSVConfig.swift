@@ -24,7 +24,7 @@ public struct CSVConfig {
         delimiter: Delimiter? = nil,
         readBufferSize: Int = 256 * 1024,
         assumeNoQuotes: Bool = false,
-        dateFormatter: DateFormatter? = nil
+        dateFormatter: DateFormatter? = nil,
     ) {
         self.delimiter = delimiter ?? CSVFormat.csv.delimiter
         self.readBufferSize = readBufferSize

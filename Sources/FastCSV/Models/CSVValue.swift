@@ -27,7 +27,7 @@ public struct CSVValue {
 
     /// Create a value directly from a byte buffer (no copy)
     init(buffer: UnsafeBufferPointer<UInt8>?) {
-        if let buffer = buffer, !buffer.isEmpty {
+        if let buffer, !buffer.isEmpty {
             valueSource = .ref(buffer)
         } else {
             valueSource = .none
@@ -59,11 +59,11 @@ public struct CSVValue {
     public var isSafe: Bool {
         switch valueSource {
         case .none:
-            return true
+            true
         case .own:
-            return true
+            true
         case .ref:
-            return false
+            false
         }
     }
 }
@@ -75,11 +75,11 @@ private extension CSVValue {
     func withRawBytes<T>(_ body: (UnsafeBufferPointer<UInt8>) throws -> T) rethrows -> T? {
         switch valueSource {
         case .none:
-            return nil
+            nil
         case let .ref(buffer):
-            return try body(buffer)
+            try body(buffer)
         case let .own(bytes):
-            return try bytes.withUnsafeBufferPointer { try body($0) }
+            try bytes.withUnsafeBufferPointer { try body($0) }
         }
     }
 
@@ -317,7 +317,7 @@ public extension CSVValue {
         try withRawBytes { bytes in
             guard let result: T = Self.parseInteger(from: bytes) else {
                 throw CSVError.invalidValueConversion(
-                    message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to \(T.self)"
+                    message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to \(T.self)",
                 )
             }
             return result
@@ -343,7 +343,7 @@ public extension CSVValue {
             try withRawBytes { bytes in
                 guard let result = Self.parseDouble(from: bytes) else {
                     throw CSVError.invalidValueConversion(
-                        message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to Double"
+                        message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to Double",
                     )
                 }
                 return result
@@ -357,7 +357,7 @@ public extension CSVValue {
             try withRawBytes { bytes in
                 guard let result = Self.parseFloat(from: bytes) else {
                     throw CSVError.invalidValueConversion(
-                        message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to Float"
+                        message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to Float",
                     )
                 }
                 return result
@@ -372,7 +372,7 @@ public extension CSVValue {
             try withRawBytes { bytes in
                 guard let result = Self.parseBool(from: bytes) else {
                     throw CSVError.invalidValueConversion(
-                        message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to Bool"
+                        message: "Could not convert '\(String(bytes: bytes, encoding: .utf8) ?? "?")' to Bool",
                     )
                 }
                 return result
@@ -396,13 +396,13 @@ public extension CSVValue {
     func copy() -> CSVValue {
         switch valueSource {
         case .none:
-            return CSVValue(buffer: nil)
+            CSVValue(buffer: nil)
 
         case let .ref(buffer):
-            return CSVValue(bytes: Array(buffer))
+            CSVValue(bytes: Array(buffer))
 
         case .own:
-            return self
+            self
         }
     }
 
@@ -411,7 +411,7 @@ public extension CSVValue {
         let quote = String(UnicodeScalar(quoteChar))
 
         // If surrounded by quotes, remove them and process escaped quotes
-        if str.hasPrefix(quote) && str.hasSuffix(quote) {
+        if str.hasPrefix(quote), str.hasSuffix(quote) {
             // Remove surrounding quotes
             let content = str.dropFirst().dropLast()
 
@@ -435,7 +435,7 @@ public extension CSVValue {
     }
 
     internal mutating func update(buffer: UnsafeBufferPointer<UInt8>?) {
-        if let buffer = buffer, !buffer.isEmpty {
+        if let buffer, !buffer.isEmpty {
             valueSource = .ref(buffer)
         } else {
             valueSource = .none

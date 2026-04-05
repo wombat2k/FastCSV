@@ -148,12 +148,12 @@ extension FastCSV {
                 noQuotes: noQuotes,
                 fieldStartPosition: fieldStartPosition,
                 storage: storage,
-                columnCount: colCount
+                columnCount: colCount,
             )
 
             let firstRow = FirstRowResult(
                 fields: fields.isEmpty ? nil : fields,
-                error: error
+                error: error,
             )
 
             return (parser, firstRow)
@@ -208,7 +208,7 @@ extension FastCSV {
                     if inQuote && parsingError == nil {
                         parsingError = .rowError(
                             row: currentRowNumber,
-                            message: "Row \(currentRowNumber) has an unclosed quote."
+                            message: "Row \(currentRowNumber) has an unclosed quote.",
                         )
                     }
 
@@ -217,13 +217,13 @@ extension FastCSV {
                             storage[currentFieldIndex] = createFieldPointer(
                                 from: fieldStartPosition,
                                 to: chunkReader.currentPosition,
-                                in: chunkReader.currentBytes!
+                                in: chunkReader.currentBytes!,
                             )
                             currentFieldIndex += 1
                         } else if parsingError == nil {
                             parsingError = .rowError(
                                 row: currentRowNumber,
-                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount)."
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount).",
                             )
                         }
                     }
@@ -268,7 +268,7 @@ extension FastCSV {
                                 storage[currentFieldIndex] = createFieldPointer(
                                     from: fieldStartPosition,
                                     to: chunkReader.currentPosition,
-                                    in: bytes
+                                    in: bytes,
                                 )
                             } else {
                                 storage[currentFieldIndex] = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
@@ -277,7 +277,7 @@ extension FastCSV {
                         } else if parsingError == nil {
                             parsingError = .rowError(
                                 row: currentRowNumber,
-                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount)."
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount).",
                             )
                         }
 
@@ -286,7 +286,7 @@ extension FastCSV {
                     } else if !inQuote, byte == delimiter.rowByte {
                         let fieldEnd = adjustFieldEndForCRLF(
                             byte: byte, fieldEnd: chunkReader.currentPosition,
-                            fieldStart: fieldStartPosition, bytes: bytes
+                            fieldStart: fieldStartPosition, bytes: bytes,
                         )
 
                         if currentFieldIndex < columnCount {
@@ -294,7 +294,7 @@ extension FastCSV {
                                 storage[currentFieldIndex] = createFieldPointer(
                                     from: fieldStartPosition,
                                     to: fieldEnd,
-                                    in: bytes
+                                    in: bytes,
                                 )
                             } else {
                                 storage[currentFieldIndex] = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
@@ -303,7 +303,7 @@ extension FastCSV {
                         } else if parsingError == nil {
                             parsingError = .rowError(
                                 row: currentRowNumber,
-                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount)."
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount).",
                             )
                         }
 
@@ -313,7 +313,7 @@ extension FastCSV {
                         let result = CSVIteratorResult(
                             directStorage: UnsafeBufferPointer(storage),
                             count: currentFieldIndex,
-                            parsingError: parsingError
+                            parsingError: parsingError,
                         )
 
                         currentRowNumber += 1
@@ -347,13 +347,13 @@ extension FastCSV {
                             storage[currentFieldIndex] = createFieldPointer(
                                 from: fieldStartPosition,
                                 to: chunkReader.currentPosition,
-                                in: chunkReader.currentBytes!
+                                in: chunkReader.currentBytes!,
                             )
                             currentFieldIndex += 1
                         } else if parsingError == nil {
                             parsingError = .rowError(
                                 row: currentRowNumber,
-                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount)."
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount).",
                             )
                         }
                     }
@@ -377,7 +377,7 @@ extension FastCSV {
                                 storage[currentFieldIndex] = createFieldPointer(
                                     from: fieldStartPosition,
                                     to: chunkReader.currentPosition,
-                                    in: bytes
+                                    in: bytes,
                                 )
                             } else {
                                 storage[currentFieldIndex] = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
@@ -386,7 +386,7 @@ extension FastCSV {
                         } else if parsingError == nil {
                             parsingError = .rowError(
                                 row: currentRowNumber,
-                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount)."
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount).",
                             )
                         }
 
@@ -395,7 +395,7 @@ extension FastCSV {
                     } else if byte == delimiter.rowByte {
                         let fieldEnd = adjustFieldEndForCRLF(
                             byte: byte, fieldEnd: chunkReader.currentPosition,
-                            fieldStart: fieldStartPosition, bytes: bytes
+                            fieldStart: fieldStartPosition, bytes: bytes,
                         )
 
                         if currentFieldIndex < columnCount {
@@ -403,7 +403,7 @@ extension FastCSV {
                                 storage[currentFieldIndex] = createFieldPointer(
                                     from: fieldStartPosition,
                                     to: fieldEnd,
-                                    in: bytes
+                                    in: bytes,
                                 )
                             } else {
                                 storage[currentFieldIndex] = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
@@ -412,7 +412,7 @@ extension FastCSV {
                         } else if parsingError == nil {
                             parsingError = .rowError(
                                 row: currentRowNumber,
-                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount)."
+                                message: "Row \(currentRowNumber) has more columns than expected: got \(currentFieldIndex + 1), expected \(columnCount).",
                             )
                         }
 
@@ -422,7 +422,7 @@ extension FastCSV {
                         let result = CSVIteratorResult(
                             directStorage: UnsafeBufferPointer(storage),
                             count: currentFieldIndex,
-                            parsingError: parsingError
+                            parsingError: parsingError,
                         )
 
                         currentRowNumber += 1
@@ -455,15 +455,15 @@ extension FastCSV {
             let length = endPosition - startPosition
             return UnsafeBufferPointer(
                 start: bytes.advanced(by: startPosition),
-                count: length
+                count: length,
             )
         }
 
         private func adjustFieldEndForCRLF(byte: UInt8, fieldEnd: Int, fieldStart: Int,
                                            bytes: UnsafePointer<UInt8>) -> Int
         {
-            if byte == UInt8(ascii: "\n") && fieldEnd > fieldStart &&
-                bytes[fieldEnd - 1] == UInt8(ascii: "\r")
+            if byte == UInt8(ascii: "\n"), fieldEnd > fieldStart,
+               bytes[fieldEnd - 1] == UInt8(ascii: "\r")
             {
                 return fieldEnd - 1
             }

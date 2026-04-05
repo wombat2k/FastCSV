@@ -7,8 +7,8 @@ struct AdversarialTests {
 
     // MARK: - Malformed Structure
 
-    @Test("Missing columns")
-    func missingColumns() async throws {
+    @Test
+    func `Missing columns`() async throws {
         let headers = TestUtils.createHeaders(count: 3)
 
         var rows = TestUtils.createValues(rows: 2, columns: 3)
@@ -39,12 +39,12 @@ struct AdversarialTests {
                 } else {
                     #expect(Bool(false), "Expected CSVError type but got \(type(of: results[1].error!))")
                 }
-            }
+            },
         )
     }
 
-    @Test("Extra columns")
-    func extraColumns() async throws {
+    @Test
+    func `Extra columns`() async throws {
         let headers = TestUtils.createHeaders(count: 3)
 
         var rows = TestUtils.createValues(rows: 2, columns: 3)
@@ -78,14 +78,14 @@ struct AdversarialTests {
                 } else {
                     #expect(Bool(false), "Expected CSVError type but got \(type(of: results[1].error!))")
                 }
-            }
+            },
         )
     }
 
     // MARK: - Malformed Quoting
 
-    @Test("Unclosed quote")
-    func unclosedQuote() async throws {
+    @Test
+    func `Unclosed quote`() async throws {
         let headers = ["header1", "header2", "header3"]
         let rows = [
             ["value1", "\"value with unfinished quote", "value3"],
@@ -109,12 +109,12 @@ struct AdversarialTests {
                 } else {
                     #expect(Bool(false), "Should have an error for unclosed quote")
                 }
-            }
+            },
         )
     }
 
-    @Test("Quotes treated as literal characters in noQuotes mode")
-    func quotesLiteralInNoQuotesMode() async throws {
+    @Test
+    func `Quotes treated as literal characters in noQuotes mode`() async throws {
         let headers = TestUtils.createHeaders(count: 3)
         var rows = TestUtils.createValues(rows: 2, columns: 3)
         rows[1][1] = "value with \"unexpected\" quotes"
@@ -136,14 +136,14 @@ struct AdversarialTests {
                 let value = try results[1].values[1].stringIfPresent() ?? ""
                 #expect(value == "value with \"unexpected\" quotes",
                         "Quotes should be preserved as literal characters")
-            }
+            },
         )
     }
 
     // MARK: - Embedded Nulls
 
-    @Test("Null bytes in field values")
-    func nullBytes() async throws {
+    @Test
+    func `Null bytes in field values`() async throws {
         let headers = TestUtils.createHeaders(count: 3)
         let rows = [
             ["before\0after", "normal", "also\0has\0nulls"],
@@ -167,14 +167,14 @@ struct AdversarialTests {
 
                 let value3 = try results[0].values[2].stringIfPresent() ?? "<nil>"
                 #expect(value3 == "also\0has\0nulls", "Multiple null bytes should be preserved")
-            }
+            },
         )
     }
 
     // MARK: - Stress Tests
 
-    @Test("Huge field spanning many chunks")
-    func hugeField() async throws {
+    @Test
+    func `Huge field spanning many chunks`() async throws {
         let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // Create a field that's ~500 bytes — spans ~16 chunks at 32 bytes each
         let hugeValue = String(repeating: "x", count: 500)
@@ -202,12 +202,12 @@ struct AdversarialTests {
 
                 let value3 = try results[0].values[2].stringIfPresent() ?? "<nil>"
                 #expect(value3 == "also_small", "Third field should be 'also_small'")
-            }
+            },
         )
     }
 
-    @Test("Huge quoted field spanning many chunks")
-    func hugeQuotedField() async throws {
+    @Test
+    func `Huge quoted field spanning many chunks`() async throws {
         let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // Quoted field with commas and newlines inside, ~300 bytes
         let innerContent = String(repeating: "data,with,commas\nand\nnewlines\n", count: 10)
@@ -233,7 +233,7 @@ struct AdversarialTests {
 
                 let value2 = try results[0].values[1].stringIfPresent() ?? "<nil>"
                 #expect(value2 == "normal", "Second field should be 'normal'")
-            }
+            },
         )
     }
 
@@ -244,8 +244,8 @@ struct AdversarialTests {
         (rows: 1000, columns: 10),
     ]
 
-    @Test("Long and wide CSV", arguments: gridSizes)
-    func longAndWideCSV(rows rowCount: Int, columns colCount: Int) async throws {
+    @Test(arguments: gridSizes)
+    func `Long and wide CSV`(rows rowCount: Int, columns colCount: Int) async throws {
         let headers = TestUtils.createHeaders(count: colCount)
         let rows = TestUtils.createValues(rows: rowCount, columns: colCount)
 
@@ -260,7 +260,7 @@ struct AdversarialTests {
                 #expect(results[0].values.count == colCount, "First row should have \(colCount) columns")
                 let values = try results.map { try $0.values.map { try $0.stringIfPresent() } }
                 #expect(rows == values)
-            }
+            },
         )
     }
 }

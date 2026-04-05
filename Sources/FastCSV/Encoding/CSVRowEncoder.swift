@@ -177,7 +177,7 @@ private struct CSVKeyedEncodingContainer<Key: CodingKey>: KeyedEncodingContainer
         storage.set(value.map { String($0) }, forKey: key.stringValue)
     }
 
-    mutating func encodeIfPresent<T: Encodable>(_ value: T?, forKey key: Key) throws {
+    mutating func encodeIfPresent(_ value: (some Encodable)?, forKey key: Key) throws {
         guard let value else {
             storage.set(nil, forKey: key.stringValue)
             return
@@ -187,7 +187,7 @@ private struct CSVKeyedEncodingContainer<Key: CodingKey>: KeyedEncodingContainer
 
     // MARK: - Generic Encodable
 
-    mutating func encode<T: Encodable>(_ value: T, forKey key: Key) throws {
+    mutating func encode(_ value: some Encodable, forKey key: Key) throws {
         if let date = value as? Date {
             storage.set(storage.config.dateFormatter.string(from: date), forKey: key.stringValue)
         } else if let decimal = value as? Decimal {
@@ -311,7 +311,7 @@ private struct CSVSingleValueEncodingContainer: SingleValueEncodingContainer {
         encoder.result = String(value)
     }
 
-    mutating func encode<T: Encodable>(_ value: T) throws {
+    mutating func encode(_ value: some Encodable) throws {
         let nested = CSVSingleValueEncoder(config: encoder.config)
         try value.encode(to: nested)
         encoder.result = nested.result

@@ -14,7 +14,7 @@ public struct CSVArrayResult {
     /// - Note: This method is useful for ensuring that the values are not invalidated
     ///   when the underlying buffer is released.
     public func copyArray() -> [CSVValue] {
-        return values.map { $0.copy() }
+        values.map { $0.copy() }
     }
 }
 
@@ -25,24 +25,24 @@ extension CSVArrayResult: RandomAccessCollection {
     public typealias Element = CSVValue
 
     public var startIndex: Index {
-        return values.startIndex
+        values.startIndex
     }
 
     public var endIndex: Index {
-        return values.endIndex
+        values.endIndex
     }
 
     public subscript(position: Index) -> Element {
-        return values[position]
+        values[position]
     }
 
     /// The number of values in the array
     public var count: Int {
-        return values.count
+        values.count
     }
 
     /// Returns true if the array contains no values
     public var isEmpty: Bool {
-        return values.isEmpty
+        values.isEmpty
     }
 }

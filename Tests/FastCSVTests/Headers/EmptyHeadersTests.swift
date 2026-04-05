@@ -3,8 +3,8 @@ import Foundation
 import Testing
 
 struct EmptyHeadersTests {
-    @Test("Dictionary without headers")
-    func emptyHeaders() async throws {
+    @Test
+    func `Dictionary without headers`() async throws {
         let rows = TestUtils.createValues(rows: 1, columns: 3)
 
         try await TestUtils.runTest(
@@ -27,12 +27,12 @@ struct EmptyHeadersTests {
                 let expectedValue3 = "row1_col3"
                 let value3 = try results[0].values["column_3"]?.stringIfPresent() ?? ""
                 #expect(value3 == expectedValue3, "Third value should be '\(expectedValue3)'")
-            }
+            },
         )
     }
 
-    @Test("Dictionary with empty values")
-    func emptyHeadersWithCustomHeaders() async throws {
+    @Test
+    func `Dictionary with empty values`() async throws {
         let headers = ["header1", "", "header3"]
         let rows = TestUtils.createValues(rows: 1, columns: 3)
 
@@ -55,7 +55,7 @@ struct EmptyHeadersTests {
 
                 let value3 = try results[0].values["header3"]?.stringIfPresent() ?? ""
                 #expect(value3 == "row1_col3", "Third value should be 'row1_col3'")
-            }
+            },
         )
     }
 }

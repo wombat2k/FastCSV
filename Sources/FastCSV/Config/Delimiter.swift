@@ -28,7 +28,7 @@ public struct Delimiter {
     {
         guard row.count == 1, field.count == 1, quote.count == 1 else {
             throw CSVError.invalidDelimiter(
-                message: "Delimiter must be a single ASCII character. Received: row='\(row)', field='\(field)', quote='\(quote)'"
+                message: "Delimiter must be a single ASCII character. Received: row='\(row)', field='\(field)', quote='\(quote)'",
             )
         }
         try self.init(row: Character(row), field: Character(field), quote: Character(quote))
@@ -43,7 +43,7 @@ public struct Delimiter {
               let quoteByte = quote.asciiValue
         else {
             throw CSVError.invalidDelimiter(
-                message: "Delimiter must be an ASCII character. Received: row='\(row)', field='\(field)', quote='\(quote)'"
+                message: "Delimiter must be an ASCII character. Received: row='\(row)', field='\(field)', quote='\(quote)'",
             )
         }
         self.rowByte = rowByte

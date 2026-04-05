@@ -5,8 +5,8 @@ import Testing
 struct MemoryLifecycleTests {
     // MARK: - isSafe property
 
-    @Test("Values from iterator are unsafe (ref)")
-    func iteratorValuesAreUnsafe() throws {
+    @Test
+    func `Values from iterator are unsafe (ref)`() throws {
         let csv = "name,age\nAlice,30\n"
         let rows = try FastCSV.makeArrayRows(fromString: csv)
 
@@ -17,8 +17,8 @@ struct MemoryLifecycleTests {
         }
     }
 
-    @Test("Copied values are safe (own)")
-    func copiedValuesAreSafe() throws {
+    @Test
+    func `Copied values are safe (own)`() throws {
         let csv = "name,age\nAlice,30\n"
         let rows = try FastCSV.makeArrayRows(fromString: csv)
 
@@ -28,8 +28,8 @@ struct MemoryLifecycleTests {
         }
     }
 
-    @Test("Empty values are safe")
-    func emptyValuesAreSafe() throws {
+    @Test
+    func `Empty values are safe`() throws {
         let csv = "name,age\nAlice,\n"
         let rows = try FastCSV.makeArrayRows(fromString: csv)
 
@@ -42,8 +42,8 @@ struct MemoryLifecycleTests {
 
     // MARK: - copy() correctness
 
-    @Test("copy() preserves string value")
-    func copyPreservesStringValue() throws {
+    @Test
+    func `copy() preserves string value`() throws {
         let csv = "name,age\nAlice,30\n"
         let rows = try FastCSV.makeArrayRows(fromString: csv)
 
@@ -55,8 +55,8 @@ struct MemoryLifecycleTests {
         }
     }
 
-    @Test("copy() preserves numeric value")
-    func copyPreservesNumericValue() throws {
+    @Test
+    func `copy() preserves numeric value`() throws {
         let csv = "name,age\nAlice,30\n"
         let rows = try FastCSV.makeArrayRows(fromString: csv)
 
@@ -68,8 +68,8 @@ struct MemoryLifecycleTests {
         }
     }
 
-    @Test("copy() on empty value stays empty")
-    func copyEmptyStaysEmpty() throws {
+    @Test
+    func `copy() on empty value stays empty`() throws {
         let csv = "name,age\nAlice,\n"
         let rows = try FastCSV.makeArrayRows(fromString: csv)
 
@@ -82,8 +82,8 @@ struct MemoryLifecycleTests {
 
     // MARK: - copyArray() / copyDictionary()
 
-    @Test("copyArray() produces all-safe values")
-    func copyArrayProducesSafeValues() throws {
+    @Test
+    func `copyArray() produces all-safe values`() throws {
         let csv = "name,age,city\nAlice,30,Boston\nBob,25,NYC\n"
         let rows = try FastCSV.makeArrayRows(fromString: csv)
 
@@ -95,8 +95,8 @@ struct MemoryLifecycleTests {
         }
     }
 
-    @Test("copyArray() preserves all values")
-    func copyArrayPreservesValues() throws {
+    @Test
+    func `copyArray() preserves all values`() throws {
         let csv = "name,age\nAlice,30\n"
         let rows = try FastCSV.makeArrayRows(fromString: csv)
 
@@ -107,8 +107,8 @@ struct MemoryLifecycleTests {
         }
     }
 
-    @Test("copyDictionary() produces all-safe values")
-    func copyDictionaryProducesSafeValues() throws {
+    @Test
+    func `copyDictionary() produces all-safe values`() throws {
         let csv = "name,age\nAlice,30\nBob,25\n"
         let rows = try FastCSV.makeDictionaryRows(fromString: csv)
 
@@ -120,8 +120,8 @@ struct MemoryLifecycleTests {
         }
     }
 
-    @Test("copyDictionary() preserves all values")
-    func copyDictionaryPreservesValues() throws {
+    @Test
+    func `copyDictionary() preserves all values`() throws {
         let csv = "name,age\nAlice,30\n"
         let rows = try FastCSV.makeDictionaryRows(fromString: csv)
 
@@ -134,8 +134,8 @@ struct MemoryLifecycleTests {
 
     // MARK: - Survival across iterations
 
-    @Test("Copied values survive across iterations")
-    func copiedValuesSurviveAcrossIterations() throws {
+    @Test
+    func `Copied values survive across iterations`() throws {
         let csv = "name,age\nAlice,30\nBob,25\nCharlie,35\n"
         let rows = try FastCSV.makeArrayRows(fromString: csv)
 
@@ -152,8 +152,8 @@ struct MemoryLifecycleTests {
         #expect(try savedValues[2].string == "Charlie")
     }
 
-    @Test("Copied array results survive across iterations")
-    func copiedArrayResultsSurviveAcrossIterations() throws {
+    @Test
+    func `Copied array results survive across iterations`() throws {
         let csv = "name,age\nAlice,30\nBob,25\n"
         let rows = try FastCSV.makeArrayRows(fromString: csv)
 
@@ -170,8 +170,8 @@ struct MemoryLifecycleTests {
         #expect(try savedRows[1][1].int == 25)
     }
 
-    @Test("Copied dictionary results survive across iterations")
-    func copiedDictionaryResultsSurviveAcrossIterations() throws {
+    @Test
+    func `Copied dictionary results survive across iterations`() throws {
         let csv = "name,age\nAlice,30\nBob,25\n"
         let rows = try FastCSV.makeDictionaryRows(fromString: csv)
 
@@ -188,8 +188,8 @@ struct MemoryLifecycleTests {
 
     // MARK: - Decodable path is inherently safe
 
-    @Test("Decodable values are owned strings, not buffer references")
-    func decodableValuesAreOwned() throws {
+    @Test
+    func `Decodable values are owned strings, not buffer references`() throws {
         struct Person: Decodable, Equatable {
             let name: String
             let age: Int

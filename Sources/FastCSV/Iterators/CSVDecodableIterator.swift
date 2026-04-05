@@ -40,7 +40,7 @@ public extension FastCSV {
                 let decoder = CSVRowDecoder(
                     values: arrayResult.values,
                     columnIndexMap: columnIndexMap,
-                    quoteChar: quoteChar
+                    quoteChar: quoteChar,
                 )
                 let decoded = try T(from: decoder)
                 return .success(decoded)

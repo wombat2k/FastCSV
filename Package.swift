@@ -12,7 +12,7 @@ let package = Package(
     products: [
         .library(
             name: "FastCSV",
-            targets: ["FastCSV"]
+            targets: ["FastCSV"],
         ),
     ],
     targets: [
@@ -22,13 +22,13 @@ let package = Package(
                 // Debug logging is disabled by default
                 // Uncomment the next line to enable debug logs during development
                 // .define("ENABLE_LOGGING"),
-            ]
+            ],
         ),
         .testTarget(
             name: "FastCSVTests",
             dependencies: ["FastCSV"],
             path: "Tests/FastCSVTests",
-            exclude: []
+            exclude: [],
         ),
-    ]
+    ],
 )

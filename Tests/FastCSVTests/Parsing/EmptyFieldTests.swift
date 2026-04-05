@@ -5,8 +5,8 @@ import Testing
 struct EmptyFieldTests {
     // MARK: Header Tests
 
-    @Test("Empty value at beginning of headers")
-    func frontDelimiterAtHeaders() async throws {
+    @Test
+    func `Empty value at beginning of headers`() async throws {
         var headers = TestUtils.createHeaders(count: 3)
         headers[0] = "" // Empty the first header
 
@@ -25,12 +25,12 @@ struct EmptyFieldTests {
                 let expectedValue = "row1_col1"
                 let value = try results[0].values["column_1"]?.stringIfPresent() ?? ""
                 #expect(value == expectedValue, "First header should have default name 'column_1'.")
-            }
+            },
         )
     }
 
-    @Test("Empty value at middle of headers")
-    func middleDelimiterAtHeaders() async throws {
+    @Test
+    func `Empty value at middle of headers`() async throws {
         var headers = TestUtils.createHeaders(count: 3)
         headers[1] = "" // Empty the middle header
 
@@ -49,12 +49,12 @@ struct EmptyFieldTests {
                 let expectedValue = "row1_col2"
                 let value = try results[0].values["column_2"]?.stringIfPresent() ?? ""
                 #expect(value == expectedValue, "Second header should have default name 'column_2'.")
-            }
+            },
         )
     }
 
-    @Test("Empty value at end of headers")
-    func trailingDelimiterAtHeaders() async throws {
+    @Test
+    func `Empty value at end of headers`() async throws {
         let headers = ["header1", "header2", ""]
         let rows = [["value1", "value2", "value3"]]
 
@@ -70,14 +70,14 @@ struct EmptyFieldTests {
 
                 let value = try results[0].values["column_3"]?.stringIfPresent() ?? ""
                 #expect(value == "value3", "Value under default header 'column_3' should be 'value3'")
-            }
+            },
         )
     }
 
     // MARK: Row Tests
 
-    @Test("Empty value at beginning of row")
-    func frontDelimiter() async throws {
+    @Test
+    func `Empty value at beginning of row`() async throws {
         let headers = TestUtils.createHeaders(count: 3)
 
         var rows = TestUtils.createValues(rows: 3, columns: 3)
@@ -118,12 +118,12 @@ struct EmptyFieldTests {
                 #expect(value == "row3_col2", "Second value in third row should be 'row3_col2'")
                 value = try results[2].values[2].stringIfPresent() ?? ""
                 #expect(value == "row3_col3", "Third value in third row should be 'row3_col3'")
-            }
+            },
         )
     }
 
-    @Test("Empty value at middle of row")
-    func middleDelimiter() async throws {
+    @Test
+    func `Empty value at middle of row`() async throws {
         let headers = ["header1", "header2", "header3"]
         let rows = [
             ["value1", "value2", "value3"],
@@ -163,12 +163,12 @@ struct EmptyFieldTests {
                 #expect(value == "value2", "Second value in third row should be 'value2'")
                 value = try results[2].values[2].stringIfPresent() ?? ""
                 #expect(value == "value3", "Third value in third row should be 'value3'")
-            }
+            },
         )
     }
 
-    @Test("Empty value at end of row")
-    func trailingDelimiter() async throws {
+    @Test
+    func `Empty value at end of row`() async throws {
         let headers = ["header1", "header2", "header3"]
         let rows = [
             ["value1", "value2", ""],
@@ -199,12 +199,12 @@ struct EmptyFieldTests {
                 #expect(value == "value2", "Second value in second row should be 'value2'")
                 value = try results[1].values[2].stringIfPresent() ?? ""
                 #expect(value == "value3", "Third value in second row should be 'value3'")
-            }
+            },
         )
     }
 
-    @Test("Multiple empty values at beginning of row")
-    func multipleFrontDelimiters() async throws {
+    @Test
+    func `Multiple empty values at beginning of row`() async throws {
         var headers = TestUtils.createHeaders(count: 4)
         headers[0] = ""
         headers[1] = ""
@@ -243,12 +243,12 @@ struct EmptyFieldTests {
                 #expect(value == "row2_col3", "Third value in second row should be 'row2_col3'")
                 value = try results[1].values[3].stringIfPresent() ?? ""
                 #expect(value == "row2_col4", "Fourth value in second row should be 'row2_col4'")
-            }
+            },
         )
     }
 
-    @Test("Multiple empty values at end of row")
-    func multipleTrailingDelimiters() async throws {
+    @Test
+    func `Multiple empty values at end of row`() async throws {
         let headers = ["header1", "header2", "", "", ""]
         let rows = [
             ["value1", "value2", "", "", ""],
@@ -288,7 +288,7 @@ struct EmptyFieldTests {
                 #expect(value == "value4", "Fourth value in second row should be 'value4'")
                 value = try results[1].values[4].stringIfPresent() ?? ""
                 #expect(value == "value5", "Fifth value in second row should be 'value5'")
-            }
+            },
         )
     }
 }

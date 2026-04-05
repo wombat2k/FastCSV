@@ -3,8 +3,8 @@ import Foundation
 import Testing
 
 struct CustomHeadersTests {
-    @Test("Array with headers and custom headers")
-    func arrayHeadersWithCustomHeaders() async throws {
+    @Test
+    func `Array with headers and custom headers`() async throws {
         let customHeaders = ["custom1", "custom2", "custom3"]
         let headers = TestUtils.createHeaders(count: 3)
         let rows = TestUtils.createValues(rows: 1, columns: 3)
@@ -32,12 +32,12 @@ struct CustomHeadersTests {
                 let expectedValue3 = "row1_col3"
                 let value3 = try results[0].values[2].stringIfPresent() ?? ""
                 #expect(value3 == expectedValue3, "Third value should be '\(expectedValue3)'")
-            }
+            },
         )
     }
 
-    @Test("Dictionary with headers and custom headers")
-    func dictionaryHeadersWithCustomHeaders() async throws {
+    @Test
+    func `Dictionary with headers and custom headers`() async throws {
         let customHeaders = ["custom1", "custom2", "custom3"]
         let headers = TestUtils.createHeaders(count: 3)
         let rows = TestUtils.createValues(rows: 1, columns: 3)
@@ -66,12 +66,12 @@ struct CustomHeadersTests {
                 #expect(results[0].values["header1"] == nil, "Header 'header1' should not exist")
                 #expect(results[0].values["header2"] == nil, "Header 'header2' should not exist")
                 #expect(results[0].values["header3"] == nil, "Header 'header3' should not exist")
-            }
+            },
         )
     }
 
-    @Test("Dictionary with custom headers and no headers")
-    func headersWithCustomHeadersAndNoHeaders() async throws {
+    @Test
+    func `Dictionary with custom headers and no headers`() async throws {
         let customHeaders = ["custom1", "custom2", "custom3"]
         let rows = TestUtils.createValues(rows: 1, columns: 3)
 
@@ -98,7 +98,7 @@ struct CustomHeadersTests {
                 #expect(results[0].values["row1_col1"] == nil, "Header 'value1' should not exist")
                 #expect(results[0].values["row1_col2"] == nil, "Header 'value2' should not exist")
                 #expect(results[0].values["row1_col3"] == nil, "Header 'value3' should not exist")
-            }
+            },
         )
     }
 }

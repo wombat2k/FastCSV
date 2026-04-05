@@ -52,7 +52,7 @@ public extension FastCSV {
 
             // Process headers
             let headerSettings = try FastCSV.processHeaders(
-                firstRow: firstRowValues, hasHeaders: hasHeaders, customHeaders: customHeaders
+                firstRow: firstRowValues, hasHeaders: hasHeaders, customHeaders: customHeaders,
             )
             headers = headerSettings.headers
             let headerCount = headerSettings.headerCount
@@ -96,7 +96,7 @@ public extension FastCSV {
                 if headers.count > 0, buffered.count != headers.count {
                     error = CSVError.rowError(
                         row: rowNumber,
-                        message: "Row \(rowNumber) has \(buffered.count) columns, expected \(headers.count)."
+                        message: "Row \(rowNumber) has \(buffered.count) columns, expected \(headers.count).",
                     )
                 }
 
@@ -131,7 +131,7 @@ public extension FastCSV {
             if headers.count > 0, fieldCount != headers.count, error == nil {
                 error = CSVError.rowError(
                     row: rowNumber,
-                    message: "Row \(rowNumber) has \(fieldCount) columns, expected \(headers.count)."
+                    message: "Row \(rowNumber) has \(fieldCount) columns, expected \(headers.count).",
                 )
             }
 

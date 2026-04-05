@@ -18,13 +18,13 @@ public enum CSVFormat {
     public var delimiter: Delimiter {
         switch self {
         case .csv:
-            return Delimiter(row: UInt8(ascii: "\n"), field: UInt8(ascii: ","), quote: UInt8(ascii: "\""))
+            Delimiter(row: UInt8(ascii: "\n"), field: UInt8(ascii: ","), quote: UInt8(ascii: "\""))
         case .tsv:
-            return Delimiter(row: UInt8(ascii: "\n"), field: UInt8(ascii: "\t"), quote: UInt8(ascii: "\""))
+            Delimiter(row: UInt8(ascii: "\n"), field: UInt8(ascii: "\t"), quote: UInt8(ascii: "\""))
         case .semiColonSeparated:
-            return Delimiter(row: UInt8(ascii: "\n"), field: UInt8(ascii: ";"), quote: UInt8(ascii: "\""))
+            Delimiter(row: UInt8(ascii: "\n"), field: UInt8(ascii: ";"), quote: UInt8(ascii: "\""))
         case let .custom(field, row, quote):
-            return Delimiter(row: row, field: field, quote: quote)
+            Delimiter(row: row, field: field, quote: quote)
         }
     }
 }

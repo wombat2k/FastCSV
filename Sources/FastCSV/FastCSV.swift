@@ -48,7 +48,7 @@ public class FastCSV {
 
     /// Process headers by replacing empty values with auto-generated column names
     private static func processEmptyHeaders(headers: [String]) -> [String] {
-        return headers.enumerated().map { index, header in
+        headers.enumerated().map { index, header in
             header.isEmpty ? "column_\(index + 1)" : header
         }
     }
@@ -67,7 +67,7 @@ public class FastCSV {
             reader: fileHandle,
             hasHeaders: hasHeaders,
             customHeaders: headers,
-            config: config ?? CSVParserConfig()
+            config: config ?? CSVParserConfig(),
         )
     }
 
@@ -91,7 +91,7 @@ public class FastCSV {
         hasHeaders: Bool = true,
         headers: [String] = [],
         columnMapping: [String: String] = [:],
-        config: CSVParserConfig? = nil
+        config: CSVParserConfig? = nil,
     ) throws -> CSVDecodableIterator<T> {
         try makeRows(type, fromURL: URL(fileURLWithPath: path), hasHeaders: hasHeaders, headers: headers, columnMapping: columnMapping, config: config)
     }
@@ -103,14 +103,14 @@ public class FastCSV {
         hasHeaders: Bool = true,
         headers: [String] = [],
         columnMapping: [String: String] = [:],
-        config: CSVParserConfig? = nil
+        config: CSVParserConfig? = nil,
     ) throws -> CSVDecodableIterator<T> {
         let iter = try makeArrayRows(fromURL: url, hasHeaders: hasHeaders, headers: headers, config: config)
         return CSVDecodableIterator<T>(
             valueArrayIterator: iter,
             headers: iter.headers,
             quoteChar: iter.quoteChar,
-            columnMapping: columnMapping
+            columnMapping: columnMapping,
         )
     }
 
@@ -122,7 +122,7 @@ public class FastCSV {
             reader: DataStreamReader(data: data),
             hasHeaders: hasHeaders,
             customHeaders: headers,
-            config: config ?? CSVParserConfig()
+            config: config ?? CSVParserConfig(),
         )
     }
 
@@ -139,14 +139,14 @@ public class FastCSV {
         hasHeaders: Bool = true,
         headers: [String] = [],
         columnMapping: [String: String] = [:],
-        config: CSVParserConfig? = nil
+        config: CSVParserConfig? = nil,
     ) throws -> CSVDecodableIterator<T> {
         let iter = try makeArrayRows(fromData: data, hasHeaders: hasHeaders, headers: headers, config: config)
         return CSVDecodableIterator<T>(
             valueArrayIterator: iter,
             headers: iter.headers,
             quoteChar: iter.quoteChar,
-            columnMapping: columnMapping
+            columnMapping: columnMapping,
         )
     }
 
@@ -169,7 +169,7 @@ public class FastCSV {
         hasHeaders: Bool = true,
         headers: [String] = [],
         columnMapping: [String: String] = [:],
-        config: CSVParserConfig? = nil
+        config: CSVParserConfig? = nil,
     ) throws -> CSVDecodableIterator<T> {
         try makeRows(type, fromData: Data(string.utf8), hasHeaders: hasHeaders, headers: headers, columnMapping: columnMapping, config: config)
     }
@@ -178,20 +178,20 @@ public class FastCSV {
 
     /// Write Encodable rows to a file path as CSV.
     /// Headers are derived automatically from CodingKeys.
-    public static func writeRows<T: Encodable>(
-        _ rows: [T],
+    public static func writeRows(
+        _ rows: [some Encodable],
         toPath path: String,
-        config: CSVWriterConfig = CSVWriterConfig()
+        config: CSVWriterConfig = CSVWriterConfig(),
     ) throws {
         try writeRows(rows, toURL: URL(fileURLWithPath: path), config: config)
     }
 
     /// Write Encodable rows to a file URL as CSV.
     /// Headers are derived automatically from CodingKeys.
-    public static func writeRows<T: Encodable>(
-        _ rows: [T],
+    public static func writeRows(
+        _ rows: [some Encodable],
         toURL url: URL,
-        config: CSVWriterConfig = CSVWriterConfig()
+        config: CSVWriterConfig = CSVWriterConfig(),
     ) throws {
         let writer = try CSVWriter(toURL: url, config: config)
         defer { writer.close() }
@@ -200,9 +200,9 @@ public class FastCSV {
 
     /// Write Encodable rows to a CSV string.
     /// Headers are derived automatically from CodingKeys.
-    public static func writeString<T: Encodable>(
-        _ rows: [T],
-        config: CSVWriterConfig = CSVWriterConfig()
+    public static func writeString(
+        _ rows: [some Encodable],
+        config: CSVWriterConfig = CSVWriterConfig(),
     ) throws -> String {
         let writer = CSVWriter(config: config)
         try writer.writeRows(rows)
@@ -216,7 +216,7 @@ public class FastCSV {
         _ rows: [[String]],
         headers: [String]? = nil,
         toPath path: String,
-        config: CSVWriterConfig = CSVWriterConfig()
+        config: CSVWriterConfig = CSVWriterConfig(),
     ) throws {
         try writeRows(rows, headers: headers, toURL: URL(fileURLWithPath: path), config: config)
     }
@@ -226,7 +226,7 @@ public class FastCSV {
         _ rows: [[String]],
         headers: [String]? = nil,
         toURL url: URL,
-        config: CSVWriterConfig = CSVWriterConfig()
+        config: CSVWriterConfig = CSVWriterConfig(),
     ) throws {
         let writer = try CSVWriter(toURL: url, config: config)
         defer { writer.close() }
@@ -240,7 +240,7 @@ public class FastCSV {
     public static func writeString(
         _ rows: [[String]],
         headers: [String]? = nil,
-        config: CSVWriterConfig = CSVWriterConfig()
+        config: CSVWriterConfig = CSVWriterConfig(),
     ) throws -> String {
         let writer = CSVWriter(config: config)
         if let headers {

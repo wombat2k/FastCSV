@@ -3,8 +3,8 @@ import Foundation
 import Testing
 
 struct CleanupTests {
-    @Test("Double cleanup succeeds")
-    func doubleCleanupSucceeds() throws {
+    @Test
+    func `Double cleanup succeeds`() throws {
         let headers = TestUtils.createHeaders(count: 10)
         let values = TestUtils.createValues(rows: 10, columns: 10)
         let fileURL = try TestUtils.createTemporaryCSVFile(headers: headers, rows: values)

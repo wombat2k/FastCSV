@@ -6,8 +6,8 @@ struct ChunkBoundaryTests {
     private static let tinyBufferSize = 32
     private static let bufferSizes = [8, 16, 32, 64, 128]
 
-    @Test("Minimal chunk boundary test - no headers")
-    func minimalChunkBoundary() async throws {
+    @Test
+    func `Minimal chunk boundary test - no headers`() async throws {
         let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // 3 columns, 2 rows, no headers — simple enough to trace by hand
         // Row: "row1_col1,row1_col2,row1_col3\n" = 30 bytes + newline = 31 bytes
@@ -32,12 +32,12 @@ struct ChunkBoundaryTests {
                         #expect(actual == expected, "Row \(rowIndex + 1), Col \(colIndex + 1): expected '\(expected)', got '\(actual)'")
                     }
                 }
-            }
+            },
         )
     }
 
-    @Test("Single wide row spanning multiple chunks")
-    func singleWideRow() async throws {
+    @Test
+    func `Single wide row spanning multiple chunks`() async throws {
         let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // Single row, 5 columns, no headers — row is ~50 bytes, needs 2 chunks
         let rows = TestUtils.createValues(rows: 1, columns: 5)
@@ -59,12 +59,12 @@ struct ChunkBoundaryTests {
                     let actual = try value.stringIfPresent() ?? "<nil>"
                     #expect(actual == expected, "Col \(colIndex + 1): expected '\(expected)', got '\(actual)'")
                 }
-            }
+            },
         )
     }
 
-    @Test("Fields spanning chunk boundaries preserve values", arguments: bufferSizes)
-    func fieldsSpanningChunkBoundaries(bufferSize: Int) async throws {
+    @Test(arguments: bufferSizes)
+    func `Fields spanning chunk boundaries preserve values`(bufferSize: Int) async throws {
         let config = CSVParserConfig(readBufferSize: bufferSize)
         let headers = TestUtils.createHeaders(count: 5)
         let rows = TestUtils.createValues(rows: 10, columns: 5)
@@ -88,12 +88,12 @@ struct ChunkBoundaryTests {
                         #expect(actual == expected, "Row \(rowIndex + 1), Col \(colIndex + 1): expected '\(expected)', got '\(actual)'")
                     }
                 }
-            }
+            },
         )
     }
 
-    @Test("Dictionary access with tiny buffer")
-    func dictionaryChunkBoundaries() async throws {
+    @Test
+    func `Dictionary access with tiny buffer`() async throws {
         let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         let headers = TestUtils.createHeaders(count: 5)
         let rows = TestUtils.createValues(rows: 10, columns: 5)
@@ -118,7 +118,7 @@ struct ChunkBoundaryTests {
                         #expect(actual == expected, "Row \(rowIndex + 1), '\(key)': expected '\(expected)', got '\(actual)'")
                     }
                 }
-            }
+            },
         )
     }
 }

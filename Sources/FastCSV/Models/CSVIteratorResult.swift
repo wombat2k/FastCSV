@@ -34,9 +34,9 @@ struct CSVIteratorResult {
     var count: Int {
         switch storage {
         case let .direct(_, count):
-            return count
+            count
         case let .array(pointers):
-            return pointers.count
+            pointers.count
         }
     }
 }
