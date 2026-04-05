@@ -38,13 +38,7 @@ struct CSVDecodableTests {
 
     @Test("Basic decoding")
     func basicDecoding() throws {
-        let fileURL = try TestUtils.createTemporaryCSVFile(
-            headers: ["name", "age"],
-            rows: [["Alice", "30"], ["Bob", "25"]]
-        )
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
+        var people = try FastCSV.makeRows(Person.self, fromString: "name,age\nAlice,30\nBob,25\n")
         var results: [Person] = []
         try people.forEach { results.append($0) }
 
@@ -53,13 +47,7 @@ struct CSVDecodableTests {
 
     @Test("Column subset — extra CSV columns are ignored")
     func columnSubset() throws {
-        let fileURL = try TestUtils.createTemporaryCSVFile(
-            headers: ["name", "age", "city"],
-            rows: [["Alice", "30", "Boston"], ["Bob", "25", "NYC"]]
-        )
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var people = try FastCSV.makeRows(PersonSubset.self, fromURL: fileURL)
+        var people = try FastCSV.makeRows(PersonSubset.self, fromString: "name,age,city\nAlice,30,Boston\nBob,25,NYC\n")
         var results: [PersonSubset] = []
         try people.forEach { results.append($0) }
 
@@ -68,10 +56,7 @@ struct CSVDecodableTests {
 
     @Test("Optional field with empty value decodes as nil")
     func optionalEmptyValue() throws {
-        let fileURL = try TestUtils.createRawCSVFile(content: "name,age\nAlice,\nBob,25\n")
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var people = try FastCSV.makeRows(PersonWithOptional.self, fromURL: fileURL)
+        var people = try FastCSV.makeRows(PersonWithOptional.self, fromString: "name,age\nAlice,\nBob,25\n")
         var results: [PersonWithOptional] = []
         try people.forEach { results.append($0) }
 
@@ -81,13 +66,7 @@ struct CSVDecodableTests {
 
     @Test("Schema mismatch — missing column throws keyNotFound")
     func schemaMismatch() throws {
-        let fileURL = try TestUtils.createTemporaryCSVFile(
-            headers: ["name", "city"],
-            rows: [["Alice", "Boston"]]
-        )
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
+        var people = try FastCSV.makeRows(Person.self, fromString: "name,city\nAlice,Boston\n")
         guard let result = people.next() else {
             Issue.record("Expected a row")
             return
@@ -100,13 +79,7 @@ struct CSVDecodableTests {
 
     @Test("Type conversion failure throws")
     func typeConversionFailure() throws {
-        let fileURL = try TestUtils.createTemporaryCSVFile(
-            headers: ["name", "age"],
-            rows: [["Alice", "abc"]]
-        )
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
+        var people = try FastCSV.makeRows(Person.self, fromString: "name,age\nAlice,abc\n")
         guard let result = people.next() else {
             Issue.record("Expected a row")
             return
@@ -119,12 +92,9 @@ struct CSVDecodableTests {
 
     @Test("Custom headers with no header row")
     func customHeaders() throws {
-        let fileURL = try TestUtils.createRawCSVFile(content: "Alice,30\nBob,25\n")
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
         var people = try FastCSV.makeRows(
             Person.self,
-            fromURL: fileURL,
+            fromString: "Alice,30\nBob,25\n",
             hasHeaders: false,
             headers: ["name", "age"]
         )
@@ -137,27 +107,17 @@ struct CSVDecodableTests {
     @Test("TSV config")
     func tsvConfig() throws {
         let tsvConfig = CSVParserConfig(delimiter: Delimiter(field: UInt8(ascii: "\t")))
-        let fileURL = try TestUtils.createTemporaryCSVFile(
-            headers: ["name", "age"],
-            rows: [["Alice", "30"]],
-            config: tsvConfig
-        )
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL, config: tsvConfig)
+        var people = try FastCSV.makeRows(Person.self, fromString: "name\tage\nAlice\t30\n", config: tsvConfig)
         var results: [Person] = []
         try people.forEach { results.append($0) }
 
         #expect(results == [Person(name: "Alice", age: 30)])
     }
 
-    @Test("Empty file throws")
-    func emptyFile() throws {
-        let fileURL = try TestUtils.createRawCSVFile(content: "")
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
+    @Test("Empty string throws")
+    func emptyString() throws {
         #expect(throws: CSVError.self) {
-            try FastCSV.makeRows(Person.self, fromURL: fileURL)
+            try FastCSV.makeRows(Person.self, fromString: "")
         }
     }
 
@@ -167,13 +127,7 @@ struct CSVDecodableTests {
             let flag: Bool
         }
 
-        let fileURL = try TestUtils.createTemporaryCSVFile(
-            headers: ["flag"],
-            rows: [["true"], ["false"], ["yes"], ["no"], ["1"], ["0"]]
-        )
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var flags = try FastCSV.makeRows(Flags.self, fromURL: fileURL)
+        var flags = try FastCSV.makeRows(Flags.self, fromString: "flag\ntrue\nfalse\nyes\nno\n1\n0\n")
         var results: [Bool] = []
         try flags.forEach { results.append($0.flag) }
 
@@ -182,14 +136,8 @@ struct CSVDecodableTests {
 
     @Test("Multiple rows iterate lazily")
     func multipleRows() throws {
-        let rows = (1...100).map { ["person_\($0)", "\($0)"] }
-        let fileURL = try TestUtils.createTemporaryCSVFile(
-            headers: ["name", "age"],
-            rows: rows
-        )
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
+        let csv = "name,age\n" + (1...100).map { "person_\($0),\($0)" }.joined(separator: "\n") + "\n"
+        var people = try FastCSV.makeRows(Person.self, fromString: csv)
         var count = 0
         try people.forEach { _ in count += 1 }
 
@@ -198,10 +146,7 @@ struct CSVDecodableTests {
 
     @Test("Quoted string fields are unquoted")
     func quotedStrings() throws {
-        let fileURL = try TestUtils.createRawCSVFile(content: "name,age\n\"Alice, Jr.\",30\n")
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
+        var people = try FastCSV.makeRows(Person.self, fromString: "name,age\n\"Alice, Jr.\",30\n")
         var results: [Person] = []
         try people.forEach { results.append($0) }
 
@@ -210,13 +155,7 @@ struct CSVDecodableTests {
 
     @Test("Multiple types decode correctly")
     func multipleTypes() throws {
-        let fileURL = try TestUtils.createTemporaryCSVFile(
-            headers: ["str", "integer", "dbl", "flt", "flag"],
-            rows: [["hello", "42", "3.14", "2.5", "true"]]
-        )
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var items = try FastCSV.makeRows(TypeRich.self, fromURL: fileURL)
+        var items = try FastCSV.makeRows(TypeRich.self, fromString: "str,integer,dbl,flt,flag\nhello,42,3.14,2.5,true\n")
         var results: [TypeRich] = []
         try items.forEach { results.append($0) }
 
@@ -229,13 +168,7 @@ struct CSVDecodableTests {
 
     @Test("Decimal decoding")
     func decimalDecoding() throws {
-        let fileURL = try TestUtils.createTemporaryCSVFile(
-            headers: ["name", "price"],
-            rows: [["Widget", "19.99"]]
-        )
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var items = try FastCSV.makeRows(WithDecimal.self, fromURL: fileURL)
+        var items = try FastCSV.makeRows(WithDecimal.self, fromString: "name,price\nWidget,19.99\n")
         var results: [WithDecimal] = []
         try items.forEach { results.append($0) }
 
@@ -244,13 +177,7 @@ struct CSVDecodableTests {
 
     @Test("for-in with Result pattern works")
     func forInWithResult() throws {
-        let fileURL = try TestUtils.createTemporaryCSVFile(
-            headers: ["name", "age"],
-            rows: [["Alice", "30"]]
-        )
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        let people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
+        let people = try FastCSV.makeRows(Person.self, fromString: "name,age\nAlice,30\n")
         for result in people {
             let person = try result.get()
             #expect(person == Person(name: "Alice", age: 30))
@@ -259,10 +186,7 @@ struct CSVDecodableTests {
 
     @Test("Non-optional empty field throws valueNotFound")
     func nonOptionalEmptyField() throws {
-        let fileURL = try TestUtils.createRawCSVFile(content: "name,age\n,30\n")
-        defer { try? FileManager.default.removeItem(at: fileURL) }
-
-        var people = try FastCSV.makeRows(Person.self, fromURL: fileURL)
+        var people = try FastCSV.makeRows(Person.self, fromString: "name,age\n,30\n")
         guard let result = people.next() else {
             Issue.record("Expected a row")
             return
@@ -272,6 +196,8 @@ struct CSVDecodableTests {
             try result.get()
         }
     }
+
+    // MARK: - File I/O Overloads
 
     @Test("Path string overload works")
     func pathStringOverload() throws {
@@ -292,24 +218,21 @@ struct CSVDecodableTests {
 
     @Test("Quoted integers and doubles decode through Decodable")
     func quotedNumericDecoding() throws {
-        let csv = "str,integer,dbl,flt,flag\n\"hello\",\"42\",\"3.14\",\"2.5\",\"true\"\n"
-        var rows = try FastCSV.makeRows(TypeRich.self, fromString: csv)
+        var rows = try FastCSV.makeRows(TypeRich.self, fromString: "str,integer,dbl,flt,flag\n\"hello\",\"42\",\"3.14\",\"2.5\",\"true\"\n")
         let result = try rows.next()!.get()
         #expect(result == TypeRich(str: "hello", integer: 42, dbl: 3.14, flt: 2.5, flag: true))
     }
 
     @Test("Quoted Int8 decodes through integer width path")
     func quotedInt8Decoding() throws {
-        let csv = "name,age\n\"Alice\",\"30\"\n"
-        var rows = try FastCSV.makeRows(Person.self, fromString: csv)
+        var rows = try FastCSV.makeRows(Person.self, fromString: "name,age\n\"Alice\",\"30\"\n")
         let result = try rows.next()!.get()
         #expect(result == Person(name: "Alice", age: 30))
     }
 
     @Test("Quoted Decimal decodes correctly")
     func quotedDecimalDecoding() throws {
-        let csv = "name,price\n\"Widget\",\"19.99\"\n"
-        var rows = try FastCSV.makeRows(WithDecimal.self, fromString: csv)
+        var rows = try FastCSV.makeRows(WithDecimal.self, fromString: "name,price\n\"Widget\",\"19.99\"\n")
         let result = try rows.next()!.get()
         #expect(result == WithDecimal(name: "Widget", price: Decimal(string: "19.99")!))
     }
@@ -318,10 +241,9 @@ struct CSVDecodableTests {
 
     @Test("Column mapping renames headers to match struct properties")
     func columnMappingBasic() throws {
-        let csv = "Full Name,Years Old\nAlice,30\nBob,25\n"
         var rows = try FastCSV.makeRows(
             Person.self,
-            fromString: csv,
+            fromString: "Full Name,Years Old\nAlice,30\nBob,25\n",
             columnMapping: ["Full Name": "name", "Years Old": "age"]
         )
         var results: [Person] = []
@@ -332,10 +254,9 @@ struct CSVDecodableTests {
 
     @Test("Column mapping — unmapped columns keep their original names")
     func columnMappingPartial() throws {
-        let csv = "name,Years Old\nAlice,30\n"
         var rows = try FastCSV.makeRows(
             Person.self,
-            fromString: csv,
+            fromString: "name,Years Old\nAlice,30\n",
             columnMapping: ["Years Old": "age"]
         )
         let result = try rows.next()!.get()
@@ -345,10 +266,9 @@ struct CSVDecodableTests {
 
     @Test("Column mapping — unmapped extra columns are ignored")
     func columnMappingExtraColumns() throws {
-        let csv = "Full Name,Years Old,City\nAlice,30,Boston\n"
         var rows = try FastCSV.makeRows(
             Person.self,
-            fromString: csv,
+            fromString: "Full Name,Years Old,City\nAlice,30,Boston\n",
             columnMapping: ["Full Name": "name", "Years Old": "age"]
         )
         let result = try rows.next()!.get()
@@ -358,10 +278,9 @@ struct CSVDecodableTests {
 
     @Test("Column mapping — missing mapped column throws keyNotFound")
     func columnMappingMissingColumn() throws {
-        let csv = "Full Name,city\nAlice,Boston\n"
         var rows = try FastCSV.makeRows(
             Person.self,
-            fromString: csv,
+            fromString: "Full Name,city\nAlice,Boston\n",
             columnMapping: ["Full Name": "name"]
         )
         guard let result = rows.next() else {
@@ -391,10 +310,9 @@ struct CSVDecodableTests {
 
     @Test("Column mapping with empty mapping behaves like no mapping")
     func columnMappingEmpty() throws {
-        let csv = "name,age\nAlice,30\n"
         var rows = try FastCSV.makeRows(
             Person.self,
-            fromString: csv,
+            fromString: "name,age\nAlice,30\n",
             columnMapping: [:]
         )
         let result = try rows.next()!.get()
