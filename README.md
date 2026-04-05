@@ -264,7 +264,17 @@ swift run RawAccess
 
 ## Performance
 
-FastCSV is optimized for high-throughput scenarios. The Decodable layer adds minimal overhead — it wraps the array iterator with a pre-built column index map, decoding only the columns matching your struct.
+FastCSV is optimized for high-throughput scenarios. Benchmarked against a 1.4GB [NHS prescription dataset](https://digital.nhs.uk/data-and-information/publications/statistical/practice-level-prescribing-data/presentation-level-july-2014) (10.3 million rows, 11 columns):
+
+| API | Rows/sec | Notes |
+|-----|----------|-------|
+| Array iterator (no quotes) | 1.2M | Raw `CSVValue` access, 6 fields per row |
+| Array iterator (standard) | 1.1M | Same access pattern, with quote detection |
+| Decodable + columnMapping | 477K | Full struct decoding, 6 typed fields |
+
+Memory stays constant regardless of file size — peak was 8.5MB (0.6% of the 1.4GB file).
+
+The Decodable path is roughly 2x slower than raw array access with equivalent field access. This overhead comes from Swift's Codable protocol machinery (dynamic dispatch, `KeyedDecodingContainer`, `CodingKey` resolution per field per row) and is inherent to any Decoder implementation. For maximum throughput on very large files, use the array or dictionary iterators directly.
 
 ## Requirements
 
