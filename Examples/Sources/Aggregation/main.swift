@@ -10,20 +10,15 @@ struct BusRoute: Decodable {
     let name: String
     let monthBeginning: String
     let avgWeekdayRides: Double
-    let avgSaturdayRides: Double
-    let avgSundayHolidayRides: Double
     let monthTotal: Int
-
-    enum CodingKeys: String, CodingKey {
-        case route
-        case name = "routename"
-        case monthBeginning = "Month_Beginning"
-        case avgWeekdayRides = "Avg_Weekday_Rides"
-        case avgSaturdayRides = "Avg_Saturday_Rides"
-        case avgSundayHolidayRides = "Avg_Sunday-Holiday_Rides"
-        case monthTotal = "MonthTotal"
-    }
 }
+
+let mapping = [
+    "routename": "name",
+    "Month_Beginning": "monthBeginning",
+    "Avg_Weekday_Rides": "avgWeekdayRides",
+    "MonthTotal": "monthTotal",
+]
 
 // --- Total ridership by year ---
 
@@ -32,7 +27,7 @@ print("CTA bus ridership by year:")
 // Year is the last 4 characters of the date string (MM/dd/yyyy).
 var ridershipByYear: [String: Int] = [:]
 
-var yearRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv")
+var yearRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: mapping)
 try yearRows.forEach { route in
     let year = String(route.monthBeginning.suffix(4))
     ridershipByYear[year, default: 0] += route.monthTotal
@@ -50,7 +45,7 @@ print("\nTop 15 routes by all-time total ridership:")
 
 var totalByRoute: [String: (name: String, total: Int)] = [:]
 
-var routeRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv")
+var routeRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: mapping)
 try routeRows.forEach { route in
     var entry = totalByRoute[route.route] ?? (name: route.name, total: 0)
     entry.total += route.monthTotal
@@ -72,7 +67,7 @@ var monthlyTotals: [(month: String, weekdayRides: Double)] = []
 var currentMonth = ""
 var currentTotal = 0.0
 
-var monthlyRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv")
+var monthlyRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: mapping)
 try monthlyRows.forEach { route in
     guard route.monthBeginning.hasSuffix("2025") else { return }
 

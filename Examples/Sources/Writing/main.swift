@@ -13,15 +13,14 @@ struct BusRoute: Decodable {
     let monthBeginning: String
     let avgWeekdayRides: Double
     let monthTotal: Int
-
-    enum CodingKeys: String, CodingKey {
-        case route
-        case name = "routename"
-        case monthBeginning = "Month_Beginning"
-        case avgWeekdayRides = "Avg_Weekday_Rides"
-        case monthTotal = "MonthTotal"
-    }
 }
+
+let inputMapping = [
+    "routename": "name",
+    "Month_Beginning": "monthBeginning",
+    "Avg_Weekday_Rides": "avgWeekdayRides",
+    "MonthTotal": "monthTotal",
+]
 
 // The output struct — different shape from the input.
 struct RouteHistory: Encodable {
@@ -29,19 +28,12 @@ struct RouteHistory: Encodable {
     let month: String
     let avgWeekdayRides: Double
     let monthTotal: Int
-
-    enum CodingKeys: String, CodingKey {
-        case year
-        case month
-        case avgWeekdayRides = "avg_weekday_rides"
-        case monthTotal = "month_total"
-    }
 }
 
 // Filter to Route 79 (Western — one of Chicago's busiest) and reshape.
 var history: [RouteHistory] = []
 
-var rows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv")
+var rows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: inputMapping)
 try rows.forEach { route in
     guard route.route == "79" else { return }
 
@@ -60,7 +52,7 @@ print("Wrote \(history.count) rows to western-route-history.csv")
 
 // --- Write to a string instead of a file ---
 
-let csv = try FastCSV.writeString(history.prefix(5).map { $0 })
+let csv = try FastCSV.writeString(Array(history.prefix(5)))
 print("\nFirst 5 rows as string:\n\(csv)")
 
 // --- Row-by-row writing with CSVWriter ---
@@ -73,7 +65,7 @@ try writer.writeHeaders(["route", "name", "peak_month_total"])
 // Find each route's peak month and write it out.
 var peakByRoute: [String: (name: String, peak: Int)] = [:]
 
-var peakRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv")
+var peakRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: inputMapping)
 try peakRows.forEach { route in
     let existing = peakByRoute[route.route]
     if existing == nil || route.monthTotal > existing!.peak {

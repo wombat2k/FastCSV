@@ -7,12 +7,13 @@ A high-performance CSV parser and writer for Swift
 
 ## Overview
 
-FastCSV is a high-performance CSV (Comma-Separated Values) parser and writer for Swift. The parser is designed to efficiently process large CSV files with minimal memory overhead through streaming and zero-copy techniques. The writer provides convenient Codable round-tripping — read CSV into structs, transform, write back out.
+FastCSV is a high-performance CSV parser and writer for Swift. The parser processes large CSV files with minimal memory overhead through streaming and zero-copy techniques. The writer provides Codable round-tripping — read CSV into structs, transform, write back out.
 
 ## Features
 
 ### Reading
 - **Decodable support** — decode CSV rows directly into Swift structs, only materializing the columns you need
+- **Column mapping** — map CSV headers to struct properties at the call site, no CodingKeys required
 - **High-performance parsing** with zero-copy techniques
 - **Low memory footprint** through chunked streaming — constant memory regardless of file size
 - **Three API tiers** — typed structs via `Decodable`, dictionary access by column name, or raw array iteration
@@ -22,7 +23,7 @@ FastCSV is a high-performance CSV (Comma-Separated Values) parser and writer for
 - **UTF-8 BOM detection** and automatic removal
 
 ### Writing
-- **Encodable support** — write Swift structs directly to CSV with automatic header derivation from CodingKeys
+- **Encodable support** — write Swift structs directly to CSV with automatic header derivation
 - **RFC 4180 quoting** — fields containing delimiters, quotes, or newlines are quoted automatically
 - **Multiple output targets** — write to file path, URL, or string
 - **Row-by-row or batch** — streaming writes via `CSVWriter` or one-shot via static methods
@@ -30,9 +31,7 @@ FastCSV is a high-performance CSV (Comma-Separated Values) parser and writer for
 
 ## Installation
 
-### Swift Package Manager
-
-Add FastCSV to your project using Swift Package Manager by adding the following to your `Package.swift` file:
+Add FastCSV to your project using Swift Package Manager:
 
 ```swift
 dependencies: [
@@ -40,127 +39,162 @@ dependencies: [
 ]
 ```
 
-## Usage
+## Quick Start
 
-### Decodable (Recommended)
-
-Define a struct matching the columns you care about. Extra CSV columns are ignored — only matched columns are decoded, so you pay no cost for columns you don't use.
+Define a struct, map the CSV columns to your property names, and iterate:
 
 ```swift
 import FastCSV
 
-struct Person: Decodable {
+struct BusRoute: Decodable {
+    let route: String
     let name: String
-    let age: Int
+    let monthTotal: Int
 }
 
-var people = try FastCSV.makeRows(Person.self, fromPath: "data.csv")
-try people.forEach { person in
-    print(person.name, person.age)
+var rows = try FastCSV.makeRows(
+    BusRoute.self,
+    fromPath: "ridership.csv",
+    columnMapping: [
+        "routename": "name",
+        "MonthTotal": "monthTotal",
+    ]
+)
+
+try rows.forEach { route in
+    print("\(route.name): \(route.monthTotal)")
 }
 ```
 
-Each row is decoded lazily as you iterate. Optional fields decode as `nil` for empty CSV values:
+Rows are decoded lazily — one at a time, not all at once. Memory stays constant regardless of file size.
+
+## Column Mapping
+
+The `columnMapping` parameter maps CSV header names to struct property names:
 
 ```swift
-struct PersonWithOptional: Decodable {
+columnMapping: ["routename": "name"]
+```
+
+This means: the CSV column `routename` fills the struct property `name`.
+
+You only need entries for columns whose names differ from your properties. Columns that already match (like `route` above) can be left out. Extra CSV columns are ignored.
+
+If you prefer baking the mapping into the type, Swift's standard `CodingKeys` works too:
+
+```swift
+struct BusRoute: Decodable {
+    let route: String
+    let name: String
+
+    enum CodingKeys: String, CodingKey {
+        case route
+        case name = "routename"
+    }
+}
+
+// No columnMapping needed
+var rows = try FastCSV.makeRows(BusRoute.self, fromPath: "ridership.csv")
+```
+
+## Iterating
+
+### forEach — process every row
+
+Use `forEach` when you want to iterate through all rows. The callback receives a decoded struct directly:
+
+```swift
+try rows.forEach { route in
+    print(route.name)
+}
+```
+
+Use `return` to skip rows (not `continue` — you're inside a closure). Note that `forEach` always reads every row in the file, even when individual iterations return early.
+
+### for-in — stop early with break
+
+Use `for-in` when you need to stop before the end. Each element is a `Result<T, Error>`:
+
+```swift
+for result in rows {
+    let route = try result.get()
+    print(route.name)
+    break
+}
+```
+
+The `Result` type also enables per-row error handling:
+
+```swift
+for result in rows {
+    switch result {
+    case .success(let route): print(route.name)
+    case .failure(let error): print("Skipping: \(error)")
+    }
+}
+```
+
+## Input Sources
+
+All reading APIs accept file paths, URLs, in-memory `Data`, or `String`:
+
+```swift
+var rows = try FastCSV.makeRows(T.self, fromPath: "/path/to/file.csv")
+var rows = try FastCSV.makeRows(T.self, fromURL: url)
+var rows = try FastCSV.makeRows(T.self, fromData: csvData)
+var rows = try FastCSV.makeRows(T.self, fromString: "name,age\nAlice,30\n")
+```
+
+## Raw Access
+
+When you don't have a struct or don't know the schema:
+
+```swift
+// By position
+let arrayRows = try FastCSV.makeArrayRows(fromPath: "data.csv")
+for row in arrayRows {
+    let name = try row[0].string
+    let age = try row[1].int
+}
+
+// By column name
+let dictRows = try FastCSV.makeDictionaryRows(fromPath: "data.csv")
+for row in dictRows {
+    let name = try row["name"]!.string
+}
+```
+
+`CSVValue` provides typed accessors: `.string`, `.int`, `.double`, `.float`, `.bool`, `.date`, `.decimal`. Use the `IfPresent` variants (`.stringIfPresent`, `.intIfPresent`, etc.) when a field might be empty — they return `nil` instead of throwing.
+
+Optional struct fields also decode empty CSV values as `nil`:
+
+```swift
+struct Person: Decodable {
     let name: String
     let age: Int?  // empty CSV field → nil
 }
 ```
 
-For per-row error handling, use the `Result`-based `for-in` loop:
+## Writing CSV
+
+### Encodable structs
+
+Headers are derived automatically from property names (or CodingKeys):
 
 ```swift
-for result in try FastCSV.makeRows(Person.self, fromPath: "data.csv") {
-    switch result {
-    case .success(let person):
-        print(person.name)
-    case .failure(let error):
-        print("Skipping row: \(error)")
-    }
-}
-```
-
-### Array-based iteration
-
-```swift
-import FastCSV
-
-let rows = try FastCSV.makeArrayRows(fromPath: "data.csv")
-
-for row in rows {
-    if let error = row.error {
-        print("Row error: \(error)")
-        continue
-    }
-
-    for value in row.values {
-        let stringValue = try value.stringIfPresent()
-        print(stringValue ?? "")
-    }
-}
-```
-
-### Dictionary-based iteration
-
-```swift
-import FastCSV
-
-let rows = try FastCSV.makeDictionaryRows(fromPath: "data.csv", hasHeaders: true)
-
-for row in rows {
-    if let error = row.error {
-        print("Row error: \(error)")
-        continue
-    }
-
-    if let name = try row.values["name"]?.stringIfPresent() {
-        print("Name: \(name)")
-    }
-}
-```
-
-### String and Data input
-
-All three API tiers also accept in-memory input — no file needed:
-
-```swift
-// From a string
-let csv = "name,age\nAlice,30\nBob,25\n"
-var people = try FastCSV.makeRows(Person.self, fromString: csv)
-
-// From Data
-let data = Data(csv.utf8)
-var people = try FastCSV.makeRows(Person.self, fromData: data)
-```
-
-### Writing CSV (Encodable)
-
-Write an array of `Encodable` structs to CSV. Headers are derived automatically from CodingKeys. Make your structs `Codable` to support both reading and writing:
-
-```swift
-struct Person: Codable {
+struct Output: Encodable {
     let name: String
     let age: Int
 }
 
-let people = [
-    Person(name: "Alice", age: 30),
-    Person(name: "Bob", age: 25),
-]
+let people = [Output(name: "Alice", age: 30), Output(name: "Bob", age: 25)]
 
-// Write to file
 try FastCSV.writeRows(people, toPath: "output.csv")
 
-// Write to string
 let csv = try FastCSV.writeString(people)
-// "name,age\nAlice,30\nBob,25\n"
 ```
 
-Optional fields encode as empty CSV values, bools as `"true"`/`"false"`, dates using the configured formatter (default: `yyyy-MM-dd`).
-
-### Writing CSV (String Arrays)
+### String arrays
 
 ```swift
 try FastCSV.writeRows(
@@ -170,87 +204,74 @@ try FastCSV.writeRows(
 )
 ```
 
-### Row-by-Row Writing
-
-For streaming writes or when rows are generated incrementally:
+### Row-by-row streaming
 
 ```swift
-let writer = try CSVWriter(toPath: "output.csv")
-try writer.writeRow(Person(name: "Alice", age: 30, score: 95.5))
-try writer.writeRow(Person(name: "Bob", age: 25, score: 87.3))
-writer.close()
+let writer = CSVWriter()
+try writer.writeHeaders(["name", "age"])
+try writer.writeRow(["Alice", "30"])
+
+if let csv = writer.toString() {
+    print(csv)
+}
 ```
 
-### Configuration
+`CSVWriter` also accepts a file path or URL in its initializer for streaming to disk.
 
-#### Reading
+## Configuration
 
-All three reading API tiers accept the same configuration options:
+### Custom delimiters
 
 ```swift
-import FastCSV
-
-let config = CSVParserConfig(
-    delimiter: CSVFormat.tsv.delimiter,  // Tab-separated values
-    readBufferSize: 512 * 1024,          // 512KB buffer
-    assumeNoQuotes: true                 // Optimize for quote-free data
-)
-
-var people = try FastCSV.makeRows(
-    Person.self,
-    fromPath: "data.tsv",
-    config: config
-)
+let tsv = CSVParserConfig(delimiter: CSVFormat.tsv.delimiter)
+var rows = try FastCSV.makeRows(T.self, fromPath: "data.tsv", config: tsv)
 ```
 
-#### Writing
+Supported formats: CSV, TSV, semicolon-separated, or custom field/row/quote delimiters.
+
+### No-quotes optimization
+
+Skip quote detection for a ~9% speed boost when your data has no quoted fields:
 
 ```swift
-let config = CSVWriterConfig(
-    delimiter: CSVFormat.tsv.delimiter  // Tab-separated output
-)
-
-try FastCSV.writeRows(people, toPath: "output.tsv", config: config)
+let config = CSVParserConfig(assumeNoQuotes: true)
 ```
 
-Custom headers can be provided for files without a header row:
+### Custom headers
+
+For files without a header row:
 
 ```swift
-var people = try FastCSV.makeRows(
-    Person.self,
+var rows = try FastCSV.makeRows(
+    T.self,
     fromPath: "data.csv",
     hasHeaders: false,
     headers: ["name", "age", "city"]
 )
 ```
 
-### Supported Formats
+## Examples
 
-- **CSV**: Comma-separated values with double quotes
-- **TSV**: Tab-separated values
-- **Semicolon-separated**: Common in European locales
-- **Custom**: Define your own field, row, and quote delimiters
+The [Examples](Examples/) directory contains runnable examples using real CTA bus ridership data (40K rows). Each example is a standalone executable target:
+
+```bash
+cd Examples
+swift run Filtering
+swift run Aggregation
+swift run Writing
+swift run RawAccess
+```
 
 ## Performance
 
-FastCSV is optimized for high-throughput scenarios.
-
-The Decodable layer adds minimal overhead — it wraps the array iterator directly with a pre-built column index map, avoiding the dictionary allocation that the dictionary iterator requires. Only columns matching your struct's properties are decoded.
+FastCSV is optimized for high-throughput scenarios. The Decodable layer adds minimal overhead — it wraps the array iterator with a pre-built column index map, decoding only the columns matching your struct.
 
 ## Requirements
 
-- **macOS**: 12.0+
+- **macOS**: 13.0+
 - **iOS**: 15.0+
 - **Swift**: 6.0+
 
-## Development Status
-
-**Note**: This project is currently in active development. While all tests pass and core functionality is stable, the API may still change.
-
-### Upcoming features
-- Performance optimizations (SIMD exploration)
-- Multi-GB stress testing
-
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) for details.

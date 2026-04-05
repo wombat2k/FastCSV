@@ -9,7 +9,6 @@ let package = Package(
         .package(path: ".."),
     ],
     targets: [
-        .executableTarget(name: "BasicUsage", dependencies: ["FastCSV"]),
         .executableTarget(name: "Filtering", dependencies: ["FastCSV"]),
         .executableTarget(name: "Aggregation", dependencies: ["FastCSV"]),
         .executableTarget(name: "Writing", dependencies: ["FastCSV"]),

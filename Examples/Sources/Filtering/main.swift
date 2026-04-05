@@ -1,6 +1,5 @@
 // Filtering.swift
-// Query CTA ridership data using lazy iteration — rows are processed
-// one at a time, so memory stays constant regardless of file size.
+// Query CTA ridership data using lazy iteration.
 
 import FastCSV
 import Foundation
@@ -13,25 +12,34 @@ struct BusRoute: Decodable {
     let avgSaturdayRides: Double
     let avgSundayHolidayRides: Double
     let monthTotal: Int
+}
 
-    enum CodingKeys: String, CodingKey {
-        case route
-        case name = "routename"
-        case monthBeginning = "Month_Beginning"
-        case avgWeekdayRides = "Avg_Weekday_Rides"
-        case avgSaturdayRides = "Avg_Saturday_Rides"
-        case avgSundayHolidayRides = "Avg_Sunday-Holiday_Rides"
-        case monthTotal = "MonthTotal"
-    }
+let mapping = [
+    "routename": "name",
+    "Month_Beginning": "monthBeginning",
+    "Avg_Weekday_Rides": "avgWeekdayRides",
+    "Avg_Saturday_Rides": "avgSaturdayRides",
+    "Avg_Sunday-Holiday_Rides": "avgSundayHolidayRides",
+    "MonthTotal": "monthTotal",
+]
+
+// --- Simple filter: months with over 1M rides ---
+
+print("Months exceeding 1M rides:")
+
+var simpleRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: mapping)
+try simpleRows.forEach { route in
+    guard route.monthTotal > 1_000_000 else { return }
+    print("  \(route.name) — \(route.monthBeginning): \(route.monthTotal) rides")
 }
 
 // --- Busiest single months across all routes ---
 
-print("Top 10 busiest route-months:")
+print("\nTop 10 busiest route-months:")
 
 var topMonths: [(String, String, Int)] = []
 
-var rows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv")
+var rows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: mapping)
 try rows.forEach { route in
     // Keep a sorted top-10 list as we stream through.
     if topMonths.count < 10 || route.monthTotal > topMonths.last!.2 {
@@ -49,7 +57,7 @@ for (i, entry) in topMonths.enumerated() {
 
 print("\nRoutes with no Saturday or Sunday service (Jan 2026):")
 
-var weekendRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv")
+var weekendRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: mapping)
 try weekendRows.forEach { route in
     guard route.monthBeginning == "01/01/2026" else { return }
 
@@ -59,13 +67,14 @@ try weekendRows.forEach { route in
 }
 
 // --- COVID impact: compare Jan 2020 vs Jan 2021 for a single route ---
+// Uses for-in because we need to break early once both months are found.
 
 print("\nRoute 9 (Ashland) — COVID impact:")
 
 var jan2020: BusRoute?
 var jan2021: BusRoute?
 
-for result in try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv") {
+for result in try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: mapping) {
     let route = try result.get()
     guard route.route == "9" else { continue }
 
