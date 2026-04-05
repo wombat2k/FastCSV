@@ -114,17 +114,17 @@ struct AdversarialTests {
         )
     }
 
-    @Test("Unexpected quotes in noQuotes mode")
-    func testUnexpectedQuotesInNoQuotesMode() async throws {
+    @Test("Quotes treated as literal characters in noQuotes mode")
+    func testQuotesLiteralInNoQuotesMode() async throws {
         let headers = TestUtils.createHeaders(count: 3)
         var rows = TestUtils.createValues(rows: 2, columns: 3)
         rows[1][1] = "value with \"unexpected\" quotes"
 
-        // Set the parser to noQuotes mode
+        // In noQuotes mode, quotes are just regular bytes — no special handling
         let config = CSVParserConfig(assumeNoQuotes: true)
 
         try await TestUtils.runTest(
-            testName: "Unexpected quotes in noQuotes mode",
+            testName: "Quotes treated as literal in noQuotes mode",
             contentHeaders: headers,
             contentRows: rows,
             config: config,
@@ -132,17 +132,11 @@ struct AdversarialTests {
             validate: { (results: [CSVArrayResult]) in
                 #expect(results.count == 2, "Should have 2 rows")
                 #expect(results[0].error == nil, "First row should not have an error")
+                #expect(results[1].error == nil, "Second row should not have an error")
 
-                if let error = results[1].error {
-                    switch error {
-                    case let .invalidCSV(message):
-                        #expect(message.contains("no-quotes mode"), "Error should mention no-quotes mode")
-                    default:
-                        #expect(Bool(false), "Expected invalidCSV but got \(error)")
-                    }
-                } else {
-                    #expect(Bool(false), "Should have an error for quotes in no-quotes mode")
-                }
+                let value = try results[1].values[1].stringIfPresent() ?? ""
+                #expect(value == "value with \"unexpected\" quotes",
+                        "Quotes should be preserved as literal characters")
             }
         )
     }

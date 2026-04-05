@@ -427,14 +427,6 @@ extension FastCSV {
 
                         currentRowNumber += 1
                         return result
-                    } else if byte == delimiter.quoteByte {
-                        let emptyFields: [UnsafeBufferPointer<UInt8>] = []
-                        let errorResult = CSVIteratorResult(
-                            fieldPointers: emptyFields,
-                            parsingError: .invalidCSV(message: "File contains quotes but was parsed in no-quotes mode")
-                        )
-                        cleanup()
-                        return errorResult
                     } else {
                         chunkReader.advancePosition()
                     }
