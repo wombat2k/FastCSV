@@ -7,7 +7,6 @@ DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 .mypy_cache/
-Examples/
 .vscode/
 *.xcodeproj/
 *.xcworkspace/
