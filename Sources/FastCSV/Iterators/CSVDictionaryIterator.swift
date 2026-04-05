@@ -12,7 +12,7 @@ public extension FastCSV {
         private var valueArrayIterator: CSVArrayIterator
         public let headers: [String]
 
-        // Pre-allocated reusable dictionary for performance
+        /// Pre-allocated reusable dictionary for performance
         private var reusableDict: [String: CSVValue]
 
         init(valueArrayIterator: CSVArrayIterator, headers: [String]) {

@@ -2,13 +2,12 @@
 import Foundation
 import Testing
 
-@Suite("CSV Value Tests")
 struct CSVValueTests {
     // MARK: - Owned CSVValue
 
-    // These tests check the behavior of CSVValue when it owns its buffer.
+    /// These tests check the behavior of CSVValue when it owns its buffer.
     @Test("CSVValue as owned String")
-    func testCSVValueAsString() throws {
+    func cSVValueAsString() throws {
         let inputValue = "Original"
         var bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .own)
@@ -24,7 +23,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as owned Integer")
-    func testCSVValueAsInteger() throws {
+    func cSVValueAsInteger() throws {
         let inputValue = "123"
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .own)
@@ -34,7 +33,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as owned Double")
-    func testCSVValueAsDouble() throws {
+    func cSVValueAsDouble() throws {
         let inputValue = "123.456"
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .own)
@@ -44,7 +43,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as owned Float")
-    func testCSVValueAsFloat() throws {
+    func cSVValueAsFloat() throws {
         let inputValue = "123.456"
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .own)
@@ -54,7 +53,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as owned Decimal")
-    func testCSVValueAsDecimal() throws {
+    func cSVValueAsDecimal() throws {
         let inputValue = "123.456"
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .own)
@@ -64,7 +63,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as owned Bool", arguments: ["true", "TRUE", "yes", "yEs", "1", "y", "Y"])
-    func testCSVValueAsBool(inputValue: String) throws {
+    func cSVValueAsBool(inputValue: String) throws {
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .own)
         let collectedValue = try csvValue.boolIfPresent ?? false
@@ -73,7 +72,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as owned Bool with invalid values", arguments: ["invalid", "123abc", "yesno"])
-    func testCSVValueAsBoolTrueWithInvalidValues(inputValue: String) throws {
+    func cSVValueAsBoolTrueWithInvalidValues(inputValue: String) throws {
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .own)
 
@@ -83,7 +82,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as owned Bool with false values", arguments: ["false", "FALSE", "no", "nO", "0", "n", "N"])
-    func testCSVValueAsBoolWithFalseValues(inputValue: String) throws {
+    func cSVValueAsBoolWithFalseValues(inputValue: String) throws {
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .own)
         let collectedValue = try csvValue.boolIfPresent ?? false
@@ -92,7 +91,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as owned String with empty buffer")
-    func testCSVValueWithEmptyBuffer() throws {
+    func cSVValueWithEmptyBuffer() throws {
         // Create an empty buffer
         let bytes = [UInt8]()
 
@@ -107,7 +106,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as owned String with empty String")
-    func testCSVValueWithEmptyString() throws {
+    func cSVValueWithEmptyString() throws {
         // Create an empty string
         let inputValue = "\"\""
         let bytes = [UInt8](inputValue.utf8)
@@ -125,9 +124,9 @@ struct CSVValueTests {
 
     // MARK: - Reference CSVValue
 
-    // These tests check the behavior of CSVValue when it references a buffer.
+    /// These tests check the behavior of CSVValue when it references a buffer.
     @Test("CSVValue as borrowed String")
-    func testCSVValueWithMutableBuffer() throws {
+    func cSVValueWithMutableBuffer() throws {
         // Create a mutable buffer
         var buffer = [UInt8]("Original".utf8)
 
@@ -157,7 +156,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as borrowed String with nil")
-    func testCSVValueWithNilBuffer() throws {
+    func cSVValueWithNilBuffer() throws {
         // Create a CSVValue with a nil buffer
         let csvValue = CSVValue(buffer: nil)
 
@@ -170,7 +169,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as borrowed Int")
-    func testCSVValueWithBorrowedInt() throws {
+    func cSVValueWithBorrowedInt() throws {
         let inputValue = "123"
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .ref)
@@ -180,7 +179,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as borrowed Double")
-    func testCSVValueWithBorrowedDouble() throws {
+    func cSVValueWithBorrowedDouble() throws {
         let inputValue = "123.456"
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .ref)
@@ -190,7 +189,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as borrowed Float")
-    func testCSVValueWithBorrowedFloat() throws {
+    func cSVValueWithBorrowedFloat() throws {
         let inputValue = "123.456"
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .ref)
@@ -200,7 +199,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as borrowed Decimal")
-    func testCSVValueWithBorrowedDecimal() throws {
+    func cSVValueWithBorrowedDecimal() throws {
         let inputValue = "123.456"
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .ref)
@@ -210,7 +209,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as borrowed Bool", arguments: ["true", "TRUE", "yes", "yEs", "1", "y", "Y"])
-    func testCSVValueWithBorrowedBool(inputValue: String) throws {
+    func cSVValueWithBorrowedBool(inputValue: String) throws {
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .ref)
         let collectedValue = try csvValue.boolIfPresent ?? false
@@ -219,7 +218,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as borrowed Bool with invalid values", arguments: ["invalid", "123abc", "yesno"])
-    func testCSVValueWithBorrowedBoolTrueWithInvalidValues(inputValue: String) throws {
+    func cSVValueWithBorrowedBoolTrueWithInvalidValues(inputValue: String) throws {
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .ref)
 
@@ -229,7 +228,7 @@ struct CSVValueTests {
     }
 
     @Test("CSVValue as borrowed Bool with false values", arguments: ["false", "FALSE", "no", "nO", "0", "n", "N"])
-    func testCSVValueWithBorrowedBoolWithFalseValues(inputValue: String) throws {
+    func cSVValueWithBorrowedBoolWithFalseValues(inputValue: String) throws {
         let bytes = [UInt8](inputValue.utf8)
         let csvValue = TestUtils.createCSVValue(from: bytes, source: .ref)
         let collectedValue = try csvValue.boolIfPresent ?? false
@@ -255,13 +254,13 @@ struct CSVValueTests {
     // MARK: - Non-Optional Accessors
 
     @Test("Non-optional string returns value")
-    func testNonOptionalString() throws {
+    func nonOptionalString() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("hello".utf8), source: .own)
         #expect(try csvValue.string == "hello")
     }
 
     @Test("Non-optional string throws on empty")
-    func testNonOptionalStringThrowsOnEmpty() throws {
+    func nonOptionalStringThrowsOnEmpty() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8](), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.string
@@ -269,19 +268,19 @@ struct CSVValueTests {
     }
 
     @Test("Non-optional string computed property matches method")
-    func testNonOptionalStringPropertyMatchesMethod() throws {
+    func nonOptionalStringPropertyMatchesMethod() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("test".utf8), source: .own)
         #expect(try csvValue.string == csvValue.string())
     }
 
     @Test("Non-optional int returns value")
-    func testNonOptionalInt() throws {
+    func nonOptionalInt() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("42".utf8), source: .own)
         #expect(try csvValue.int == 42)
     }
 
     @Test("Non-optional int throws on empty")
-    func testNonOptionalIntThrowsOnEmpty() throws {
+    func nonOptionalIntThrowsOnEmpty() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8](), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.int
@@ -289,13 +288,13 @@ struct CSVValueTests {
     }
 
     @Test("Non-optional double returns value")
-    func testNonOptionalDouble() throws {
+    func nonOptionalDouble() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("3.14".utf8), source: .own)
         #expect(try csvValue.double == 3.14)
     }
 
     @Test("Non-optional double throws on empty")
-    func testNonOptionalDoubleThrowsOnEmpty() throws {
+    func nonOptionalDoubleThrowsOnEmpty() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8](), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.double
@@ -303,13 +302,13 @@ struct CSVValueTests {
     }
 
     @Test("Non-optional float returns value")
-    func testNonOptionalFloat() throws {
+    func nonOptionalFloat() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("2.5".utf8), source: .own)
         #expect(try csvValue.float == 2.5)
     }
 
     @Test("Non-optional float throws on empty")
-    func testNonOptionalFloatThrowsOnEmpty() throws {
+    func nonOptionalFloatThrowsOnEmpty() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8](), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.float
@@ -317,13 +316,13 @@ struct CSVValueTests {
     }
 
     @Test("Non-optional decimal returns value")
-    func testNonOptionalDecimal() throws {
+    func nonOptionalDecimal() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("19.99".utf8), source: .own)
         #expect(try csvValue.decimal == Decimal(string: "19.99"))
     }
 
     @Test("Non-optional decimal throws on empty")
-    func testNonOptionalDecimalThrowsOnEmpty() throws {
+    func nonOptionalDecimalThrowsOnEmpty() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8](), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.decimal
@@ -331,13 +330,13 @@ struct CSVValueTests {
     }
 
     @Test("Non-optional bool returns value")
-    func testNonOptionalBool() throws {
+    func nonOptionalBool() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("true".utf8), source: .own)
         #expect(try csvValue.bool == true)
     }
 
     @Test("Non-optional bool throws on empty")
-    func testNonOptionalBoolThrowsOnEmpty() throws {
+    func nonOptionalBoolThrowsOnEmpty() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8](), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.bool
@@ -347,13 +346,13 @@ struct CSVValueTests {
     // MARK: - Optional Computed Properties (stringIfPresent as property)
 
     @Test("stringIfPresent computed property returns value")
-    func testStringIfPresentProperty() throws {
+    func stringIfPresentProperty() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("hello".utf8), source: .own)
         #expect(try csvValue.stringIfPresent == "hello")
     }
 
     @Test("stringIfPresent computed property returns nil on empty")
-    func testStringIfPresentPropertyNilOnEmpty() throws {
+    func stringIfPresentPropertyNilOnEmpty() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8](), source: .own)
         #expect(try csvValue.stringIfPresent == nil)
     }
@@ -361,7 +360,7 @@ struct CSVValueTests {
     // MARK: - Date Accessors
 
     @Test("Date with default formatter (yyyy-MM-dd)")
-    func testDateDefaultFormatter() throws {
+    func dateDefaultFormatter() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("2026-03-29".utf8), source: .own)
         let result = try csvValue.date()
 
@@ -373,7 +372,7 @@ struct CSVValueTests {
     }
 
     @Test("Date with custom formatter")
-    func testDateCustomFormatter() throws {
+    func dateCustomFormatter() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("03/29/2026".utf8), source: .own)
         let formatter = DateFormatter()
         formatter.dateFormat = "MM/dd/yyyy"
@@ -388,7 +387,7 @@ struct CSVValueTests {
     }
 
     @Test("Date throws on invalid string")
-    func testDateThrowsOnInvalid() throws {
+    func dateThrowsOnInvalid() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("not-a-date".utf8), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.date()
@@ -396,7 +395,7 @@ struct CSVValueTests {
     }
 
     @Test("Date throws on empty")
-    func testDateThrowsOnEmpty() throws {
+    func dateThrowsOnEmpty() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8](), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.date()
@@ -404,20 +403,20 @@ struct CSVValueTests {
     }
 
     @Test("dateIfPresent returns nil on empty")
-    func testDateIfPresentNilOnEmpty() throws {
+    func dateIfPresentNilOnEmpty() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8](), source: .own)
         #expect(try csvValue.dateIfPresent() == nil)
     }
 
     @Test("dateIfPresent returns value on valid date")
-    func testDateIfPresentReturnsValue() throws {
+    func dateIfPresentReturnsValue() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("2026-03-29".utf8), source: .own)
         let result = try csvValue.dateIfPresent()
         #expect(result != nil)
     }
 
     @Test("dateIfPresent throws on invalid string")
-    func testDateIfPresentThrowsOnInvalid() throws {
+    func dateIfPresentThrowsOnInvalid() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("garbage".utf8), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.dateIfPresent()
@@ -427,7 +426,7 @@ struct CSVValueTests {
     // MARK: - Quoted Values Are Strings
 
     @Test("Quoted integer is treated as string, not number")
-    func testQuotedIntIsString() throws {
+    func quotedIntIsString() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("\"42\"".utf8), source: .own)
         // Quoted field is a string — intIfPresent should fail because the raw bytes include quotes
         #expect(throws: CSVError.self) {
@@ -440,25 +439,25 @@ struct CSVValueTests {
     // MARK: - Direct Byte Parsing Edge Cases
 
     @Test("Integer parsing: negative values")
-    func testNegativeInt() throws {
+    func negativeInt() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("-42".utf8), source: .own)
         #expect(try csvValue.intIfPresent == -42)
     }
 
     @Test("Integer parsing: positive sign")
-    func testPositiveSignInt() throws {
+    func positiveSignInt() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("+42".utf8), source: .own)
         #expect(try csvValue.intIfPresent == 42)
     }
 
     @Test("Integer parsing: leading zeros")
-    func testLeadingZerosInt() throws {
+    func leadingZerosInt() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("007".utf8), source: .own)
         #expect(try csvValue.intIfPresent == 7)
     }
 
     @Test("Integer parsing: overflow throws")
-    func testIntOverflow() throws {
+    func intOverflow() throws {
         // Int8 max is 127
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("128".utf8), source: .own)
         #expect(throws: CSVError.self) {
@@ -467,14 +466,14 @@ struct CSVValueTests {
     }
 
     @Test("Integer parsing: Int8.min parses correctly")
-    func testInt8Min() throws {
+    func int8Min() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("-128".utf8), source: .own)
         let result: Int8? = try csvValue.fixedWidthIntegerIfPresent()
         #expect(result == Int8.min)
     }
 
     @Test("Integer parsing: negative unsigned throws")
-    func testNegativeUnsigned() throws {
+    func negativeUnsigned() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("-1".utf8), source: .own)
         #expect(throws: CSVError.self) {
             let _: UInt? = try csvValue.fixedWidthIntegerIfPresent()
@@ -482,7 +481,7 @@ struct CSVValueTests {
     }
 
     @Test("Integer parsing: bare sign throws")
-    func testBareSign() throws {
+    func bareSign() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("-".utf8), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.intIfPresent
@@ -490,7 +489,7 @@ struct CSVValueTests {
     }
 
     @Test("Integer parsing: non-digit throws")
-    func testNonDigit() throws {
+    func nonDigit() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("12a3".utf8), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.intIfPresent
@@ -498,25 +497,25 @@ struct CSVValueTests {
     }
 
     @Test("Double parsing: scientific notation")
-    func testDoubleScientific() throws {
+    func doubleScientific() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("1.5e2".utf8), source: .own)
         #expect(try csvValue.doubleIfPresent == 150.0)
     }
 
     @Test("Double parsing: negative")
-    func testNegativeDouble() throws {
+    func negativeDouble() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("-3.14".utf8), source: .own)
         #expect(try csvValue.doubleIfPresent == -3.14)
     }
 
     @Test("Double parsing: infinity")
-    func testDoubleInfinity() throws {
+    func doubleInfinity() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("inf".utf8), source: .own)
         #expect(try csvValue.doubleIfPresent == Double.infinity)
     }
 
     @Test("Double parsing: leading whitespace rejects")
-    func testDoubleLeadingWhitespace() throws {
+    func doubleLeadingWhitespace() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8](" 3.14".utf8), source: .own)
         #expect(throws: CSVError.self) {
             _ = try csvValue.doubleIfPresent
@@ -524,7 +523,7 @@ struct CSVValueTests {
     }
 
     @Test("fixedWidthIntegerIfPresent generic works for multiple types")
-    func testGenericFixedWidthInteger() throws {
+    func genericFixedWidthInteger() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("42".utf8), source: .own)
         let i8: Int8? = try csvValue.fixedWidthIntegerIfPresent()
         let u16: UInt16? = try csvValue.fixedWidthIntegerIfPresent()

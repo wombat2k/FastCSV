@@ -10,13 +10,13 @@ struct CSVIteratorResult {
 
     /// Create a result backed by a pre-allocated buffer (zero-copy, used by fixed-column parsers)
     init(directStorage: UnsafeBufferPointer<UnsafeBufferPointer<UInt8>>, count: Int, parsingError: CSVError?) {
-        self.storage = .direct(directStorage, count: count)
+        storage = .direct(directStorage, count: count)
         self.parsingError = parsingError
     }
 
     /// Create a result backed by an array (used by dynamic-column parser)
     init(fieldPointers: [UnsafeBufferPointer<UInt8>], parsingError: CSVError?) {
-        self.storage = .array(fieldPointers)
+        storage = .array(fieldPointers)
         self.parsingError = parsingError
     }
 

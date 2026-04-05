@@ -23,7 +23,7 @@ public struct CSVValue {
     }
 
     /// The underlying storage
-    var valueSource: ValueSource
+    private(set) var valueSource: ValueSource
 
     /// Create a value directly from a byte buffer (no copy)
     init(buffer: UnsafeBufferPointer<UInt8>?) {
@@ -133,7 +133,8 @@ private extension CSVValue {
         guard !bytes.isEmpty else { return nil }
         // Reject leading/trailing whitespace to match Swift's Double.init behavior
         if bytes[0] == 0x20 || bytes[0] == 0x09 ||
-            bytes[bytes.count - 1] == 0x20 || bytes[bytes.count - 1] == 0x09 {
+            bytes[bytes.count - 1] == 0x20 || bytes[bytes.count - 1] == 0x09
+        {
             return nil
         }
 
@@ -154,7 +155,8 @@ private extension CSVValue {
     static func parseFloat(from bytes: UnsafeBufferPointer<UInt8>) -> Float? {
         guard !bytes.isEmpty else { return nil }
         if bytes[0] == 0x20 || bytes[0] == 0x09 ||
-            bytes[bytes.count - 1] == 0x20 || bytes[bytes.count - 1] == 0x09 {
+            bytes[bytes.count - 1] == 0x20 || bytes[bytes.count - 1] == 0x09
+        {
             return nil
         }
 
@@ -182,26 +184,26 @@ private extension CSVValue {
             default: return nil
             }
         case 2:
-            if (bytes[0] | 0x20) == UInt8(ascii: "n") &&
-                (bytes[1] | 0x20) == UInt8(ascii: "o") { return false }
+            if (bytes[0] | 0x20) == UInt8(ascii: "n"),
+               (bytes[1] | 0x20) == UInt8(ascii: "o") { return false }
             return nil
         case 3:
-            if (bytes[0] | 0x20) == UInt8(ascii: "y") &&
-                (bytes[1] | 0x20) == UInt8(ascii: "e") &&
-                (bytes[2] | 0x20) == UInt8(ascii: "s") { return true }
+            if (bytes[0] | 0x20) == UInt8(ascii: "y"),
+               (bytes[1] | 0x20) == UInt8(ascii: "e"),
+               (bytes[2] | 0x20) == UInt8(ascii: "s") { return true }
             return nil
         case 4:
-            if (bytes[0] | 0x20) == UInt8(ascii: "t") &&
-                (bytes[1] | 0x20) == UInt8(ascii: "r") &&
-                (bytes[2] | 0x20) == UInt8(ascii: "u") &&
-                (bytes[3] | 0x20) == UInt8(ascii: "e") { return true }
+            if (bytes[0] | 0x20) == UInt8(ascii: "t"),
+               (bytes[1] | 0x20) == UInt8(ascii: "r"),
+               (bytes[2] | 0x20) == UInt8(ascii: "u"),
+               (bytes[3] | 0x20) == UInt8(ascii: "e") { return true }
             return nil
         case 5:
-            if (bytes[0] | 0x20) == UInt8(ascii: "f") &&
-                (bytes[1] | 0x20) == UInt8(ascii: "a") &&
-                (bytes[2] | 0x20) == UInt8(ascii: "l") &&
-                (bytes[3] | 0x20) == UInt8(ascii: "s") &&
-                (bytes[4] | 0x20) == UInt8(ascii: "e") { return false }
+            if (bytes[0] | 0x20) == UInt8(ascii: "f"),
+               (bytes[1] | 0x20) == UInt8(ascii: "a"),
+               (bytes[2] | 0x20) == UInt8(ascii: "l"),
+               (bytes[3] | 0x20) == UInt8(ascii: "s"),
+               (bytes[4] | 0x20) == UInt8(ascii: "e") { return false }
             return nil
         default:
             return nil
@@ -409,7 +411,7 @@ public extension CSVValue {
         let quote = String(UnicodeScalar(quoteChar))
 
         // If surrounded by quotes, remove them and process escaped quotes
-        if str.count >= 2 && str.hasPrefix(quote) && str.hasSuffix(quote) {
+        if str.hasPrefix(quote) && str.hasSuffix(quote) {
             // Remove surrounding quotes
             let content = str.dropFirst().dropLast()
 
@@ -424,16 +426,8 @@ public extension CSVValue {
     /// - Returns: The string value, or nil if empty
     /// - Throws: CSVError.invalidValueConversion if conversion fails
     private func getRawString() throws -> String? {
-        switch valueSource {
-        case .none:
-            return nil
-        case let .own(bytes):
+        try withRawBytes { bytes in
             guard let str = String(bytes: bytes, encoding: .utf8) else {
-                throw CSVError.invalidValueConversion(message: "Could not convert bytes to string")
-            }
-            return str
-        case let .ref(buffer):
-            guard let str = String(bytes: buffer, encoding: .utf8) else {
                 throw CSVError.invalidValueConversion(message: "Could not convert bytes to string")
             }
             return str

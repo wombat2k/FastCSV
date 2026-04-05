@@ -1,4 +1,4 @@
-// Writing.swift
+// main.swift
 // Read CSV data, transform it, and write it back out.
 // Demonstrates the full read-transform-write round-trip.
 
@@ -22,7 +22,7 @@ let inputMapping = [
     "MonthTotal": "monthTotal",
 ]
 
-// The output struct — different shape from the input.
+/// The output struct — different shape from the input.
 struct RouteHistory: Encodable {
     let year: String
     let month: String
@@ -30,7 +30,7 @@ struct RouteHistory: Encodable {
     let monthTotal: Int
 }
 
-// Filter to Route 79 (Western — one of Chicago's busiest) and reshape.
+/// Filter to Route 79 (Western — one of Chicago's busiest) and reshape.
 var history: [RouteHistory] = []
 
 var rows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: inputMapping)
@@ -57,12 +57,12 @@ print("\nFirst 5 rows as string:\n\(csv)")
 
 // --- Row-by-row writing with CSVWriter ---
 
-// Useful when you want to stream output without buffering everything.
+/// Useful when you want to stream output without buffering everything.
 let writer = CSVWriter()
 
 try writer.writeHeaders(["route", "name", "peak_month_total"])
 
-// Find each route's peak month and write it out.
+/// Find each route's peak month and write it out.
 var peakByRoute: [String: (name: String, peak: Int)] = [:]
 
 var peakRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: inputMapping)

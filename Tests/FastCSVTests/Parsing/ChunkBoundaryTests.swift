@@ -2,13 +2,12 @@
 import Foundation
 import Testing
 
-@Suite("Chunk Boundary Tests")
 struct ChunkBoundaryTests {
     private static let tinyBufferSize = 32
     private static let bufferSizes = [8, 16, 32, 64, 128]
 
     @Test("Minimal chunk boundary test - no headers")
-    func testMinimalChunkBoundary() async throws {
+    func minimalChunkBoundary() async throws {
         let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // 3 columns, 2 rows, no headers — simple enough to trace by hand
         // Row: "row1_col1,row1_col2,row1_col3\n" = 30 bytes + newline = 31 bytes
@@ -38,7 +37,7 @@ struct ChunkBoundaryTests {
     }
 
     @Test("Single wide row spanning multiple chunks")
-    func testSingleWideRow() async throws {
+    func singleWideRow() async throws {
         let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // Single row, 5 columns, no headers — row is ~50 bytes, needs 2 chunks
         let rows = TestUtils.createValues(rows: 1, columns: 5)
@@ -65,7 +64,7 @@ struct ChunkBoundaryTests {
     }
 
     @Test("Fields spanning chunk boundaries preserve values", arguments: bufferSizes)
-    func testFieldsSpanningChunkBoundaries(bufferSize: Int) async throws {
+    func fieldsSpanningChunkBoundaries(bufferSize: Int) async throws {
         let config = CSVParserConfig(readBufferSize: bufferSize)
         let headers = TestUtils.createHeaders(count: 5)
         let rows = TestUtils.createValues(rows: 10, columns: 5)
@@ -94,7 +93,7 @@ struct ChunkBoundaryTests {
     }
 
     @Test("Dictionary access with tiny buffer")
-    func testDictionaryChunkBoundaries() async throws {
+    func dictionaryChunkBoundaries() async throws {
         let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         let headers = TestUtils.createHeaders(count: 5)
         let rows = TestUtils.createValues(rows: 10, columns: 5)
@@ -112,7 +111,7 @@ struct ChunkBoundaryTests {
                     #expect(result.error == nil, "Row \(rowIndex + 1) should not have an error")
                     #expect(result.values.count == 5, "Row \(rowIndex + 1) should have 5 columns, got \(result.values.count)")
 
-                    for colIndex in 1...5 {
+                    for colIndex in 1 ... 5 {
                         let key = "header\(colIndex)"
                         let expected = "row\(rowIndex + 1)_col\(colIndex)"
                         let actual = try result[key]?.stringIfPresent() ?? "<nil>"

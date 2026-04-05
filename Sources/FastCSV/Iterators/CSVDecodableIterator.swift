@@ -22,7 +22,7 @@ public extension FastCSV {
                 let key = columnMapping[header] ?? header
                 map[key] = index
             }
-            self.columnIndexMap = map
+            columnIndexMap = map
             self.quoteChar = quoteChar
         }
 

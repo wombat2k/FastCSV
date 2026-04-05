@@ -2,10 +2,9 @@
 import Foundation
 import Testing
 
-@Suite("Empty Headers Tests")
 struct EmptyHeadersTests {
     @Test("Dictionary without headers")
-    func testEmptyHeaders() async throws {
+    func emptyHeaders() async throws {
         let rows = TestUtils.createValues(rows: 1, columns: 3)
 
         try await TestUtils.runTest(
@@ -33,7 +32,7 @@ struct EmptyHeadersTests {
     }
 
     @Test("Dictionary with empty values")
-    func testEmptyHeadersWithCustomHeaders() async throws {
+    func emptyHeadersWithCustomHeaders() async throws {
         let headers = ["header1", "", "header3"]
         let rows = TestUtils.createValues(rows: 1, columns: 3)
 

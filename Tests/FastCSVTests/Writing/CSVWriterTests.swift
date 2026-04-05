@@ -28,9 +28,7 @@ private struct WithDate: Codable, Equatable {
 
 // MARK: - String Array Writing
 
-@Suite("CSV Writer Tests")
 struct CSVWriterTests {
-
     @Test("Write string array rows with headers")
     func writeStringArrayWithHeaders() throws {
         let csv = try FastCSV.writeString(
@@ -52,7 +50,7 @@ struct CSVWriterTests {
     func writeEmptyRowsWithHeaders() throws {
         let writer = CSVWriter()
         try writer.writeHeaders(["name", "age"])
-        let csv = writer.toString()!
+        let csv = try #require(writer.toString())
         #expect(csv == "name,age\n")
     }
 
@@ -132,8 +130,8 @@ struct CSVWriterTests {
 
     @Test("Decimal encoding")
     func decimalEncoding() throws {
-        let employees = [
-            Employee(name: "Alice", active: true, salary: Decimal(string: "75000.50")!),
+        let employees = try [
+            Employee(name: "Alice", active: true, salary: #require(Decimal(string: "75000.50"))),
         ]
         let csv = try FastCSV.writeString(employees)
         #expect(csv.contains("75000.5"))
@@ -161,7 +159,7 @@ struct CSVWriterTests {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = TimeZone(identifier: "UTC")
-        let date = formatter.date(from: "2026-03-15")!
+        let date = try #require(formatter.date(from: "2026-03-15"))
 
         let items = [WithDate(name: "Alice", startDate: date)]
         let config = CSVWriterConfig(dateFormatter: formatter)
@@ -201,7 +199,7 @@ struct CSVWriterTests {
         try writer.writeHeaders(["a", "b"])
         try writer.writeRow(["1", "2"])
         try writer.writeRow(["3", "4"])
-        let csv = writer.toString()!
+        let csv = try #require(writer.toString())
         #expect(csv == "a,b\n1,2\n3,4\n")
     }
 
@@ -210,7 +208,7 @@ struct CSVWriterTests {
         let writer = CSVWriter()
         try writer.writeRow(Person(name: "Alice", age: 30, score: 95.5))
         try writer.writeRow(Person(name: "Bob", age: 25, score: 87.3))
-        let csv = writer.toString()!
+        let csv = try #require(writer.toString())
         #expect(csv == "name,age,score\nAlice,30,95.5\nBob,25,87.3\n")
     }
 
@@ -260,9 +258,9 @@ struct CSVWriterTests {
         var decoded: [Person] = []
         for result in rows {
             switch result {
-            case .success(let person):
+            case let .success(person):
                 decoded.append(person)
-            case .failure(let error):
+            case let .failure(error):
                 throw error
             }
         }
@@ -283,9 +281,9 @@ struct CSVWriterTests {
         var decoded: [Person] = []
         for result in rows {
             switch result {
-            case .success(let person):
+            case let .success(person):
                 decoded.append(person)
-            case .failure(let error):
+            case let .failure(error):
                 throw error
             }
         }
@@ -306,9 +304,9 @@ struct CSVWriterTests {
         var decoded: [WithOptional] = []
         for result in rows {
             switch result {
-            case .success(let item):
+            case let .success(item):
                 decoded.append(item)
-            case .failure(let error):
+            case let .failure(error):
                 throw error
             }
         }
@@ -329,9 +327,9 @@ struct CSVWriterTests {
         var decoded: [Employee] = []
         for result in rows {
             switch result {
-            case .success(let item):
+            case let .success(item):
                 decoded.append(item)
-            case .failure(let error):
+            case let .failure(error):
                 throw error
             }
         }
@@ -350,9 +348,9 @@ struct CSVWriterTests {
         var decoded: [Person] = []
         for result in rows {
             switch result {
-            case .success(let person):
+            case let .success(person):
                 decoded.append(person)
-            case .failure(let error):
+            case let .failure(error):
                 throw error
             }
         }

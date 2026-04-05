@@ -2,7 +2,6 @@
 import Foundation
 import Testing
 
-@Suite("Header Tests")
 struct HeaderTests {
     @Test("Array with headers before parsing")
     func testHeaders() throws {
@@ -17,7 +16,7 @@ struct HeaderTests {
     }
 
     @Test("Headers after parsing")
-    func testHeadersAfterParsing() throws {
+    func headersAfterParsing() throws {
         let csvRows = try FastCSV.makeDictionaryRows(fromString: "header1,header2,header3\nval1,val2,val3\n")
 
         for _ in csvRows {}
@@ -31,7 +30,7 @@ struct HeaderTests {
     }
 
     @Test("Headers with BOM")
-    func testHeadersWithBOM() throws {
+    func headersWithBOM() throws {
         let csvRows = try FastCSV.makeDictionaryRows(fromString: "\u{FEFF}header1,header2,header3\nval1,val2,val3\n")
 
         let resultHeaders = csvRows.headers
@@ -43,7 +42,7 @@ struct HeaderTests {
     }
 
     @Test("No headers, first row with BOM")
-    func testNoHeadersWithBOM() throws {
+    func noHeadersWithBOM() throws {
         let rows = try FastCSV.makeArrayRows(
             fromString: "\u{FEFF}row1_col1,row1_col2,row1_col3\n",
             hasHeaders: false,
@@ -51,7 +50,9 @@ struct HeaderTests {
         )
 
         var results: [CSVArrayResult] = []
-        for row in rows { results.append(row) }
+        for row in rows {
+            results.append(row)
+        }
 
         #expect(results.count == 1)
         #expect(results[0].values.count == 3)

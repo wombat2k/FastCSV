@@ -1,4 +1,4 @@
-// RawAccess.swift
+// main.swift
 // Array and dictionary iterators for when you don't know (or don't want
 // to define) the schema upfront. Useful for CSV exploration and dynamic data.
 
@@ -7,7 +7,7 @@ import Foundation
 
 // --- Array access: rows as [CSVValue] ---
 
-// When you just want positional access to fields.
+/// When you just want positional access to fields.
 let arrayRows = try FastCSV.makeArrayRows(fromPath: "cta-ridership.csv")
 
 // Headers are available on the iterator.
@@ -48,7 +48,7 @@ for row in dictRows {
     let weekday = try row["Avg_Weekday_Rides"]!.double
     let total = try row["MonthTotal"]!.int
 
-    if weekday > 20_000 {
+    if weekday > 20000 {
         print("  High-traffic: \(name) — \(weekday) avg weekday, \(total) monthly total")
     }
 
@@ -60,13 +60,13 @@ for row in dictRows {
 
 print("\nCSVValue type demo:")
 
-// Parse a small CSV from a string to demonstrate value access patterns.
+/// Parse a small CSV from a string to demonstrate value access patterns.
 let csv = """
-    item,quantity,price,in_stock,notes
-    Widget,100,9.99,true,Standard widget
-    Gadget,0,24.50,false,
-    Doohickey,42,3.75,true,"Has a comma, in the name"
-    """
+item,quantity,price,in_stock,notes
+Widget,100,9.99,true,Standard widget
+Gadget,0,24.50,false,
+Doohickey,42,3.75,true,"Has a comma, in the name"
+"""
 
 let rows = try FastCSV.makeArrayRows(fromString: csv)
 

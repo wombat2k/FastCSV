@@ -2,10 +2,9 @@
 import Foundation
 import Testing
 
-@Suite("Custom Headers Tests")
 struct CustomHeadersTests {
     @Test("Array with headers and custom headers")
-    func testArrayHeadersWithCustomHeaders() async throws {
+    func arrayHeadersWithCustomHeaders() async throws {
         let customHeaders = ["custom1", "custom2", "custom3"]
         let headers = TestUtils.createHeaders(count: 3)
         let rows = TestUtils.createValues(rows: 1, columns: 3)
@@ -38,7 +37,7 @@ struct CustomHeadersTests {
     }
 
     @Test("Dictionary with headers and custom headers")
-    func testDictionaryHeadersWithCustomHeaders() async throws {
+    func dictionaryHeadersWithCustomHeaders() async throws {
         let customHeaders = ["custom1", "custom2", "custom3"]
         let headers = TestUtils.createHeaders(count: 3)
         let rows = TestUtils.createValues(rows: 1, columns: 3)
@@ -72,7 +71,7 @@ struct CustomHeadersTests {
     }
 
     @Test("Dictionary with custom headers and no headers")
-    func testHeadersWithCustomHeadersAndNoHeaders() async throws {
+    func headersWithCustomHeadersAndNoHeaders() async throws {
         let customHeaders = ["custom1", "custom2", "custom3"]
         let rows = TestUtils.createValues(rows: 1, columns: 3)
 

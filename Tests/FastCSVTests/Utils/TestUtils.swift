@@ -4,7 +4,7 @@ import Testing
 
 /// A base test suite for testing the FastCSV parser
 enum TestUtils {
-    // Output format for testing
+    /// Output format for testing
     enum OutputFormat {
         case array
         case dictionary
@@ -28,7 +28,7 @@ enum TestUtils {
         return true
     }
 
-    // Create a temporary CSV file from arrays with configurable delimiter
+    /// Create a temporary CSV file from arrays with configurable delimiter
     static func createTemporaryCSVFile(
         headers: [String] = [],
         rows: [[String]] = [[]],
@@ -57,7 +57,7 @@ enum TestUtils {
         return tempURL
     }
 
-    // Create a temporary CSV file from raw string content (no automatic delimiters added)
+    /// Create a temporary CSV file from raw string content (no automatic delimiters added)
     static func createRawCSVFile(content: String) throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appending(path: "test_\(UUID().uuidString).csv")
@@ -65,7 +65,7 @@ enum TestUtils {
         return url
     }
 
-    // Run a test case with arrays for headers and content
+    /// Run a test case with arrays for headers and content
     static func runTest<T>(
         testName: String,
         contentHeaders: [String] = [],
@@ -151,11 +151,11 @@ enum TestUtils {
         }
     }
 
-    /// Creates a CSVValue from a string reference with the specified source type
-    /// - Parameters:
-    ///   - stringRef: Reference to a string that will be used to create the CSVValue
-    ///   - source: The source type for the CSVValue (.own, .ref, or .none)
-    /// - Returns: A CSVValue with the specified source type
+    // Creates a CSVValue from a string reference with the specified source type
+    // - Parameters:
+    //   - stringRef: Reference to a string that will be used to create the CSVValue
+    //   - source: The source type for the CSVValue (.own, .ref, or .none)
+    // - Returns: A CSVValue with the specified source type
 
     static func createCSVValue(from bytes: [UInt8], source: SourceType = .own) -> CSVValue {
         switch source {
@@ -179,13 +179,9 @@ enum SourceType {
     case own
 }
 
-// Error type for parser test failures
+/// Error type for parser test failures
 struct ParserTestError: Error, CustomStringConvertible {
     let message: String
-
-    init(message: String) {
-        self.message = message
-    }
 
     var description: String {
         return message

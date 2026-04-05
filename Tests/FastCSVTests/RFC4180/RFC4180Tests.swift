@@ -13,7 +13,6 @@ import Testing
 /// 6. Fields containing line breaks, double quotes, or commas must be enclosed in double quotes
 /// 7. Double quotes inside fields are escaped by doubling them ("")
 /// 8. Spaces are considered part of a field (not trimmed)
-@Suite("RFC 4180 Conformance Tests")
 struct RFC4180Tests {
     /// Writes raw CSV bytes to a temp file, parses as array, returns safe-copied results.
     private func parseRawCSV(_ csv: String, hasHeaders: Bool = true) throws -> [CSVArrayResult] {
@@ -33,7 +32,7 @@ struct RFC4180Tests {
     // MARK: - Basic Record Parsing (Rules 1, 3, 4)
 
     @Test("Basic CSV as array")
-    func testBasicCSV() async throws {
+    func basicCSV() async throws {
         let headers = TestUtils.createHeaders(count: 3)
         let rows = TestUtils.createValues(rows: 2, columns: 3)
 
@@ -64,7 +63,7 @@ struct RFC4180Tests {
     }
 
     @Test("Basic CSV as dictionary")
-    func testBasicCSVAsDictionary() async throws {
+    func basicCSVAsDictionary() async throws {
         let headers = TestUtils.createHeaders(count: 3)
         let rows = TestUtils.createValues(rows: 1, columns: 3)
 
@@ -97,7 +96,7 @@ struct RFC4180Tests {
     // MARK: - Quoting (Rules 5, 6, 7)
 
     @Test("Quoted fields")
-    func testQuotedFields() async throws {
+    func quotedFields() async throws {
         let headers = TestUtils.createHeaders(count: 3)
         var rows = TestUtils.createValues(rows: 1, columns: 3)
         rows[0][0] = "\"quoted value\""
@@ -126,7 +125,7 @@ struct RFC4180Tests {
     }
 
     @Test("Escaped quotes")
-    func testEscapedQuotes() async throws {
+    func escapedQuotes() async throws {
         let headers = TestUtils.createHeaders(count: 3)
         var rows = TestUtils.createValues(rows: 1, columns: 3)
         rows[0][1] = #"value with "escaped" quotes"#
@@ -150,7 +149,7 @@ struct RFC4180Tests {
     }
 
     @Test("Newline within quoted field")
-    func testNewlineWithinQuotes() async throws {
+    func newlineWithinQuotes() async throws {
         let headers = TestUtils.createHeaders(count: 3)
         var rows = TestUtils.createValues(rows: 1, columns: 3)
         rows[0][1] = "\"value with\nreturn\""
@@ -172,19 +171,21 @@ struct RFC4180Tests {
     }
 
     // MARK: - Empty Fields
+
     // Empty field positions (leading, middle, trailing, multiple consecutive)
     // are thoroughly tested in Parsing/EmptyFieldTests.swift
 
     // MARK: - Empty Headers
+
     // Empty header auto-naming behavior is tested in Headers/EmptyHeadersTests.swift
 
     // MARK: - Line Endings (Rule 1)
 
     @Test("Pure CRLF line endings")
-    func testPureCRLF() throws {
+    func pureCRLF() throws {
         let csv = "header1,header2\r\n" +
-                  "value1,value2\r\n" +
-                  "value3,value4\r\n"
+            "value1,value2\r\n" +
+            "value3,value4\r\n"
 
         let results = try parseRawCSV(csv)
 
@@ -205,11 +206,11 @@ struct RFC4180Tests {
     }
 
     @Test("Mixed line endings (LF, CRLF)")
-    func testMixedLineEndings() throws {
-        let csv = "header1,header2,header3\n" +        // LF
-                  "row1_col1,row1_col2,row1_col3\r\n" + // CRLF
-                  "row2_col1,row2_col2,row2_col3\n" +    // LF
-                  "row3_col1,row3_col2,row3_col3\r\n"    // CRLF
+    func mixedLineEndings() throws {
+        let csv = "header1,header2,header3\n" + // LF
+            "row1_col1,row1_col2,row1_col3\r\n" + // CRLF
+            "row2_col1,row2_col2,row2_col3\n" + // LF
+            "row3_col1,row3_col2,row3_col3\r\n" // CRLF
 
         let results = try parseRawCSV(csv)
 
@@ -219,7 +220,7 @@ struct RFC4180Tests {
             #expect(result.error == nil, "Row \(rowIndex + 1) should not have an error")
             #expect(result.values.count == 3, "Row \(rowIndex + 1) should have 3 columns")
 
-            for colIndex in 0..<3 {
+            for colIndex in 0 ..< 3 {
                 let expected = "row\(rowIndex + 1)_col\(colIndex + 1)"
                 let actual = try result.values[colIndex].stringIfPresent() ?? "<nil>"
                 #expect(actual == expected)
@@ -230,10 +231,10 @@ struct RFC4180Tests {
     // MARK: - Trailing Line Break Optional (Rule 2)
 
     @Test("Last record without trailing line break")
-    func testNoTrailingLineBreak() throws {
+    func noTrailingLineBreak() throws {
         let csv = "header1,header2\n" +
-                  "value1,value2\n" +
-                  "value3,value4"  // no trailing newline
+            "value1,value2\n" +
+            "value3,value4" // no trailing newline
 
         let results = try parseRawCSV(csv)
 
@@ -249,9 +250,9 @@ struct RFC4180Tests {
     // MARK: - Comma Within Quoted Field (Rule 6)
 
     @Test("Comma within quoted field")
-    func testCommaWithinQuotedField() throws {
+    func commaWithinQuotedField() throws {
         let csv = "header1,header2,header3\n" +
-                  "\"value1,with,commas\",normal,\"also,commas\"\n"
+            "\"value1,with,commas\",normal,\"also,commas\"\n"
 
         let results = try parseRawCSV(csv)
 
@@ -270,9 +271,9 @@ struct RFC4180Tests {
     // MARK: - CRLF Within Quoted Field (Rule 6)
 
     @Test("CRLF within quoted field")
-    func testCRLFWithinQuotedField() throws {
+    func cRLFWithinQuotedField() throws {
         let csv = "header1,header2\r\n" +
-                  "\"line1\r\nline2\",normal\r\n"
+            "\"line1\r\nline2\",normal\r\n"
 
         let results = try parseRawCSV(csv)
 
@@ -289,9 +290,9 @@ struct RFC4180Tests {
     // MARK: - Spaces Preserved (Rule 8)
 
     @Test("Spaces are part of the field, not trimmed")
-    func testSpacesPreserved() throws {
+    func spacesPreserved() throws {
         let csv = "header1,header2,header3\n" +
-                  " leading,trailing ,\" quoted with spaces \"\n"
+            " leading,trailing ,\" quoted with spaces \"\n"
 
         let results = try parseRawCSV(csv)
 

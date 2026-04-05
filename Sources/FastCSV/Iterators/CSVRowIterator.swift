@@ -3,7 +3,7 @@ import Foundation
 extension FastCSV {
     /// Zero-copy iterator for CSV rows, returning raw field pointers to the underlying buffer
     struct CSVRowIterator: IteratorProtocol, Sequence {
-        public typealias Element = CSVIteratorResult
+        typealias Element = CSVIteratorResult
 
         private var parser: CSVParser
 
@@ -17,17 +17,17 @@ extension FastCSV {
                 readBufferSize: config.readBufferSize,
                 noQuotes: config.assumeNoQuotes
             )
-            self.parser = result.parser
-            self.firstRow = result.firstRow
+            parser = result.parser
+            firstRow = result.firstRow
         }
 
         /// Get the next row of CSV data (starts at row 2; row 1 is available via `firstRow`)
-        public mutating func next() -> CSVIteratorResult? {
+        mutating func next() -> CSVIteratorResult? {
             return parser.parseNextRow()
         }
 
         /// Cleans up the parser and releases any resources it holds.
-        public mutating func cleanup() {
+        mutating func cleanup() {
             parser.cleanup()
         }
 

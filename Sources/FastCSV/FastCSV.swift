@@ -98,7 +98,7 @@ public class FastCSV {
 
     /// Create a lazy sequence that decodes CSV rows into Decodable structs.
     public static func makeRows<T: Decodable>(
-        _ type: T.Type,
+        _: T.Type,
         fromURL url: URL,
         hasHeaders: Bool = true,
         headers: [String] = [],
@@ -134,7 +134,7 @@ public class FastCSV {
 
     /// Create a lazy sequence that decodes CSV rows into Decodable structs from in-memory Data.
     public static func makeRows<T: Decodable>(
-        _ type: T.Type,
+        _: T.Type,
         fromData data: Data,
         hasHeaders: Bool = true,
         headers: [String] = [],

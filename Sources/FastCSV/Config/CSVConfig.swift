@@ -6,14 +6,14 @@ public struct CSVConfig {
     public let delimiter: Delimiter
 
     /// Size of the buffer used when reading from disk (in bytes). Ignored by the writer.
-    /// A larger buffer size can improve performance when reading large files, but will use more 
+    /// A larger buffer size can improve performance when reading large files, but will use more
     /// memory. Defaults to 256 KB, which is a good balance for most use cases.
     public let readBufferSize: Int
 
     /// Whether to assume that the CSV file does not contain any quoted fields. Ignored by the writer.
     /// The parser will report an error if it encounters a quote character when this is true.
-    /// Setting this to true can improve performance when parsing large files that do not contain 
-    /// any quoted fields, but it should only be used if you are certain that the file does not 
+    /// Setting this to true can improve performance when parsing large files that do not contain
+    /// any quoted fields, but it should only be used if you are certain that the file does not
     /// contain any quotes.
     public let assumeNoQuotes: Bool
 

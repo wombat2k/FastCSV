@@ -1,4 +1,4 @@
-// Aggregation.swift
+// main.swift
 // Accumulate statistics across 40K+ rows in constant memory.
 // Nothing is loaded into an array — just running totals.
 
@@ -24,7 +24,7 @@ let mapping = [
 
 print("CTA bus ridership by year:")
 
-// Year is the last 4 characters of the date string (MM/dd/yyyy).
+/// Year is the last 4 characters of the date string (MM/dd/yyyy).
 var ridershipByYear: [String: Int] = [:]
 
 var yearRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv", columnMapping: mapping)

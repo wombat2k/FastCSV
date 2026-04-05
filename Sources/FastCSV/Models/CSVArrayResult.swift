@@ -9,11 +9,6 @@ public struct CSVArrayResult {
     public let values: [CSVValue]
     public let error: CSVError?
 
-    init(values: [CSVValue], error: CSVError?) {
-        self.values = values
-        self.error = error
-    }
-
     /// Returns a safe copy of the array of CSVValue
     /// - Returns: A new array with copied values
     /// - Note: This method is useful for ensuring that the values are not invalidated
@@ -29,15 +24,12 @@ extension CSVArrayResult: RandomAccessCollection {
     public typealias Index = Array<CSVValue>.Index
     public typealias Element = CSVValue
 
-    public var startIndex: Index { return values.startIndex }
-    public var endIndex: Index { return values.endIndex }
-
-    public func index(after i: Index) -> Index {
-        return values.index(after: i)
+    public var startIndex: Index {
+        return values.startIndex
     }
 
-    public func index(before i: Index) -> Index {
-        return values.index(before: i)
+    public var endIndex: Index {
+        return values.endIndex
     }
 
     public subscript(position: Index) -> Element {
@@ -45,8 +37,12 @@ extension CSVArrayResult: RandomAccessCollection {
     }
 
     /// The number of values in the array
-    public var count: Int { return values.count }
+    public var count: Int {
+        return values.count
+    }
 
     /// Returns true if the array contains no values
-    public var isEmpty: Bool { return values.isEmpty }
+    public var isEmpty: Bool {
+        return values.isEmpty
+    }
 }

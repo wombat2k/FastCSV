@@ -33,9 +33,7 @@ private struct WithDecimal: Decodable, Equatable {
 
 // MARK: - Tests
 
-@Suite("Decodable Support")
 struct CSVDecodableTests {
-
     @Test("Basic decoding")
     func basicDecoding() throws {
         var people = try FastCSV.makeRows(Person.self, fromString: "name,age\nAlice,30\nBob,25\n")
@@ -136,7 +134,7 @@ struct CSVDecodableTests {
 
     @Test("Multiple rows iterate lazily")
     func multipleRows() throws {
-        let csv = "name,age\n" + (1...100).map { "person_\($0),\($0)" }.joined(separator: "\n") + "\n"
+        let csv = "name,age\n" + (1 ... 100).map { "person_\($0),\($0)" }.joined(separator: "\n") + "\n"
         var people = try FastCSV.makeRows(Person.self, fromString: csv)
         var count = 0
         try people.forEach { _ in count += 1 }
@@ -219,22 +217,22 @@ struct CSVDecodableTests {
     @Test("Quoted integers and doubles decode through Decodable")
     func quotedNumericDecoding() throws {
         var rows = try FastCSV.makeRows(TypeRich.self, fromString: "str,integer,dbl,flt,flag\n\"hello\",\"42\",\"3.14\",\"2.5\",\"true\"\n")
-        let result = try rows.next()!.get()
+        let result = try #require(rows.next()?.get())
         #expect(result == TypeRich(str: "hello", integer: 42, dbl: 3.14, flt: 2.5, flag: true))
     }
 
     @Test("Quoted Int8 decodes through integer width path")
     func quotedInt8Decoding() throws {
         var rows = try FastCSV.makeRows(Person.self, fromString: "name,age\n\"Alice\",\"30\"\n")
-        let result = try rows.next()!.get()
+        let result = try #require(rows.next()?.get())
         #expect(result == Person(name: "Alice", age: 30))
     }
 
     @Test("Quoted Decimal decodes correctly")
     func quotedDecimalDecoding() throws {
         var rows = try FastCSV.makeRows(WithDecimal.self, fromString: "name,price\n\"Widget\",\"19.99\"\n")
-        let result = try rows.next()!.get()
-        #expect(result == WithDecimal(name: "Widget", price: Decimal(string: "19.99")!))
+        let result = try #require(rows.next()?.get())
+        #expect(try result == WithDecimal(name: "Widget", price: #require(Decimal(string: "19.99"))))
     }
 
     // MARK: - Column Mapping
@@ -259,7 +257,7 @@ struct CSVDecodableTests {
             fromString: "name,Years Old\nAlice,30\n",
             columnMapping: ["Years Old": "age"]
         )
-        let result = try rows.next()!.get()
+        let result = try #require(rows.next()?.get())
 
         #expect(result == Person(name: "Alice", age: 30))
     }
@@ -271,7 +269,7 @@ struct CSVDecodableTests {
             fromString: "Full Name,Years Old,City\nAlice,30,Boston\n",
             columnMapping: ["Full Name": "name", "Years Old": "age"]
         )
-        let result = try rows.next()!.get()
+        let result = try #require(rows.next()?.get())
 
         #expect(result == Person(name: "Alice", age: 30))
     }
@@ -303,7 +301,7 @@ struct CSVDecodableTests {
             fromPath: fileURL.path,
             columnMapping: ["Full Name": "name", "Years Old": "age"]
         )
-        let result = try rows.next()!.get()
+        let result = try #require(rows.next()?.get())
 
         #expect(result == Person(name: "Alice", age: 30))
     }
@@ -315,7 +313,7 @@ struct CSVDecodableTests {
             fromString: "name,age\nAlice,30\n",
             columnMapping: [:]
         )
-        let result = try rows.next()!.get()
+        let result = try #require(rows.next()?.get())
 
         #expect(result == Person(name: "Alice", age: 30))
     }

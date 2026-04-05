@@ -28,7 +28,7 @@ struct CSVRowEncoder: Encoder {
     let userInfo: [CodingUserInfoKey: Any] = [:]
     let storage: EncodedRowStorage
 
-    func container<Key: CodingKey>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> {
+    func container<Key: CodingKey>(keyedBy _: Key.Type) -> KeyedEncodingContainer<Key> {
         KeyedEncodingContainer(CSVKeyedEncodingContainer<Key>(storage: storage))
     }
 
@@ -203,11 +203,11 @@ private struct CSVKeyedEncodingContainer<Key: CodingKey>: KeyedEncodingContainer
 
     // MARK: - Unsupported
 
-    mutating func nestedContainer<NestedKey: CodingKey>(keyedBy type: NestedKey.Type, forKey key: Key) -> KeyedEncodingContainer<NestedKey> {
+    mutating func nestedContainer<NestedKey: CodingKey>(keyedBy _: NestedKey.Type, forKey _: Key) -> KeyedEncodingContainer<NestedKey> {
         fatalError("CSV does not support nested containers")
     }
 
-    mutating func nestedUnkeyedContainer(forKey key: Key) -> UnkeyedEncodingContainer {
+    mutating func nestedUnkeyedContainer(forKey _: Key) -> UnkeyedEncodingContainer {
         fatalError("CSV does not support nested containers")
     }
 
@@ -215,7 +215,7 @@ private struct CSVKeyedEncodingContainer<Key: CodingKey>: KeyedEncodingContainer
         fatalError("CSV does not support inheritance encoding")
     }
 
-    mutating func superEncoder(forKey key: Key) -> Encoder {
+    mutating func superEncoder(forKey _: Key) -> Encoder {
         fatalError("CSV does not support inheritance encoding")
     }
 }
@@ -234,7 +234,7 @@ private final class CSVSingleValueEncoder: Encoder {
         self.config = config
     }
 
-    func container<Key: CodingKey>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> {
+    func container<Key: CodingKey>(keyedBy _: Key.Type) -> KeyedEncodingContainer<Key> {
         fatalError("Single CSV value does not support keyed encoding")
     }
 
@@ -263,16 +263,45 @@ private struct CSVSingleValueEncodingContainer: SingleValueEncodingContainer {
         encoder.result = value ? "true" : "false"
     }
 
-    mutating func encode(_ value: Int) throws { encoder.result = String(value) }
-    mutating func encode(_ value: Int8) throws { encoder.result = String(value) }
-    mutating func encode(_ value: Int16) throws { encoder.result = String(value) }
-    mutating func encode(_ value: Int32) throws { encoder.result = String(value) }
-    mutating func encode(_ value: Int64) throws { encoder.result = String(value) }
-    mutating func encode(_ value: UInt) throws { encoder.result = String(value) }
-    mutating func encode(_ value: UInt8) throws { encoder.result = String(value) }
-    mutating func encode(_ value: UInt16) throws { encoder.result = String(value) }
-    mutating func encode(_ value: UInt32) throws { encoder.result = String(value) }
-    mutating func encode(_ value: UInt64) throws { encoder.result = String(value) }
+    mutating func encode(_ value: Int) throws {
+        encoder.result = String(value)
+    }
+
+    mutating func encode(_ value: Int8) throws {
+        encoder.result = String(value)
+    }
+
+    mutating func encode(_ value: Int16) throws {
+        encoder.result = String(value)
+    }
+
+    mutating func encode(_ value: Int32) throws {
+        encoder.result = String(value)
+    }
+
+    mutating func encode(_ value: Int64) throws {
+        encoder.result = String(value)
+    }
+
+    mutating func encode(_ value: UInt) throws {
+        encoder.result = String(value)
+    }
+
+    mutating func encode(_ value: UInt8) throws {
+        encoder.result = String(value)
+    }
+
+    mutating func encode(_ value: UInt16) throws {
+        encoder.result = String(value)
+    }
+
+    mutating func encode(_ value: UInt32) throws {
+        encoder.result = String(value)
+    }
+
+    mutating func encode(_ value: UInt64) throws {
+        encoder.result = String(value)
+    }
 
     mutating func encode(_ value: Double) throws {
         encoder.result = String(value)

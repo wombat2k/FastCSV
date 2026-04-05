@@ -1,4 +1,4 @@
-// Filtering.swift
+// main.swift
 // Query CTA ridership data using lazy iteration.
 
 import FastCSV
@@ -61,7 +61,7 @@ var weekendRows = try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.c
 try weekendRows.forEach { route in
     guard route.monthBeginning == "01/01/2026" else { return }
 
-    if route.avgSaturdayRides == 0 && route.avgSundayHolidayRides == 0 {
+    if route.avgSaturdayRides == 0, route.avgSundayHolidayRides == 0 {
         print("  \(route.name) (\(route.route)) — weekday avg: \(route.avgWeekdayRides)")
     }
 }
@@ -80,7 +80,7 @@ for result in try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv",
 
     if route.monthBeginning == "01/01/2020" { jan2020 = route }
     if route.monthBeginning == "01/01/2021" { jan2021 = route }
-    if jan2020 != nil && jan2021 != nil { break }
+    if jan2020 != nil, jan2021 != nil { break }
 }
 
 if let before = jan2020, let during = jan2021 {

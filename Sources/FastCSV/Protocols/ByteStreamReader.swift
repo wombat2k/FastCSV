@@ -13,7 +13,7 @@ public protocol ByteStreamReader {
 }
 
 extension FileHandle: ByteStreamReader {
-    // Avoid intermediate Data object for better performance
+    /// Avoid intermediate Data object for better performance
     public func readBytes(into buffer: UnsafeMutablePointer<UInt8>, maxLength: Int) -> Int {
         // Use lower-level read syscall directly when possible
         #if os(macOS) || os(iOS)

@@ -5,7 +5,6 @@ import Foundation
 /// CSVWriter is a class because it owns resources (file handles) and maintains
 /// mutable state (column ordering, header emission).
 public final class CSVWriter {
-
     // MARK: - Properties
 
     private let config: CSVWriterConfig
@@ -36,20 +35,20 @@ public final class CSVWriter {
             throw CSVError.writeError(message: "Could not open file for writing at \(url.path)")
         }
         self.config = config
-        self.output = FileWriteTarget(fileHandle: handle)
-        self.fieldDelimiter = String(UnicodeScalar(config.delimiter.fieldByte))
-        self.quoteChar = String(UnicodeScalar(config.delimiter.quoteByte))
-        self.doubledQuote = quoteChar + quoteChar
+        output = FileWriteTarget(fileHandle: handle)
+        fieldDelimiter = String(UnicodeScalar(config.delimiter.fieldByte))
+        quoteChar = String(UnicodeScalar(config.delimiter.quoteByte))
+        doubledQuote = quoteChar + quoteChar
     }
 
     /// Create a writer backed by an internal string buffer.
     /// Retrieve the result via `toString()`.
     public init(config: CSVWriterConfig = CSVWriterConfig()) {
         self.config = config
-        self.output = StringWriteTarget()
-        self.fieldDelimiter = String(UnicodeScalar(config.delimiter.fieldByte))
-        self.quoteChar = String(UnicodeScalar(config.delimiter.quoteByte))
-        self.doubledQuote = quoteChar + quoteChar
+        output = StringWriteTarget()
+        fieldDelimiter = String(UnicodeScalar(config.delimiter.fieldByte))
+        quoteChar = String(UnicodeScalar(config.delimiter.quoteByte))
+        doubledQuote = quoteChar + quoteChar
     }
 
     deinit {

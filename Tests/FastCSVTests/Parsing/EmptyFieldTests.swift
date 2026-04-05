@@ -2,12 +2,11 @@
 import Foundation
 import Testing
 
-@Suite("Empty Field Tests")
 struct EmptyFieldTests {
     // MARK: Header Tests
 
     @Test("Empty value at beginning of headers")
-    func testFrontDelimiterAtHeaders() async throws {
+    func frontDelimiterAtHeaders() async throws {
         var headers = TestUtils.createHeaders(count: 3)
         headers[0] = "" // Empty the first header
 
@@ -31,7 +30,7 @@ struct EmptyFieldTests {
     }
 
     @Test("Empty value at middle of headers")
-    func testMiddleDelimiterAtHeaders() async throws {
+    func middleDelimiterAtHeaders() async throws {
         var headers = TestUtils.createHeaders(count: 3)
         headers[1] = "" // Empty the middle header
 
@@ -55,7 +54,7 @@ struct EmptyFieldTests {
     }
 
     @Test("Empty value at end of headers")
-    func testTrailingDelimiterAtHeaders() async throws {
+    func trailingDelimiterAtHeaders() async throws {
         let headers = ["header1", "header2", ""]
         let rows = [["value1", "value2", "value3"]]
 
@@ -78,7 +77,7 @@ struct EmptyFieldTests {
     // MARK: Row Tests
 
     @Test("Empty value at beginning of row")
-    func testFrontDelimiter() async throws {
+    func frontDelimiter() async throws {
         let headers = TestUtils.createHeaders(count: 3)
 
         var rows = TestUtils.createValues(rows: 3, columns: 3)
@@ -124,7 +123,7 @@ struct EmptyFieldTests {
     }
 
     @Test("Empty value at middle of row")
-    func testMiddleDelimiter() async throws {
+    func middleDelimiter() async throws {
         let headers = ["header1", "header2", "header3"]
         let rows = [
             ["value1", "value2", "value3"],
@@ -169,7 +168,7 @@ struct EmptyFieldTests {
     }
 
     @Test("Empty value at end of row")
-    func testTrailingDelimiter() async throws {
+    func trailingDelimiter() async throws {
         let headers = ["header1", "header2", "header3"]
         let rows = [
             ["value1", "value2", ""],
@@ -205,7 +204,7 @@ struct EmptyFieldTests {
     }
 
     @Test("Multiple empty values at beginning of row")
-    func testMultipleFrontDelimiters() async throws {
+    func multipleFrontDelimiters() async throws {
         var headers = TestUtils.createHeaders(count: 4)
         headers[0] = ""
         headers[1] = ""
@@ -249,7 +248,7 @@ struct EmptyFieldTests {
     }
 
     @Test("Multiple empty values at end of row")
-    func testMultipleTrailingDelimiters() async throws {
+    func multipleTrailingDelimiters() async throws {
         let headers = ["header1", "header2", "", "", ""]
         let rows = [
             ["value1", "value2", "", "", ""],

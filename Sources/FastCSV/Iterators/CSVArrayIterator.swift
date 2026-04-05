@@ -17,7 +17,7 @@ public extension FastCSV {
         /// Quote character used by the parser (needed by Decodable layer)
         public let quoteChar: UInt8
 
-        // Pre-allocated arrays for reuse
+        /// Pre-allocated arrays for reuse
         private var valueBuffer: [CSVValue]
 
         /// Buffered first row for hasHeaders:false — yielded on the first call to next()
@@ -27,7 +27,7 @@ public extension FastCSV {
         /// We extract headers from it here, then all subsequent next() calls start at row 2.
         init(reader: ByteStreamReader, hasHeaders: Bool, customHeaders: [String] = [], config: CSVParserConfig) throws {
             let finalConfig = config
-            self.quoteChar = finalConfig.delimiter.quoteByte
+            quoteChar = finalConfig.delimiter.quoteByte
 
             var rowIter = CSVRowIterator(reader: reader, config: finalConfig)
 
@@ -54,19 +54,19 @@ public extension FastCSV {
             let headerSettings = try FastCSV.processHeaders(
                 firstRow: firstRowValues, hasHeaders: hasHeaders, customHeaders: customHeaders
             )
-            self.headers = headerSettings.headers
+            headers = headerSettings.headers
             let headerCount = headerSettings.headerCount
 
             // If row 1 is data (not headers), buffer it for yielding on first next() call
             if !headerSettings.skipFirstRow {
-                self.bufferedFirstRow = firstRowValues
-                self.rowNumber = 0
+                bufferedFirstRow = firstRowValues
+                rowNumber = 0
             } else {
-                self.bufferedFirstRow = nil
-                self.rowNumber = 1
+                bufferedFirstRow = nil
+                rowNumber = 1
             }
 
-            self.rowIterator = rowIter
+            rowIterator = rowIter
 
             // Pre-allocate buffer for values with expected capacity
             if headerCount > 0 {
@@ -88,12 +88,12 @@ public extension FastCSV {
                 if valueBuffer.count != buffered.count {
                     valueBuffer = [CSVValue](repeating: CSVValue(buffer: nil), count: buffered.count)
                 }
-                for i in 0..<buffered.count {
+                for i in 0 ..< buffered.count {
                     valueBuffer[i] = buffered[i]
                 }
 
                 var error: CSVError? = nil
-                if headers.count > 0 && buffered.count != headers.count {
+                if headers.count > 0, buffered.count != headers.count {
                     error = CSVError.rowError(
                         row: rowNumber,
                         message: "Row \(rowNumber) has \(buffered.count) columns, expected \(headers.count)."
@@ -115,20 +115,20 @@ public extension FastCSV {
                 var newBuffer = [CSVValue](repeating: CSVValue(buffer: nil), count: fieldCount)
 
                 let minCount = Swift.min(valueBuffer.count, fieldCount)
-                for i in 0..<minCount {
+                for i in 0 ..< minCount {
                     newBuffer[i] = valueBuffer[i]
                 }
                 valueBuffer = newBuffer
             }
 
-            for i in 0..<fieldCount {
+            for i in 0 ..< fieldCount {
                 let fieldPointer = result[i]
                 valueBuffer[i].update(buffer: fieldPointer.isEmpty ? nil : fieldPointer)
             }
 
             var error = result.parsingError
 
-            if headers.count > 0 && fieldCount != headers.count && error == nil {
+            if headers.count > 0, fieldCount != headers.count, error == nil {
                 error = CSVError.rowError(
                     row: rowNumber,
                     message: "Row \(rowNumber) has \(fieldCount) columns, expected \(headers.count)."

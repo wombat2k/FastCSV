@@ -2,14 +2,13 @@
 import Foundation
 import Testing
 
-@Suite("Adversarial Input Tests")
 struct AdversarialTests {
     private static let tinyBufferSize = 32
 
     // MARK: - Malformed Structure
 
     @Test("Missing columns")
-    func testMissingColumns() async throws {
+    func missingColumns() async throws {
         let headers = TestUtils.createHeaders(count: 3)
 
         var rows = TestUtils.createValues(rows: 2, columns: 3)
@@ -45,7 +44,7 @@ struct AdversarialTests {
     }
 
     @Test("Extra columns")
-    func testExtraColumns() async throws {
+    func extraColumns() async throws {
         let headers = TestUtils.createHeaders(count: 3)
 
         var rows = TestUtils.createValues(rows: 2, columns: 3)
@@ -86,7 +85,7 @@ struct AdversarialTests {
     // MARK: - Malformed Quoting
 
     @Test("Unclosed quote")
-    func testUnclosedQuote() async throws {
+    func unclosedQuote() async throws {
         let headers = ["header1", "header2", "header3"]
         let rows = [
             ["value1", "\"value with unfinished quote", "value3"],
@@ -115,7 +114,7 @@ struct AdversarialTests {
     }
 
     @Test("Quotes treated as literal characters in noQuotes mode")
-    func testQuotesLiteralInNoQuotesMode() async throws {
+    func quotesLiteralInNoQuotesMode() async throws {
         let headers = TestUtils.createHeaders(count: 3)
         var rows = TestUtils.createValues(rows: 2, columns: 3)
         rows[1][1] = "value with \"unexpected\" quotes"
@@ -144,7 +143,7 @@ struct AdversarialTests {
     // MARK: - Embedded Nulls
 
     @Test("Null bytes in field values")
-    func testNullBytes() async throws {
+    func nullBytes() async throws {
         let headers = TestUtils.createHeaders(count: 3)
         let rows = [
             ["before\0after", "normal", "also\0has\0nulls"],
@@ -175,7 +174,7 @@ struct AdversarialTests {
     // MARK: - Stress Tests
 
     @Test("Huge field spanning many chunks")
-    func testHugeField() async throws {
+    func hugeField() async throws {
         let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // Create a field that's ~500 bytes — spans ~16 chunks at 32 bytes each
         let hugeValue = String(repeating: "x", count: 500)
@@ -208,7 +207,7 @@ struct AdversarialTests {
     }
 
     @Test("Huge quoted field spanning many chunks")
-    func testHugeQuotedField() async throws {
+    func hugeQuotedField() async throws {
         let config = CSVParserConfig(readBufferSize: Self.tinyBufferSize)
         // Quoted field with commas and newlines inside, ~300 bytes
         let innerContent = String(repeating: "data,with,commas\nand\nnewlines\n", count: 10)
@@ -246,7 +245,7 @@ struct AdversarialTests {
     ]
 
     @Test("Long and wide CSV", arguments: gridSizes)
-    func testLongAndWideCSV(rows rowCount: Int, columns colCount: Int) async throws {
+    func longAndWideCSV(rows rowCount: Int, columns colCount: Int) async throws {
         let headers = TestUtils.createHeaders(count: colCount)
         let rows = TestUtils.createValues(rows: rowCount, columns: colCount)
 

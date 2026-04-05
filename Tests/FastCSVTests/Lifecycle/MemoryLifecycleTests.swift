@@ -2,9 +2,7 @@
 import Foundation
 import Testing
 
-@Suite("Memory Lifecycle Tests")
 struct MemoryLifecycleTests {
-
     // MARK: - isSafe property
 
     @Test("Values from iterator are unsafe (ref)")
@@ -129,8 +127,8 @@ struct MemoryLifecycleTests {
 
         for row in rows {
             let safeCopy = row.copyDictionary()
-            #expect(try safeCopy["name"]!.string == "Alice")
-            #expect(try safeCopy["age"]!.int == 30)
+            #expect(try safeCopy["name"]?.string == "Alice")
+            #expect(try safeCopy["age"]?.int == 30)
         }
     }
 
@@ -184,8 +182,8 @@ struct MemoryLifecycleTests {
         }
 
         #expect(savedRows.count == 2)
-        #expect(try savedRows[0]["name"]!.string == "Alice")
-        #expect(try savedRows[1]["name"]!.string == "Bob")
+        #expect(try savedRows[0]["name"]?.string == "Alice")
+        #expect(try savedRows[1]["name"]?.string == "Bob")
     }
 
     // MARK: - Decodable path is inherently safe

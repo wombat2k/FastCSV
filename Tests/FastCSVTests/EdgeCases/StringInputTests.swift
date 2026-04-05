@@ -7,9 +7,7 @@ private struct Person: Decodable, Equatable {
     let age: Int
 }
 
-@Suite("String and Data Input Tests")
 struct StringInputTests {
-
     // MARK: - String Input
 
     @Test("Array rows from string")

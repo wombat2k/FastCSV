@@ -11,11 +11,6 @@ public struct CSVDictionaryResult {
     public let values: [String: CSVValue]
     public let error: CSVError?
 
-    public init(values: [String: CSVValue], error: CSVError?) {
-        self.values = values
-        self.error = error
-    }
-
     /// Returns a safe copy of the dictionary
     /// - Returns: A new dictionary with copied values
     public func copyDictionary() -> [String: CSVValue] {
@@ -44,8 +39,13 @@ extension CSVDictionaryResult: Collection {
     public typealias Index = Dictionary<String, CSVValue>.Index
     public typealias Element = Dictionary<String, CSVValue>.Element
 
-    public var startIndex: Index { return values.startIndex }
-    public var endIndex: Index { return values.endIndex }
+    public var startIndex: Index {
+        return values.startIndex
+    }
+
+    public var endIndex: Index {
+        return values.endIndex
+    }
 
     public func index(after i: Index) -> Index {
         return values.index(after: i)
@@ -56,14 +56,13 @@ extension CSVDictionaryResult: Collection {
     }
 
     /// The number of key-value pairs in the dictionary
-    public var count: Int { return values.count }
+    public var count: Int {
+        return values.count
+    }
 
     /// Returns true if the dictionary contains no key-value pairs
-    public var isEmpty: Bool { return values.isEmpty }
-
-    /// Returns true if the dictionary contains the specified key
-    public func contains(key: String) -> Bool {
-        return values[key] != nil
+    public var isEmpty: Bool {
+        return values.isEmpty
     }
 
     /// Returns the keys of the dictionary

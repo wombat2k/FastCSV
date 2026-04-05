@@ -8,17 +8,24 @@ public struct Delimiter {
     public let quoteByte: UInt8
 
     /// The row delimiter as a Character.
-    public var row: Character { Character(UnicodeScalar(rowByte)) }
+    public var row: Character {
+        Character(UnicodeScalar(rowByte))
+    }
 
     /// The field delimiter as a Character.
-    public var field: Character { Character(UnicodeScalar(fieldByte)) }
+    public var field: Character {
+        Character(UnicodeScalar(fieldByte))
+    }
 
     /// The quote delimiter as a Character.
-    public var quote: Character { Character(UnicodeScalar(quoteByte)) }
+    public var quote: Character {
+        Character(UnicodeScalar(quoteByte))
+    }
 
     public init(row: String = "\n",
                 field: String = ",",
-                quote: String = "\"") throws {
+                quote: String = "\"") throws
+    {
         guard row.count == 1, field.count == 1, quote.count == 1 else {
             throw CSVError.invalidDelimiter(
                 message: "Delimiter must be a single ASCII character. Received: row='\(row)', field='\(field)', quote='\(quote)'"
@@ -29,10 +36,12 @@ public struct Delimiter {
 
     public init(row: Character = "\n",
                 field: Character = ",",
-                quote: Character = "\"") throws {
+                quote: Character = "\"") throws
+    {
         guard let rowByte = row.asciiValue,
               let fieldByte = field.asciiValue,
-              let quoteByte = quote.asciiValue else {
+              let quoteByte = quote.asciiValue
+        else {
             throw CSVError.invalidDelimiter(
                 message: "Delimiter must be an ASCII character. Received: row='\(row)', field='\(field)', quote='\(quote)'"
             )
@@ -44,9 +53,10 @@ public struct Delimiter {
 
     public init(row: UInt8 = 10,
                 field: UInt8 = 44,
-                quote: UInt8 = 34) {
-        self.rowByte = row
-        self.fieldByte = field
-        self.quoteByte = quote
+                quote: UInt8 = 34)
+    {
+        rowByte = row
+        fieldByte = field
+        quoteByte = quote
     }
 }

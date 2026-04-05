@@ -12,7 +12,7 @@ struct CSVRowDecoder: Decoder {
     let columnIndexMap: [String: Int]
     let quoteChar: UInt8
 
-    func container<Key: CodingKey>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> {
+    func container<Key: CodingKey>(keyedBy _: Key.Type) throws -> KeyedDecodingContainer<Key> {
         KeyedDecodingContainer(CSVKeyedDecodingContainer<Key>(decoder: self))
     }
 
@@ -82,7 +82,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
     // MARK: - String
 
-    func decode(_ type: String.Type, forKey key: Key) throws -> String {
+    func decode(_: String.Type, forKey key: Key) throws -> String {
         guard let result = try stringValue(for: key) else {
             throw DecodingError.valueNotFound(String.self, DecodingError.Context(
                 codingPath: [key],
@@ -94,7 +94,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
     // MARK: - Bool
 
-    func decode(_ type: Bool.Type, forKey key: Key) throws -> Bool {
+    func decode(_: Bool.Type, forKey key: Key) throws -> Bool {
         guard let str = try stringValue(for: key) else {
             throw DecodingError.valueNotFound(Bool.self, DecodingError.Context(
                 codingPath: [key],
@@ -114,57 +114,57 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
     // MARK: - Int
 
-    func decode(_ type: Int.Type, forKey key: Key) throws -> Int {
+    func decode(_: Int.Type, forKey key: Key) throws -> Int {
         try decodeFromString(key: key)
     }
 
     // MARK: - Double
 
-    func decode(_ type: Double.Type, forKey key: Key) throws -> Double {
+    func decode(_: Double.Type, forKey key: Key) throws -> Double {
         try decodeFromString(key: key)
     }
 
     // MARK: - Float
 
-    func decode(_ type: Float.Type, forKey key: Key) throws -> Float {
+    func decode(_: Float.Type, forKey key: Key) throws -> Float {
         try decodeFromString(key: key)
     }
 
     // MARK: - Integer Width Variants
 
-    func decode(_ type: Int8.Type, forKey key: Key) throws -> Int8 {
+    func decode(_: Int8.Type, forKey key: Key) throws -> Int8 {
         try decodeFromString(key: key)
     }
 
-    func decode(_ type: Int16.Type, forKey key: Key) throws -> Int16 {
+    func decode(_: Int16.Type, forKey key: Key) throws -> Int16 {
         try decodeFromString(key: key)
     }
 
-    func decode(_ type: Int32.Type, forKey key: Key) throws -> Int32 {
+    func decode(_: Int32.Type, forKey key: Key) throws -> Int32 {
         try decodeFromString(key: key)
     }
 
-    func decode(_ type: Int64.Type, forKey key: Key) throws -> Int64 {
+    func decode(_: Int64.Type, forKey key: Key) throws -> Int64 {
         try decodeFromString(key: key)
     }
 
-    func decode(_ type: UInt.Type, forKey key: Key) throws -> UInt {
+    func decode(_: UInt.Type, forKey key: Key) throws -> UInt {
         try decodeFromString(key: key)
     }
 
-    func decode(_ type: UInt8.Type, forKey key: Key) throws -> UInt8 {
+    func decode(_: UInt8.Type, forKey key: Key) throws -> UInt8 {
         try decodeFromString(key: key)
     }
 
-    func decode(_ type: UInt16.Type, forKey key: Key) throws -> UInt16 {
+    func decode(_: UInt16.Type, forKey key: Key) throws -> UInt16 {
         try decodeFromString(key: key)
     }
 
-    func decode(_ type: UInt32.Type, forKey key: Key) throws -> UInt32 {
+    func decode(_: UInt32.Type, forKey key: Key) throws -> UInt32 {
         try decodeFromString(key: key)
     }
 
-    func decode(_ type: UInt64.Type, forKey key: Key) throws -> UInt64 {
+    func decode(_: UInt64.Type, forKey key: Key) throws -> UInt64 {
         try decodeFromString(key: key)
     }
 
@@ -246,7 +246,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
 
     // MARK: - Unsupported
 
-    func nestedContainer<NestedKey: CodingKey>(keyedBy type: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> {
+    func nestedContainer<NestedKey: CodingKey>(keyedBy _: NestedKey.Type, forKey key: Key) throws -> KeyedDecodingContainer<NestedKey> {
         throw DecodingError.dataCorrupted(DecodingError.Context(
             codingPath: [key],
             debugDescription: "CSV does not support nested containers"
@@ -284,7 +284,7 @@ private struct CSVSingleValueDecoder: Decoder {
     let codingPath: [CodingKey]
     let userInfo: [CodingUserInfoKey: Any] = [:]
 
-    func container<Key: CodingKey>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> {
+    func container<Key: CodingKey>(keyedBy _: Key.Type) throws -> KeyedDecodingContainer<Key> {
         throw DecodingError.dataCorrupted(DecodingError.Context(
             codingPath: codingPath,
             debugDescription: "Single CSV value does not support keyed decoding"
@@ -307,11 +307,15 @@ private struct CSVSingleValueDecodingContainer: SingleValueDecodingContainer {
     let value: String
     let codingPath: [CodingKey]
 
-    func decodeNil() -> Bool { false }
+    func decodeNil() -> Bool {
+        false
+    }
 
-    func decode(_ type: String.Type) throws -> String { value }
+    func decode(_: String.Type) throws -> String {
+        value
+    }
 
-    func decode(_ type: Bool.Type) throws -> Bool {
+    func decode(_: Bool.Type) throws -> Bool {
         switch value.lowercased() {
         case "true", "yes", "1", "y": return true
         case "false", "no", "0", "n": return false
@@ -323,18 +327,47 @@ private struct CSVSingleValueDecodingContainer: SingleValueDecodingContainer {
         }
     }
 
-    func decode(_ type: Int.Type) throws -> Int { try decodeInteger() }
-    func decode(_ type: Int8.Type) throws -> Int8 { try decodeInteger() }
-    func decode(_ type: Int16.Type) throws -> Int16 { try decodeInteger() }
-    func decode(_ type: Int32.Type) throws -> Int32 { try decodeInteger() }
-    func decode(_ type: Int64.Type) throws -> Int64 { try decodeInteger() }
-    func decode(_ type: UInt.Type) throws -> UInt { try decodeInteger() }
-    func decode(_ type: UInt8.Type) throws -> UInt8 { try decodeInteger() }
-    func decode(_ type: UInt16.Type) throws -> UInt16 { try decodeInteger() }
-    func decode(_ type: UInt32.Type) throws -> UInt32 { try decodeInteger() }
-    func decode(_ type: UInt64.Type) throws -> UInt64 { try decodeInteger() }
+    func decode(_: Int.Type) throws -> Int {
+        try decodeInteger()
+    }
 
-    func decode(_ type: Double.Type) throws -> Double {
+    func decode(_: Int8.Type) throws -> Int8 {
+        try decodeInteger()
+    }
+
+    func decode(_: Int16.Type) throws -> Int16 {
+        try decodeInteger()
+    }
+
+    func decode(_: Int32.Type) throws -> Int32 {
+        try decodeInteger()
+    }
+
+    func decode(_: Int64.Type) throws -> Int64 {
+        try decodeInteger()
+    }
+
+    func decode(_: UInt.Type) throws -> UInt {
+        try decodeInteger()
+    }
+
+    func decode(_: UInt8.Type) throws -> UInt8 {
+        try decodeInteger()
+    }
+
+    func decode(_: UInt16.Type) throws -> UInt16 {
+        try decodeInteger()
+    }
+
+    func decode(_: UInt32.Type) throws -> UInt32 {
+        try decodeInteger()
+    }
+
+    func decode(_: UInt64.Type) throws -> UInt64 {
+        try decodeInteger()
+    }
+
+    func decode(_: Double.Type) throws -> Double {
         guard let result = Double(value) else {
             throw DecodingError.typeMismatch(Double.self, DecodingError.Context(
                 codingPath: codingPath,
@@ -344,7 +377,7 @@ private struct CSVSingleValueDecodingContainer: SingleValueDecodingContainer {
         return result
     }
 
-    func decode(_ type: Float.Type) throws -> Float {
+    func decode(_: Float.Type) throws -> Float {
         guard let result = Float(value) else {
             throw DecodingError.typeMismatch(Float.self, DecodingError.Context(
                 codingPath: codingPath,
@@ -354,7 +387,7 @@ private struct CSVSingleValueDecodingContainer: SingleValueDecodingContainer {
         return result
     }
 
-    func decode<T: Decodable>(_ type: T.Type) throws -> T {
+    func decode<T: Decodable>(_: T.Type) throws -> T {
         // Let the type try to decode itself from this single-value container
         try T(from: CSVSingleValueDecoder(value: value, codingPath: codingPath))
     }
