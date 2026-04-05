@@ -14,12 +14,13 @@ public extension FastCSV {
         private let columnIndexMap: [String: Int]
         private let quoteChar: UInt8
 
-        init(valueArrayIterator: CSVArrayIterator, headers: [String], quoteChar: UInt8) {
+        init(valueArrayIterator: CSVArrayIterator, headers: [String], quoteChar: UInt8, columnMapping: [String: String] = [:]) {
             self.valueArrayIterator = valueArrayIterator
 
             var map = [String: Int](minimumCapacity: headers.count)
             for (index, header) in headers.enumerated() {
-                map[header] = index
+                let key = columnMapping[header] ?? header
+                map[key] = index
             }
             self.columnIndexMap = map
             self.quoteChar = quoteChar

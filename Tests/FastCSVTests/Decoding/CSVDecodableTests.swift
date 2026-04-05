@@ -313,4 +313,92 @@ struct CSVDecodableTests {
         let result = try rows.next()!.get()
         #expect(result == WithDecimal(name: "Widget", price: Decimal(string: "19.99")!))
     }
+
+    // MARK: - Column Mapping
+
+    @Test("Column mapping renames headers to match struct properties")
+    func columnMappingBasic() throws {
+        let csv = "Full Name,Years Old\nAlice,30\nBob,25\n"
+        var rows = try FastCSV.makeRows(
+            Person.self,
+            fromString: csv,
+            columnMapping: ["Full Name": "name", "Years Old": "age"]
+        )
+        var results: [Person] = []
+        try rows.forEach { results.append($0) }
+
+        #expect(results == [Person(name: "Alice", age: 30), Person(name: "Bob", age: 25)])
+    }
+
+    @Test("Column mapping — unmapped columns keep their original names")
+    func columnMappingPartial() throws {
+        let csv = "name,Years Old\nAlice,30\n"
+        var rows = try FastCSV.makeRows(
+            Person.self,
+            fromString: csv,
+            columnMapping: ["Years Old": "age"]
+        )
+        let result = try rows.next()!.get()
+
+        #expect(result == Person(name: "Alice", age: 30))
+    }
+
+    @Test("Column mapping — unmapped extra columns are ignored")
+    func columnMappingExtraColumns() throws {
+        let csv = "Full Name,Years Old,City\nAlice,30,Boston\n"
+        var rows = try FastCSV.makeRows(
+            Person.self,
+            fromString: csv,
+            columnMapping: ["Full Name": "name", "Years Old": "age"]
+        )
+        let result = try rows.next()!.get()
+
+        #expect(result == Person(name: "Alice", age: 30))
+    }
+
+    @Test("Column mapping — missing mapped column throws keyNotFound")
+    func columnMappingMissingColumn() throws {
+        let csv = "Full Name,city\nAlice,Boston\n"
+        var rows = try FastCSV.makeRows(
+            Person.self,
+            fromString: csv,
+            columnMapping: ["Full Name": "name"]
+        )
+        guard let result = rows.next() else {
+            Issue.record("Expected a row")
+            return
+        }
+
+        #expect(throws: DecodingError.self) {
+            try result.get()
+        }
+    }
+
+    @Test("Column mapping with fromPath overload")
+    func columnMappingFromPath() throws {
+        let fileURL = try TestUtils.createRawCSVFile(content: "Full Name,Years Old\nAlice,30\n")
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+
+        var rows = try FastCSV.makeRows(
+            Person.self,
+            fromPath: fileURL.path,
+            columnMapping: ["Full Name": "name", "Years Old": "age"]
+        )
+        let result = try rows.next()!.get()
+
+        #expect(result == Person(name: "Alice", age: 30))
+    }
+
+    @Test("Column mapping with empty mapping behaves like no mapping")
+    func columnMappingEmpty() throws {
+        let csv = "name,age\nAlice,30\n"
+        var rows = try FastCSV.makeRows(
+            Person.self,
+            fromString: csv,
+            columnMapping: [:]
+        )
+        let result = try rows.next()!.get()
+
+        #expect(result == Person(name: "Alice", age: 30))
+    }
 }

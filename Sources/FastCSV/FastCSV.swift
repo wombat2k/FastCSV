@@ -90,9 +90,10 @@ public class FastCSV {
         fromPath path: String,
         hasHeaders: Bool = true,
         headers: [String] = [],
+        columnMapping: [String: String] = [:],
         config: CSVParserConfig? = nil
     ) throws -> CSVDecodableIterator<T> {
-        try makeRows(type, fromURL: URL(fileURLWithPath: path), hasHeaders: hasHeaders, headers: headers, config: config)
+        try makeRows(type, fromURL: URL(fileURLWithPath: path), hasHeaders: hasHeaders, headers: headers, columnMapping: columnMapping, config: config)
     }
 
     /// Create a lazy sequence that decodes CSV rows into Decodable structs.
@@ -101,13 +102,15 @@ public class FastCSV {
         fromURL url: URL,
         hasHeaders: Bool = true,
         headers: [String] = [],
+        columnMapping: [String: String] = [:],
         config: CSVParserConfig? = nil
     ) throws -> CSVDecodableIterator<T> {
         let iter = try makeArrayRows(fromURL: url, hasHeaders: hasHeaders, headers: headers, config: config)
         return CSVDecodableIterator<T>(
             valueArrayIterator: iter,
             headers: iter.headers,
-            quoteChar: iter.quoteChar
+            quoteChar: iter.quoteChar,
+            columnMapping: columnMapping
         )
     }
 
@@ -135,13 +138,15 @@ public class FastCSV {
         fromData data: Data,
         hasHeaders: Bool = true,
         headers: [String] = [],
+        columnMapping: [String: String] = [:],
         config: CSVParserConfig? = nil
     ) throws -> CSVDecodableIterator<T> {
         let iter = try makeArrayRows(fromData: data, hasHeaders: hasHeaders, headers: headers, config: config)
         return CSVDecodableIterator<T>(
             valueArrayIterator: iter,
             headers: iter.headers,
-            quoteChar: iter.quoteChar
+            quoteChar: iter.quoteChar,
+            columnMapping: columnMapping
         )
     }
 
@@ -163,9 +168,10 @@ public class FastCSV {
         fromString string: String,
         hasHeaders: Bool = true,
         headers: [String] = [],
+        columnMapping: [String: String] = [:],
         config: CSVParserConfig? = nil
     ) throws -> CSVDecodableIterator<T> {
-        try makeRows(type, fromData: Data(string.utf8), hasHeaders: hasHeaders, headers: headers, config: config)
+        try makeRows(type, fromData: Data(string.utf8), hasHeaders: hasHeaders, headers: headers, columnMapping: columnMapping, config: config)
     }
 
     // MARK: - Writing (Encodable → File)
