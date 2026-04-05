@@ -223,7 +223,7 @@ if let csv = writer.toString() {
 ### Custom delimiters
 
 ```swift
-let tsv = CSVParserConfig(delimiter: CSVFormat.tsv.delimiter)
+let tsv = CSVConfig(delimiter: CSVFormat.tsv.delimiter)
 var rows = try FastCSV.makeRows(T.self, fromPath: "data.tsv", config: tsv)
 ```
 
@@ -234,7 +234,7 @@ Supported formats: CSV, TSV, semicolon-separated, or custom field/row/quote deli
 Skip quote detection for a ~9% speed boost when your data has no quoted fields:
 
 ```swift
-let config = CSVParserConfig(assumeNoQuotes: true)
+let config = CSVConfig(assumeNoQuotes: true)
 ```
 
 ### Custom headers

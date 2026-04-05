@@ -27,7 +27,7 @@ public extension FastCSV {
         /// We extract headers from it here, then all subsequent next() calls start at row 2.
         init(reader: ByteStreamReader, hasHeaders: Bool, customHeaders: [String] = [], config: CSVParserConfig) throws {
             let finalConfig = config
-            self.quoteChar = finalConfig.delimiter.quote
+            self.quoteChar = finalConfig.delimiter.quoteByte
 
             var rowIter = CSVRowIterator(reader: reader, config: finalConfig)
 

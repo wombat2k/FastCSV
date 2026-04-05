@@ -127,7 +127,7 @@ struct CustomDelimiterTests {
 
         #expect(results.count == 1)
         #expect(TestUtils.isErrorFree(dictionaryResult: results))
-        #expect(try results[0].values["note"]?.stringIfPresent(quoteChar: config.delimiter.quote) == "has, commas")
+        #expect(try results[0].values["note"]?.stringIfPresent(quoteChar: config.delimiter.quoteByte) == "has, commas")
     }
 
     // MARK: - File I/O Helper
@@ -158,18 +158,18 @@ struct CustomDelimiterTests {
     func testStringInitializerValid() throws {
         let delimiter = try Delimiter(row: "\n", field: ",", quote: "\"")
 
-        #expect(delimiter.row == UInt8(ascii: "\n"))
-        #expect(delimiter.field == UInt8(ascii: ","))
-        #expect(delimiter.quote == UInt8(ascii: "\""))
+        #expect(delimiter.rowByte == UInt8(ascii: "\n"))
+        #expect(delimiter.fieldByte == UInt8(ascii: ","))
+        #expect(delimiter.quoteByte == UInt8(ascii: "\""))
     }
 
     @Test("Character initializer with valid single-character delimiters")
     func testCharacterInitializerValid() throws {
         let delimiter = try Delimiter(row: Character("\n"), field: Character(","), quote: Character("\""))
 
-        #expect(delimiter.row == UInt8(ascii: "\n"))
-        #expect(delimiter.field == UInt8(ascii: ","))
-        #expect(delimiter.quote == UInt8(ascii: "\""))
+        #expect(delimiter.rowByte == UInt8(ascii: "\n"))
+        #expect(delimiter.fieldByte == UInt8(ascii: ","))
+        #expect(delimiter.quoteByte == UInt8(ascii: "\""))
     }
 
     // MARK: - Invalid Delimiter Tests
@@ -229,30 +229,30 @@ struct CustomDelimiterTests {
     @Test("Default string initializer produces expected delimiters")
     func testDefaultInitializer() throws {
         let rowProvided = try Delimiter(row: "\t")
-        #expect(rowProvided.field == UInt8(ascii: ","))
-        #expect(rowProvided.quote == UInt8(ascii: "\""))
+        #expect(rowProvided.fieldByte == UInt8(ascii: ","))
+        #expect(rowProvided.quoteByte == UInt8(ascii: "\""))
 
         let fieldProvided = try Delimiter(field: "\t")
-        #expect(fieldProvided.row == UInt8(ascii: "\n"))
-        #expect(fieldProvided.quote == UInt8(ascii: "\""))
+        #expect(fieldProvided.rowByte == UInt8(ascii: "\n"))
+        #expect(fieldProvided.quoteByte == UInt8(ascii: "\""))
 
         let quoteProvided = try Delimiter(quote: "\t")
-        #expect(quoteProvided.row == UInt8(ascii: "\n"))
-        #expect(quoteProvided.field == UInt8(ascii: ","))
+        #expect(quoteProvided.rowByte == UInt8(ascii: "\n"))
+        #expect(quoteProvided.fieldByte == UInt8(ascii: ","))
     }
 
     @Test("Default character initializer produces expected delimiters")
     func testDefaultCharacterInitializer() throws {
         let rowProvided = try Delimiter(row: Character("\t"))
-        #expect(rowProvided.field == UInt8(ascii: ","))
-        #expect(rowProvided.quote == UInt8(ascii: "\""))
+        #expect(rowProvided.fieldByte == UInt8(ascii: ","))
+        #expect(rowProvided.quoteByte == UInt8(ascii: "\""))
 
         let fieldProvided = try Delimiter(field: Character("\t"))
-        #expect(fieldProvided.row == UInt8(ascii: "\n"))
-        #expect(fieldProvided.quote == UInt8(ascii: "\""))
+        #expect(fieldProvided.rowByte == UInt8(ascii: "\n"))
+        #expect(fieldProvided.quoteByte == UInt8(ascii: "\""))
 
         let quoteProvided = try Delimiter(quote: Character("\t"))
-        #expect(quoteProvided.row == UInt8(ascii: "\n"))
-        #expect(quoteProvided.field == UInt8(ascii: ","))
+        #expect(quoteProvided.rowByte == UInt8(ascii: "\n"))
+        #expect(quoteProvided.fieldByte == UInt8(ascii: ","))
     }
 }

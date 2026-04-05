@@ -37,8 +37,8 @@ public final class CSVWriter {
         }
         self.config = config
         self.output = FileWriteTarget(fileHandle: handle)
-        self.fieldDelimiter = String(UnicodeScalar(config.delimiter.field))
-        self.quoteChar = String(UnicodeScalar(config.delimiter.quote))
+        self.fieldDelimiter = String(UnicodeScalar(config.delimiter.fieldByte))
+        self.quoteChar = String(UnicodeScalar(config.delimiter.quoteByte))
         self.doubledQuote = quoteChar + quoteChar
     }
 
@@ -47,8 +47,8 @@ public final class CSVWriter {
     public init(config: CSVWriterConfig = CSVWriterConfig()) {
         self.config = config
         self.output = StringWriteTarget()
-        self.fieldDelimiter = String(UnicodeScalar(config.delimiter.field))
-        self.quoteChar = String(UnicodeScalar(config.delimiter.quote))
+        self.fieldDelimiter = String(UnicodeScalar(config.delimiter.fieldByte))
+        self.quoteChar = String(UnicodeScalar(config.delimiter.quoteByte))
         self.doubledQuote = quoteChar + quoteChar
     }
 

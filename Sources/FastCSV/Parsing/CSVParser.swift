@@ -71,14 +71,14 @@ extension FastCSV {
                 while chunkReader.currentPosition < chunkReader.currentReadBufferSize {
                     let byte = bytes[chunkReader.currentPosition]
 
-                    if byte == delimiter.quote {
+                    if byte == delimiter.quoteByte {
                         if !inQuote && chunkReader.currentPosition == fieldStart {
                             inQuote = true
                             chunkReader.advancePosition()
                             continue
                         } else if inQuote {
                             if chunkReader.currentPosition + 1 < chunkReader.currentReadBufferSize &&
-                                bytes[chunkReader.currentPosition + 1] == delimiter.quote
+                                bytes[chunkReader.currentPosition + 1] == delimiter.quoteByte
                             {
                                 chunkReader.advancePosition(by: 2)
                                 continue
@@ -91,7 +91,7 @@ extension FastCSV {
                             chunkReader.advancePosition()
                             continue
                         }
-                    } else if !inQuote && byte == delimiter.field {
+                    } else if !inQuote && byte == delimiter.fieldByte {
                         if chunkReader.currentPosition > fieldStart {
                             let length = chunkReader.currentPosition - fieldStart
                             fields.append(Array(UnsafeBufferPointer(start: bytes.advanced(by: fieldStart), count: length)))
@@ -101,7 +101,7 @@ extension FastCSV {
 
                         chunkReader.advancePosition()
                         fieldStart = chunkReader.currentPosition
-                    } else if !inQuote && byte == delimiter.row {
+                    } else if !inQuote && byte == delimiter.rowByte {
                         var fieldEnd = chunkReader.currentPosition
                         if byte == UInt8(ascii: "\n") && fieldEnd > fieldStart &&
                             bytes[fieldEnd - 1] == UInt8(ascii: "\r")
@@ -242,14 +242,14 @@ extension FastCSV {
                 while chunkReader.currentPosition < chunkReader.currentReadBufferSize {
                     let byte = bytes[chunkReader.currentPosition]
 
-                    if byte == delimiter.quote {
+                    if byte == delimiter.quoteByte {
                         if !inQuote && chunkReader.currentPosition == fieldStartPosition {
                             inQuote = true
                             chunkReader.advancePosition()
                             continue
                         } else if inQuote {
                             if chunkReader.currentPosition + 1 < chunkReader.currentReadBufferSize &&
-                                bytes[chunkReader.currentPosition + 1] == delimiter.quote
+                                bytes[chunkReader.currentPosition + 1] == delimiter.quoteByte
                             {
                                 chunkReader.advancePosition(by: 2)
                                 continue
@@ -262,7 +262,7 @@ extension FastCSV {
                             chunkReader.advancePosition()
                             continue
                         }
-                    } else if !inQuote && byte == delimiter.field {
+                    } else if !inQuote && byte == delimiter.fieldByte {
                         if currentFieldIndex < columnCount {
                             if chunkReader.currentPosition > fieldStartPosition {
                                 storage[currentFieldIndex] = createFieldPointer(
@@ -283,7 +283,7 @@ extension FastCSV {
 
                         chunkReader.advancePosition()
                         fieldStartPosition = chunkReader.currentPosition
-                    } else if !inQuote && byte == delimiter.row {
+                    } else if !inQuote && byte == delimiter.rowByte {
                         let fieldEnd = adjustFieldEndForCRLF(
                             byte: byte, fieldEnd: chunkReader.currentPosition,
                             fieldStart: fieldStartPosition, bytes: bytes
@@ -371,7 +371,7 @@ extension FastCSV {
                 while chunkReader.currentPosition < chunkReader.currentReadBufferSize {
                     let byte = bytes[chunkReader.currentPosition]
 
-                    if byte == delimiter.field {
+                    if byte == delimiter.fieldByte {
                         if currentFieldIndex < columnCount {
                             if chunkReader.currentPosition > fieldStartPosition {
                                 storage[currentFieldIndex] = createFieldPointer(
@@ -392,7 +392,7 @@ extension FastCSV {
 
                         chunkReader.advancePosition()
                         fieldStartPosition = chunkReader.currentPosition
-                    } else if byte == delimiter.row {
+                    } else if byte == delimiter.rowByte {
                         let fieldEnd = adjustFieldEndForCRLF(
                             byte: byte, fieldEnd: chunkReader.currentPosition,
                             fieldStart: fieldStartPosition, bytes: bytes
@@ -427,7 +427,7 @@ extension FastCSV {
 
                         currentRowNumber += 1
                         return result
-                    } else if byte == delimiter.quote {
+                    } else if byte == delimiter.quoteByte {
                         let emptyFields: [UnsafeBufferPointer<UInt8>] = []
                         let errorResult = CSVIteratorResult(
                             fieldPointers: emptyFields,

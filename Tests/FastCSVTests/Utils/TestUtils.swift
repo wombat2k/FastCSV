@@ -40,8 +40,8 @@ enum TestUtils {
         var csvContent = ""
 
         // Convert delimiters to their string representation
-        let fieldDelimiter = String(UnicodeScalar(config.delimiter.field))
-        let rowDelimiter = String(UnicodeScalar(config.delimiter.row))
+        let fieldDelimiter = String(UnicodeScalar(config.delimiter.fieldByte))
+        let rowDelimiter = String(UnicodeScalar(config.delimiter.rowByte))
 
         if !headers.isEmpty {
             csvContent = headers.joined(separator: fieldDelimiter)

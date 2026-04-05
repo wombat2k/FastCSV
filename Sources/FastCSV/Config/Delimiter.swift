@@ -1,49 +1,52 @@
 import Foundation
 
-/// This struct controls the delimiters used for parsing CSV files.
-/// It is used by the parser to determine how to split the data.
+/// Controls the delimiters used for parsing and writing CSV files.
 /// By default, it is RFC 4180 compliant.
 public struct Delimiter {
-    let row: UInt8
-    let field: UInt8
-    let quote: UInt8
+    public let rowByte: UInt8
+    public let fieldByte: UInt8
+    public let quoteByte: UInt8
 
-    public init(row: String = "\n", // LF
-                field: String = ",", // comma
-                quote: String = "\"") // double quote
-                throws {
+    /// The row delimiter as a Character.
+    public var row: Character { Character(UnicodeScalar(rowByte)) }
 
-        let message = "Delimiter characters must be a single ASCII character. Received: row='\(row)', field='\(field)', quote='\(quote)'"
-        
+    /// The field delimiter as a Character.
+    public var field: Character { Character(UnicodeScalar(fieldByte)) }
+
+    /// The quote delimiter as a Character.
+    public var quote: Character { Character(UnicodeScalar(quoteByte)) }
+
+    public init(row: String = "\n",
+                field: String = ",",
+                quote: String = "\"") throws {
         guard row.count == 1, field.count == 1, quote.count == 1 else {
-            throw CSVError.invalidDelimiter(message: message)
+            throw CSVError.invalidDelimiter(
+                message: "Delimiter must be a single ASCII character. Received: row='\(row)', field='\(field)', quote='\(quote)'"
+            )
         }
-        
         try self.init(row: Character(row), field: Character(field), quote: Character(quote))
     }
 
-    public init(row: Character = "\n", // LF
-                field: Character = ",", // comma
-                quote: Character = "\"") // double quote
-    throws {
-        let message = "Delimiter characters must be an ASCII character. Received: row='\(row)', field='\(field)', quote='\(quote)'"    
-        
-        if let rowByte = row.asciiValue, let fieldByte = field.asciiValue, let quoteByte = quote.asciiValue {
-            self.row = rowByte
-            self.field = fieldByte
-            self.quote = quoteByte
+    public init(row: Character = "\n",
+                field: Character = ",",
+                quote: Character = "\"") throws {
+        guard let rowByte = row.asciiValue,
+              let fieldByte = field.asciiValue,
+              let quoteByte = quote.asciiValue else {
+            throw CSVError.invalidDelimiter(
+                message: "Delimiter must be an ASCII character. Received: row='\(row)', field='\(field)', quote='\(quote)'"
+            )
         }
-        else {
-            throw CSVError.invalidDelimiter(message: message)
-        }
+        self.rowByte = rowByte
+        self.fieldByte = fieldByte
+        self.quoteByte = quoteByte
     }
-    
-    public init(row: UInt8 = 10, // LF
-                field: UInt8 = 44, // comma
-                quote: UInt8 = 34) // double quote
-    {
-        self.row = row
-        self.field = field
-        self.quote = quote
+
+    public init(row: UInt8 = 10,
+                field: UInt8 = 44,
+                quote: UInt8 = 34) {
+        self.rowByte = row
+        self.fieldByte = field
+        self.quoteByte = quote
     }
 }

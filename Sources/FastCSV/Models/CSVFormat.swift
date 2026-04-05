@@ -15,7 +15,7 @@ public enum CSVFormat {
     case custom(field: UInt8, row: UInt8, quote: UInt8)
 
     /// Get the delimiter configuration for this format
-    var delimiter: Delimiter {
+    public var delimiter: Delimiter {
         switch self {
         case .csv:
             return Delimiter(row: UInt8(ascii: "\n"), field: UInt8(ascii: ","), quote: UInt8(ascii: "\""))
