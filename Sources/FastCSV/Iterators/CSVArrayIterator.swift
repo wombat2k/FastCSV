@@ -5,7 +5,9 @@ public extension FastCSV {
     /// This iterator returns each row as an array of CSVValue.
     /// It is designed to be efficient and reusable, minimizing memory allocations.
     /// ⚠️ - This iterator is not thread-safe. It only should be used in a single-threaded context.
-    /// ⚠️ - This iterator will automatically clean up resources after the last row is processed (including when encountering a fatal exception), but the user is responsible for calling cleanup if they choose not to iterate through all rows.
+    /// ⚠️ - This iterator will automatically clean up resources after the last row is processed
+    /// (including when encountering a fatal exception), but the user is responsible for calling
+    /// cleanup if they choose not to iterate through all rows.
     struct CSVArrayIterator: IteratorProtocol, Sequence {
         public typealias Element = CSVArrayResult
 
@@ -88,8 +90,8 @@ public extension FastCSV {
                 if valueBuffer.count != buffered.count {
                     valueBuffer = [CSVValue](repeating: CSVValue(buffer: nil), count: buffered.count)
                 }
-                for i in 0 ..< buffered.count {
-                    valueBuffer[i] = buffered[i]
+                for index in 0 ..< buffered.count {
+                    valueBuffer[index] = buffered[index]
                 }
 
                 var error: CSVError? = nil
@@ -115,15 +117,15 @@ public extension FastCSV {
                 var newBuffer = [CSVValue](repeating: CSVValue(buffer: nil), count: fieldCount)
 
                 let minCount = Swift.min(valueBuffer.count, fieldCount)
-                for i in 0 ..< minCount {
-                    newBuffer[i] = valueBuffer[i]
+                for index in 0 ..< minCount {
+                    newBuffer[index] = valueBuffer[index]
                 }
                 valueBuffer = newBuffer
             }
 
-            for i in 0 ..< fieldCount {
-                let fieldPointer = result[i]
-                valueBuffer[i].update(buffer: fieldPointer.isEmpty ? nil : fieldPointer)
+            for index in 0 ..< fieldCount {
+                let fieldPointer = result[index]
+                valueBuffer[index].update(buffer: fieldPointer.isEmpty ? nil : fieldPointer)
             }
 
             var error = result.parsingError

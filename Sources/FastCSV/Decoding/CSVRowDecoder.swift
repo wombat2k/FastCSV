@@ -101,15 +101,14 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
                 debugDescription: "Expected Bool but found empty field for '\(key.stringValue)'",
             ))
         }
-        switch str.lowercased() {
-        case "true", "yes", "1", "y": return true
-        case "false", "no", "0", "n": return false
-        default:
+        let utf8 = Array(str.utf8)
+        guard let result = utf8.withUnsafeBufferPointer({ CSVValue.parseBool(from: $0) }) else {
             throw DecodingError.typeMismatch(Bool.self, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Could not convert '\(str)' to Bool for '\(key.stringValue)'",
             ))
         }
+        return result
     }
 
     // MARK: - Int
@@ -203,6 +202,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
                     debugDescription: "Could not convert '\(str)' to Date for '\(key.stringValue)'",
                 ))
             }
+            // swiftlint:disable:next force_cast
             return date as! T
         }
 
@@ -219,6 +219,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
                     debugDescription: "Could not convert '\(str)' to Decimal for '\(key.stringValue)'",
                 ))
             }
+            // swiftlint:disable:next force_cast
             return decimal as! T
         }
 
@@ -230,6 +231,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
                     debugDescription: "Could not convert '\(str)' to URL for '\(key.stringValue)'",
                 ))
             }
+            // swiftlint:disable:next force_cast
             return url as! T
         }
 
@@ -316,15 +318,14 @@ private struct CSVSingleValueDecodingContainer: SingleValueDecodingContainer {
     }
 
     func decode(_: Bool.Type) throws -> Bool {
-        switch value.lowercased() {
-        case "true", "yes", "1", "y": return true
-        case "false", "no", "0", "n": return false
-        default:
+        let utf8 = Array(value.utf8)
+        guard let result = utf8.withUnsafeBufferPointer({ CSVValue.parseBool(from: $0) }) else {
             throw DecodingError.typeMismatch(Bool.self, DecodingError.Context(
                 codingPath: codingPath,
                 debugDescription: "Could not convert '\(value)' to Bool",
             ))
         }
+        return result
     }
 
     func decode(_: Int.Type) throws -> Int {

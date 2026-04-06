@@ -1,3 +1,4 @@
+// swiftlint:disable cyclomatic_complexity function_body_length type_body_length
 import Foundation
 
 extension FastCSV {
@@ -135,8 +136,8 @@ extension FastCSV {
             let storage: UnsafeMutableBufferPointer<UnsafeBufferPointer<UInt8>>
             if colCount > 0 {
                 storage = .allocate(capacity: colCount)
-                for i in 0 ..< colCount {
-                    storage[i] = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
+                for index in 0 ..< colCount {
+                    storage[index] = UnsafeBufferPointer<UInt8>(start: nil, count: 0)
                 }
             } else {
                 storage = .allocate(capacity: 0)

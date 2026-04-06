@@ -5,7 +5,9 @@ public extension FastCSV {
     /// This iterator returns each row as a dictionary of String:CSVValue with the key being the header.
     /// It is designed to be efficient and reusable, minimizing memory allocations.
     /// ⚠️ - This iterator is not thread-safe. It only should be used in a single-threaded context.
-    /// ⚠️ - This iterator will automatically clean up resources after the last row is processed (including when encountering a fatal exception), but the user is responsible for calling cleanup if they choose not to iterate through all rows.
+    /// ⚠️ - This iterator will automatically clean up resources after the last row is processed
+    /// (including when encountering a fatal exception), but the user is responsible for calling
+    /// cleanup if they choose not to iterate through all rows.
     struct CSVDictionaryIterator: IteratorProtocol, Sequence {
         public typealias Element = CSVDictionaryResult
 
@@ -46,8 +48,8 @@ public extension FastCSV {
 
             // Update dictionary values directly - no need to recreate keys
             let count = Swift.min(headers.count, values.count)
-            for i in 0 ..< count {
-                reusableDict[headers[i]] = values[i]
+            for index in 0 ..< count {
+                reusableDict[headers[index]] = values[index]
             }
 
             return CSVDictionaryResult(values: reusableDict, error: error)

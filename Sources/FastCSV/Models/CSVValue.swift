@@ -88,40 +88,40 @@ private extension CSVValue {
     static func parseInteger<T: FixedWidthInteger>(from bytes: UnsafeBufferPointer<UInt8>) -> T? {
         guard !bytes.isEmpty else { return nil }
 
-        var i = 0
+        var index = 0
         var negate = false
 
-        if bytes[i] == UInt8(ascii: "-") {
+        if bytes[index] == UInt8(ascii: "-") {
             guard T.isSigned else { return nil }
             negate = true
-            i += 1
-        } else if bytes[i] == UInt8(ascii: "+") {
-            i += 1
+            index += 1
+        } else if bytes[index] == UInt8(ascii: "+") {
+            index += 1
         }
 
-        guard i < bytes.count else { return nil }
+        guard index < bytes.count else { return nil }
 
         // Accumulate using subtraction when negative to correctly handle T.min
         var result: T = 0
-        while i < bytes.count {
-            let byte = bytes[i]
+        while index < bytes.count {
+            let byte = bytes[index]
             guard byte >= UInt8(ascii: "0"), byte <= UInt8(ascii: "9") else { return nil }
             let digit = T(byte &- UInt8(ascii: "0"))
 
-            let (r1, o1) = result.multipliedReportingOverflow(by: 10)
-            guard !o1 else { return nil }
+            let (multiplied, overflowed) = result.multipliedReportingOverflow(by: 10)
+            guard !overflowed else { return nil }
 
             if negate {
-                let (r2, o2) = r1.subtractingReportingOverflow(digit)
-                guard !o2 else { return nil }
-                result = r2
+                let (subtracted, underflowed) = multiplied.subtractingReportingOverflow(digit)
+                guard !underflowed else { return nil }
+                result = subtracted
             } else {
-                let (r2, o2) = r1.addingReportingOverflow(digit)
-                guard !o2 else { return nil }
-                result = r2
+                let (added, overflowed) = multiplied.addingReportingOverflow(digit)
+                guard !overflowed else { return nil }
+                result = added
             }
 
-            i += 1
+            index += 1
         }
 
         return result
@@ -172,7 +172,11 @@ private extension CSVValue {
             return result
         }
     }
+}
 
+// MARK: - Bool Parsing
+
+extension CSVValue {
     /// Parse a Bool directly from ASCII bytes without intermediate String allocation.
     /// Case-insensitive matching using bitwise OR for lowercase conversion.
     static func parseBool(from bytes: UnsafeBufferPointer<UInt8>) -> Bool? {

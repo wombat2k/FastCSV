@@ -47,6 +47,7 @@ extension CSVDictionaryResult: Collection {
         values.endIndex
     }
 
+    // swiftlint:disable:next identifier_name
     public func index(after i: Index) -> Index {
         values.index(after: i)
     }
