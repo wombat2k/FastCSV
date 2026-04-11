@@ -3,7 +3,7 @@
 A high-performance CSV parser and writer for Swift
 
 [![CI](https://github.com/wombat2k/FastCSV/actions/workflows/ci.yml/badge.svg)](https://github.com/wombat2k/FastCSV/actions/workflows/ci.yml)
-[![Swift 6](https://img.shields.io/badge/Swift-6.1-orange.svg)](https://swift.org)
+[![Swift 6](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Overview
@@ -281,7 +281,7 @@ The Decodable path is roughly 2x slower than raw array access with equivalent fi
 
 - **macOS**: 13.0+
 - **iOS**: 15.0+
-- **Swift**: 6.1+
+- **Swift**: 6.2+
 
 ## License
 
