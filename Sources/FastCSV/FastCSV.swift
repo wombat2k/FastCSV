@@ -1,12 +1,12 @@
 import Foundation
 
 /// High-performance streaming CSV parser that returns rows on demand
-public class FastCSV {
+public enum FastCSV {
     // MARK: - Header Processing
 
     /// Process header information based on first row and configuration
     static func processHeaders(firstRow: [CSVValue], hasHeaders: Bool, customHeaders: [String]) throws ->
-        (headers: [String], skipFirstRow: Bool, headerCount: Int)
+        (headers: [String], skipFirstRow: Bool)
     {
         if !customHeaders.isEmpty {
             if customHeaders.count != firstRow.count {
@@ -17,17 +17,17 @@ public class FastCSV {
 
             // If custom headers are provided AND file has headers,
             // we should skip the first row when reading data
-            return (processedHeaders, hasHeaders, processedHeaders.count)
+            return (processedHeaders, hasHeaders)
         } else if hasHeaders {
             let extractedHeaders = try firstRow.map { try $0.stringIfPresent() ?? "" }
 
             let processedHeaders = processEmptyHeaders(headers: extractedHeaders)
 
-            return (processedHeaders, true, processedHeaders.count)
+            return (processedHeaders, true)
         } else {
             let emptyHeaders = Array(repeating: "", count: firstRow.count)
             let processedHeaders = processEmptyHeaders(headers: emptyHeaders)
-            return (processedHeaders, false, firstRow.count)
+            return (processedHeaders, false)
         }
     }
 
@@ -206,7 +206,10 @@ public class FastCSV {
     ) throws -> String {
         let writer = CSVWriter(config: config)
         try writer.writeRows(rows)
-        return writer.toString()!
+        guard let result = writer.toString() else {
+            throw CSVError.writeError(message: "Failed to produce CSV string output.")
+        }
+        return result
     }
 
     // MARK: - Writing (String Arrays → File)
@@ -247,6 +250,9 @@ public class FastCSV {
             try writer.writeHeaders(headers)
         }
         try writer.writeRows(rows)
-        return writer.toString()!
+        guard let result = writer.toString() else {
+            throw CSVError.writeError(message: "Failed to produce CSV string output.")
+        }
+        return result
     }
 }

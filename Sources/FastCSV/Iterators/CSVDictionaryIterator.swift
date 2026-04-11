@@ -52,6 +52,11 @@ public extension FastCSV {
                 reusableDict[headers[index]] = values[index]
             }
 
+            // Clear stale values for any headers not covered by this row
+            for index in count ..< headers.count {
+                reusableDict[headers[index]] = CSVValue(buffer: nil)
+            }
+
             return CSVDictionaryResult(values: reusableDict, error: error)
         }
 
@@ -61,7 +66,7 @@ public extension FastCSV {
         /// - Parameter callback: Function to process each row
         /// ⚠️ - This method is not thread-safe. It only should be used in a single-threaded context.
         /// ℹ️ - This method will automatically clean up resources after the last row is processed (including when encountering a fatal exception)
-        mutating func forEach(_ callback: (CSVDictionaryResult) throws -> Void) throws {
+        public mutating func forEach(_ callback: (CSVDictionaryResult) throws -> Void) throws {
             defer {
                 cleanup()
             }

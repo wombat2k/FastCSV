@@ -41,7 +41,7 @@ extension FastCSV {
 
             // Parse row 1 to discover column count
             var fields: [[UInt8]] = []
-            var error: CSVError? = nil
+            var error: CSVError?
             var inQuote = false
             var fieldStart = 0
 
@@ -131,7 +131,7 @@ extension FastCSV {
             chunkReader.releaseRetainedBuffers()
 
             let fieldStartPosition = chunkReader.currentPosition
-            let colCount = fields.isEmpty ? 0 : fields.count
+            let colCount = fields.count
 
             let storage: UnsafeMutableBufferPointer<UnsafeBufferPointer<UInt8>>
             if colCount > 0 {
@@ -213,12 +213,12 @@ extension FastCSV {
                         )
                     }
 
-                    if chunkReader.currentPosition > fieldStartPosition && chunkReader.currentBytes != nil {
+                    if chunkReader.currentPosition > fieldStartPosition, let bytes = chunkReader.currentBytes {
                         if currentFieldIndex < columnCount {
                             storage[currentFieldIndex] = createFieldPointer(
                                 from: fieldStartPosition,
                                 to: chunkReader.currentPosition,
-                                in: chunkReader.currentBytes!,
+                                in: bytes,
                             )
                             currentFieldIndex += 1
                         } else if parsingError == nil {
@@ -343,12 +343,12 @@ extension FastCSV {
                 }
 
                 if chunkReader.isFinished {
-                    if chunkReader.currentPosition > fieldStartPosition && chunkReader.currentBytes != nil {
+                    if chunkReader.currentPosition > fieldStartPosition, let bytes = chunkReader.currentBytes {
                         if currentFieldIndex < columnCount {
                             storage[currentFieldIndex] = createFieldPointer(
                                 from: fieldStartPosition,
                                 to: chunkReader.currentPosition,
-                                in: chunkReader.currentBytes!,
+                                in: bytes,
                             )
                             currentFieldIndex += 1
                         } else if parsingError == nil {

@@ -57,7 +57,6 @@ public extension FastCSV {
                 firstRow: firstRowValues, hasHeaders: hasHeaders, customHeaders: customHeaders,
             )
             headers = headerSettings.headers
-            let headerCount = headerSettings.headerCount
 
             // If row 1 is data (not headers), buffer it for yielding on first next() call
             if !headerSettings.skipFirstRow {
@@ -71,8 +70,8 @@ public extension FastCSV {
             rowIterator = rowIter
 
             // Pre-allocate buffer for values with expected capacity
-            if headerCount > 0 {
-                valueBuffer = [CSVValue](repeating: CSVValue(buffer: nil), count: headerCount)
+            if !headers.isEmpty {
+                valueBuffer = [CSVValue](repeating: CSVValue(buffer: nil), count: headers.count)
             } else {
                 valueBuffer = []
             }
@@ -94,8 +93,8 @@ public extension FastCSV {
                     valueBuffer[index] = buffered[index]
                 }
 
-                var error: CSVError? = nil
-                if headers.count > 0, buffered.count != headers.count {
+                var error: CSVError?
+                if !headers.isEmpty, buffered.count != headers.count {
                     error = CSVError.rowError(
                         row: rowNumber,
                         message: "Row \(rowNumber) has \(buffered.count) columns, expected \(headers.count).",
@@ -114,13 +113,7 @@ public extension FastCSV {
             let fieldCount = result.count
 
             if valueBuffer.count != fieldCount {
-                var newBuffer = [CSVValue](repeating: CSVValue(buffer: nil), count: fieldCount)
-
-                let minCount = Swift.min(valueBuffer.count, fieldCount)
-                for index in 0 ..< minCount {
-                    newBuffer[index] = valueBuffer[index]
-                }
-                valueBuffer = newBuffer
+                valueBuffer = [CSVValue](repeating: CSVValue(buffer: nil), count: fieldCount)
             }
 
             for index in 0 ..< fieldCount {
@@ -130,7 +123,7 @@ public extension FastCSV {
 
             var error = result.parsingError
 
-            if headers.count > 0, fieldCount != headers.count, error == nil {
+            if !headers.isEmpty, fieldCount != headers.count, error == nil {
                 error = CSVError.rowError(
                     row: rowNumber,
                     message: "Row \(rowNumber) has \(fieldCount) columns, expected \(headers.count).",
@@ -150,7 +143,7 @@ public extension FastCSV {
         // MARK: - Convenience Methods
 
         /// Process the CSV file with a callback for each row as an array of CSVValue
-        mutating func forEach(_ callback: (CSVArrayResult) throws -> Void) throws {
+        public mutating func forEach(_ callback: (CSVArrayResult) throws -> Void) throws {
             defer { cleanup() }
 
             while let result = next() {

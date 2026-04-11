@@ -21,8 +21,6 @@ extension FastCSV {
         private var currentReadBuffer: UnsafeMutablePointer<UInt8>?
         /// Previous buffers kept alive because field pointers may reference them
         private var retainedBuffers: [UnsafeMutablePointer<UInt8>] = []
-        /// Flag to track if we've already checked for BOM
-        private var bomChecked: Bool = false
         /// Tracker to prevent double cleanup
         private let cleanupTracker: CleanupTracker
 
@@ -40,13 +38,7 @@ extension FastCSV {
         /// Loads the next chunk of data if needed
         func loadNextChunkIfNeeded() {
             if currentPosition >= currentReadBufferSize || currentReadBuffer == nil {
-                #if os(macOS) || os(iOS) || os(tvOS) || os(watchOS)
-                    autoreleasepool {
-                        self.loadNextChunk()
-                    }
-                #else
-                    loadNextChunk()
-                #endif
+                loadNextChunk()
             }
         }
 
@@ -66,20 +58,6 @@ extension FastCSV {
                 currentBytes = UnsafePointer(buffer)
                 currentReadBufferSize = bytesRead
                 currentPosition = 0
-
-                // Check for UTF-8 BOM in the first chunk only
-                if !bomChecked, currentReadBufferSize >= 3 {
-                    bomChecked = true
-
-                    // Check for UTF-8 BOM (EF BB BF)
-                    if currentBytes![0] == 0xEF,
-                       currentBytes![1] == 0xBB,
-                       currentBytes![2] == 0xBF
-                    {
-                        // Skip the BOM by advancing position
-                        currentPosition = 3
-                    }
-                }
             } else {
                 // EOF — deallocate the unused new buffer but keep the current
                 // buffer alive. The parser may still need to capture a final
@@ -97,11 +75,6 @@ extension FastCSV {
         /// Advances the current position by the specified amount
         func advancePosition(by amount: Int) {
             currentPosition += amount
-        }
-
-        /// Sets the current position
-        func setPosition(_ position: Int) {
-            currentPosition = position
         }
 
         /// Extends the current buffer when a row spans a chunk boundary.
