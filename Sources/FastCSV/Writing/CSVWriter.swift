@@ -4,6 +4,14 @@
     import Foundation
 #endif
 
+#if canImport(Darwin)
+    import Darwin
+#elseif canImport(Glibc)
+    import Glibc
+#elseif canImport(Musl)
+    import Musl
+#endif
+
 /// A CSV writer that supports row-by-row output to a file or string buffer.
 ///
 /// CSVWriter is a class because it owns resources (file handles) and maintains
@@ -31,15 +39,12 @@ public final class CSVWriter {
 
     /// Create a writer that writes to a file URL.
     public init(toURL url: URL, config: CSVWriterConfig = CSVWriterConfig()) throws {
-        let manager = FileManager.default
-        if !manager.createFile(atPath: url.path, contents: nil) {
-            throw CSVError.writeError(message: "Could not create file at \(url.path)")
-        }
-        guard let handle = try? FileHandle(forWritingTo: url) else {
+        let fd = url.path.withCString { open($0, O_WRONLY | O_CREAT | O_TRUNC, 0o644) }
+        guard fd >= 0 else {
             throw CSVError.writeError(message: "Could not open file for writing at \(url.path)")
         }
         self.config = config
-        output = FileWriteTarget(fileHandle: handle)
+        output = FileWriteTarget(fd: fd)
         fieldDelimiter = String(UnicodeScalar(config.delimiter.fieldByte))
         quoteChar = String(UnicodeScalar(config.delimiter.quoteByte))
         doubledQuote = quoteChar + quoteChar
@@ -176,22 +181,60 @@ private protocol CSVWriteTarget {
 }
 
 private final class FileWriteTarget: CSVWriteTarget {
-    private let fileHandle: FileHandle
+    private let fd: Int32
+    private var didClose = false
 
-    init(fileHandle: FileHandle) {
-        self.fileHandle = fileHandle
+    init(fd: Int32) {
+        self.fd = fd
     }
 
     func write(_ string: String) throws {
-        guard let data = string.data(using: .utf8) else {
-            throw CSVError.writeError(message: "Could not encode string as UTF-8")
+        let bytes = Array(string.utf8)
+        try bytes.withUnsafeBufferPointer { buf in
+            guard var ptr = buf.baseAddress else { return }
+            var remaining = buf.count
+            while remaining > 0 {
+                let n = posixWrite(fd, ptr, remaining)
+                if n < 0 {
+                    throw CSVError.writeError(message: "Write to file descriptor failed")
+                }
+                remaining -= n
+                ptr = ptr.advanced(by: n)
+            }
         }
-        fileHandle.write(data)
     }
 
     func close() {
-        try? fileHandle.close()
+        guard !didClose else { return }
+        _ = posixClose(fd)
+        didClose = true
     }
+}
+
+@inline(__always)
+private func posixWrite(_ fd: Int32, _ buf: UnsafePointer<UInt8>, _ n: Int) -> Int {
+    #if canImport(Darwin)
+        return Darwin.write(fd, buf, n)
+    #elseif canImport(Glibc)
+        return Glibc.write(fd, buf, n)
+    #elseif canImport(Musl)
+        return Musl.write(fd, buf, n)
+    #else
+        return -1
+    #endif
+}
+
+@inline(__always)
+private func posixClose(_ fd: Int32) -> Int32 {
+    #if canImport(Darwin)
+        return Darwin.close(fd)
+    #elseif canImport(Glibc)
+        return Glibc.close(fd)
+    #elseif canImport(Musl)
+        return Musl.close(fd)
+    #else
+        return -1
+    #endif
 }
 
 private final class StringWriteTarget: CSVWriteTarget {

@@ -4,6 +4,14 @@
     import Foundation
 #endif
 
+#if canImport(Darwin)
+    import Darwin
+#elseif canImport(Glibc)
+    import Glibc
+#elseif canImport(Musl)
+    import Musl
+#endif
+
 /// Represents a field value in a CSV file.
 /// This type efficiently handles the raw bytes without unnecessary copying.
 /// ⚠️ Warning: CSVValue objects may contain references to the underlying CSV buffer.

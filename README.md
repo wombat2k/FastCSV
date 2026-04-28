@@ -345,7 +345,10 @@ The Decodable path is roughly 2x slower than raw array access with equivalent fi
 
 - **macOS**: 13.0+
 - **iOS**: 15.0+
+- **Linux**: Swift 6.2+ (Ubuntu 24.04 tested in CI)
 - **Swift**: 6.2+
+
+On Linux, FastCSV builds against `FoundationEssentials` and avoids pulling in full Foundation. File I/O goes through POSIX (`open`/`read`/`write`/`close`) rather than `FileHandle`, which is not part of `FoundationEssentials`.
 
 ## License
 

@@ -66,9 +66,9 @@ public enum FastCSV {
 
     /// Create an iterator over CSV rows as arrays of CSVValue
     public static func makeArrayRows(fromURL url: URL, hasHeaders: Bool = true, headers: [String] = [], config: CSVParserConfig? = nil) throws -> CSVArrayIterator {
-        let fileHandle = try FileHandle(forReadingFrom: url)
+        let reader = try FileStreamReader(url: url)
         return try CSVArrayIterator(
-            reader: fileHandle,
+            reader: reader,
             hasHeaders: hasHeaders,
             customHeaders: headers,
             config: config ?? CSVParserConfig(),

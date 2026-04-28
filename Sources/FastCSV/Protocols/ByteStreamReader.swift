@@ -4,6 +4,14 @@
     import Foundation
 #endif
 
+#if canImport(Darwin)
+    import Darwin
+#elseif canImport(Glibc)
+    import Glibc
+#elseif canImport(Musl)
+    import Musl
+#endif
+
 /// Protocol for reading bytes from any source
 public protocol ByteStreamReader {
     /// Read bytes into the provided buffer
@@ -16,31 +24,33 @@ public protocol ByteStreamReader {
     func cleanup()
 }
 
-extension FileHandle: ByteStreamReader {
-    /// Avoid intermediate Data object for better performance
-    public func readBytes(into buffer: UnsafeMutablePointer<UInt8>, maxLength: Int) -> Int {
-        // Use lower-level read syscall directly when possible
-        #if os(macOS) || os(iOS)
-            return Darwin.read(fileDescriptor, buffer, maxLength)
-        #elseif os(Linux)
-            return Glibc.read(fileDescriptor, buffer, maxLength)
-        #else
-            // Fall back to standard implementation
-            let data = readData(ofLength: maxLength)
-            if data.count > 0 {
-                data.copyBytes(to: buffer, count: data.count)
-            }
-            return data.count
-        #endif
+/// A ByteStreamReader backed by a POSIX file descriptor.
+/// Avoids the FoundationEssentials/Foundation split: FileHandle is not in
+/// FoundationEssentials, so we go straight to libc.
+final class FileStreamReader: ByteStreamReader {
+    private let fd: Int32
+    private var didClose = false
+
+    init(url: URL) throws {
+        let opened = url.path.withCString { open($0, O_RDONLY) }
+        guard opened >= 0 else {
+            throw CSVError.invalidFile(message: "Could not open file at \(url.path)")
+        }
+        fd = opened
     }
 
-    public func cleanup() {
-        do {
-            try close()
-        } catch {
-            // Handle or ignore error
-        }
+    func readBytes(into buffer: UnsafeMutablePointer<UInt8>, maxLength: Int) -> Int {
+        let n = read(fd, buffer, maxLength)
+        return n > 0 ? n : 0
     }
+
+    func cleanup() {
+        guard !didClose else { return }
+        _ = close(fd)
+        didClose = true
+    }
+
+    deinit { cleanup() }
 }
 
 /// A ByteStreamReader that reads from in-memory Data.
