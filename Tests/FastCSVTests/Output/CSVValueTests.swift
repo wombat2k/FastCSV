@@ -376,6 +376,9 @@ struct CSVValueTests {
         #expect(components.day == 29)
     }
 
+    // Date.VerbatimFormatStyle lives in FoundationInternationalization, which would
+    // pull ICU into the test binary on Linux. Skip on Linux to keep the dependency-free build.
+    #if !os(Linux)
     @Test
     func `Date with custom strategy`() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("03/29/2026".utf8), source: .own)
@@ -395,6 +398,7 @@ struct CSVValueTests {
         #expect(components.month == 3)
         #expect(components.day == 29)
     }
+    #endif
 
     @Test
     func `Date throws on invalid string`() throws {

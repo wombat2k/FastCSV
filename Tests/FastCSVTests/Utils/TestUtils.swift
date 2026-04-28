@@ -140,13 +140,13 @@ enum TestUtils {
             try validate(items)
         } catch let error as CSVError {
             if let expectThrow {
-                if error.localizedDescription == expectThrow.localizedDescription {
+                if error.description == expectThrow.description {
                     #expect(Bool(true))
                 } else {
                     #expect(Bool(false), "Expected error: \(expectThrow), but got: \(error)")
                 }
             } else {
-                print("❌ Parser failed test '\(testName)': \(error.localizedDescription)")
+                print("❌ Parser failed test '\(testName)': \(error.description)")
                 throw error // Re-throw to fail the test
             }
         }

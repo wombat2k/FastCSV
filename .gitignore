@@ -11,3 +11,4 @@ DerivedData/
 *.xcodeproj/
 *.xcworkspace/
 *.trace
+.claude

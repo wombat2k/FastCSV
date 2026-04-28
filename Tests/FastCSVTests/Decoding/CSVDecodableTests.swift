@@ -346,6 +346,9 @@ struct CSVDecodableTests {
         #expect(components.day == 15)
     }
 
+    // Date.VerbatimFormatStyle lives in FoundationInternationalization, which would
+    // pull ICU into the test binary on Linux. Skip on Linux to keep the dependency-free build.
+    #if !os(Linux)
     @Test
     func `Date decoding honors config dateStrategy`() throws {
         let style = Date.VerbatimFormatStyle(
@@ -370,4 +373,5 @@ struct CSVDecodableTests {
         #expect(components.month == 3)
         #expect(components.day == 15)
     }
+    #endif
 }

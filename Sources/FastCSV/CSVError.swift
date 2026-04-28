@@ -20,3 +20,18 @@ public enum CSVError: Error {
     /// Error during CSV writing (file creation failure, state violations, encoding issues).
     case writeError(message: String)
 }
+
+extension CSVError: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case let .invalidDelimiter(message),
+             let .invalidFile(message),
+             let .invalidCSV(message),
+             let .invalidValueConversion(message),
+             let .writeError(message):
+            return message
+        case let .rowError(row, message):
+            return "Row \(row): \(message)"
+        }
+    }
+}
