@@ -1,4 +1,8 @@
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 /// High-performance streaming CSV parser that returns rows on demand
 public enum FastCSV {
@@ -110,6 +114,7 @@ public enum FastCSV {
             valueArrayIterator: iter,
             headers: iter.headers,
             quoteChar: iter.quoteChar,
+            dateStrategy: config?.dateStrategy ?? .iso8601Date,
             columnMapping: columnMapping,
         )
     }
@@ -146,6 +151,7 @@ public enum FastCSV {
             valueArrayIterator: iter,
             headers: iter.headers,
             quoteChar: iter.quoteChar,
+            dateStrategy: config?.dateStrategy ?? .iso8601Date,
             columnMapping: columnMapping,
         )
     }

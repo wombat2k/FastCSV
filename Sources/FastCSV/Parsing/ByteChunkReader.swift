@@ -1,4 +1,8 @@
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 extension FastCSV {
     /// Helper class for parsers that provides common byte stream reading and chunk management

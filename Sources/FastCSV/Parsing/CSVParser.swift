@@ -1,5 +1,9 @@
 // swiftlint:disable cyclomatic_complexity function_body_length type_body_length
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 extension FastCSV {
     /// Result of reading the first row during parser initialization.

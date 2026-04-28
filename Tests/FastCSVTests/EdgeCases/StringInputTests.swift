@@ -1,5 +1,9 @@
 @testable import FastCSV
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 import Testing
 
 private struct Person: Decodable, Equatable {

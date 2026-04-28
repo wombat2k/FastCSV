@@ -1,4 +1,8 @@
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 /// Collects encoded field values as strings, keyed by CodingKey.stringValue.
 /// Reference type so the KeyedEncodingContainer can mutate it.
@@ -189,7 +193,7 @@ private struct CSVKeyedEncodingContainer<Key: CodingKey>: KeyedEncodingContainer
 
     mutating func encode(_ value: some Encodable, forKey key: Key) throws {
         if let date = value as? Date {
-            storage.set(storage.config.dateFormatter.string(from: date), forKey: key.stringValue)
+            storage.set(storage.config.dateStrategy.format(date), forKey: key.stringValue)
         } else if let decimal = value as? Decimal {
             storage.set("\(decimal)", forKey: key.stringValue)
         } else if let url = value as? URL {

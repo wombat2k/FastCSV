@@ -1,4 +1,8 @@
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 /// Represents a field value in a CSV file.
 /// This type efficiently handles the raw bytes without unnecessary copying.
@@ -6,12 +10,6 @@ import Foundation
 /// If you need to store values beyond the lifetime of the iterator, use the `copy()` method
 /// to create a safely owned copy of the value.
 public struct CSVValue {
-    static let defaultDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter
-    }()
-
     /// The internal storage mechanism for the value - optimized for smaller enum size
     /// and faster switching logic
     enum ValueSource {
@@ -284,8 +282,9 @@ public extension CSVValue {
     }
 
     /// The value as a Date. Throws if the field is empty or cannot be converted.
-    func date(formatter: DateFormatter? = nil) throws -> Date {
-        guard let result = try dateIfPresent(formatter: formatter) else {
+    /// - Parameter strategy: Date strategy to use. Defaults to ISO 8601 date-only.
+    func date(strategy: CSVDateStrategy = .iso8601Date) throws -> Date {
+        guard let result = try dateIfPresent(strategy: strategy) else {
             throw CSVError.invalidValueConversion(message: "Expected Date but field is empty")
         }
         return result
@@ -385,15 +384,16 @@ public extension CSVValue {
     }
 
     /// The value as a Date, or nil if the field is empty. Throws on invalid conversion.
-    func dateIfPresent(formatter: DateFormatter? = nil) throws -> Date? {
+    /// - Parameter strategy: Date strategy to use. Defaults to ISO 8601 date-only.
+    func dateIfPresent(strategy: CSVDateStrategy = .iso8601Date) throws -> Date? {
         guard let str = try getRawString() else {
             return nil
         }
-        let dateFormatter = formatter ?? Self.defaultDateFormatter
-        guard let date = dateFormatter.date(from: str) else {
+        do {
+            return try strategy.parse(str)
+        } catch {
             throw CSVError.invalidValueConversion(message: "Could not convert '\(str)' to Date")
         }
-        return date
     }
 
     /// Creates a safe copy of this CSVValue that won't be invalidated when the buffer is released

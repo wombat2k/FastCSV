@@ -27,6 +27,7 @@ swift run Filtering
 swift run Aggregation
 swift run Writing
 swift run RawAccess
+swift run Dates
 ```
 
 ## Examples
@@ -37,6 +38,7 @@ swift run RawAccess
 | `Aggregation` | [main.swift](Sources/Aggregation/main.swift) | Accumulate statistics over 40K rows in constant memory |
 | `Writing` | [main.swift](Sources/Writing/main.swift) | Read, transform, and write back out — the full round-trip |
 | `RawAccess` | [main.swift](Sources/RawAccess/main.swift) | Array and dictionary iterators for schema-less CSV exploration |
+| `Dates` | [main.swift](Sources/Dates/main.swift) | Decode `MM/dd/yyyy` with `CSVDateStrategy.formatStyle(_:)` and round-trip through encoding |
 
 ## Data Attribution
 

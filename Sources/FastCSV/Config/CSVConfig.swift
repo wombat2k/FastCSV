@@ -1,4 +1,8 @@
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 /// Configuration options for CSV parsing and writing.
 public struct CSVConfig {
@@ -17,19 +21,21 @@ public struct CSVConfig {
     /// contain any quotes.
     public let assumeNoQuotes: Bool
 
-    /// Date formatter for Date values. Defaults to "yyyy-MM-dd". Ignored by the reader.
-    public let dateFormatter: DateFormatter
+    /// Date strategy for Date values. Defaults to ISO 8601 date-only (`yyyy-MM-dd`).
+    /// Used by the writer for encoding and by the Codable decoder when no per-field
+    /// override is provided.
+    public let dateStrategy: CSVDateStrategy
 
     public init(
         delimiter: Delimiter? = nil,
         readBufferSize: Int = 256 * 1024,
         assumeNoQuotes: Bool = false,
-        dateFormatter: DateFormatter? = nil,
+        dateStrategy: CSVDateStrategy = .iso8601Date,
     ) {
         self.delimiter = delimiter ?? CSVFormat.csv.delimiter
         self.readBufferSize = readBufferSize
         self.assumeNoQuotes = assumeNoQuotes
-        self.dateFormatter = dateFormatter ?? CSVValue.defaultDateFormatter
+        self.dateStrategy = dateStrategy
     }
 }
 

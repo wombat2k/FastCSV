@@ -3,7 +3,11 @@
 // to define) the schema upfront. Useful for CSV exploration and dynamic data.
 
 import FastCSV
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 // --- Array access: rows as [CSVValue] ---
 

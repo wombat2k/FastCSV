@@ -1,4 +1,8 @@
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 /// Decoder that maps a single CSV row's values to a Decodable type.
 /// Uses a column index map (header name -> array index) for O(1) key lookup.
@@ -11,6 +15,7 @@ struct CSVRowDecoder: Decoder {
     let values: [CSVValue]
     let columnIndexMap: [String: Int]
     let quoteChar: UInt8
+    let dateStrategy: CSVDateStrategy
 
     func container<Key: CodingKey>(keyedBy _: Key.Type) throws -> KeyedDecodingContainer<Key> {
         KeyedDecodingContainer(CSVKeyedDecodingContainer<Key>(decoder: self))
@@ -196,7 +201,10 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
                     debugDescription: "Expected Date but found empty field for '\(key.stringValue)'",
                 ))
             }
-            guard let date = CSVValue.defaultDateFormatter.date(from: str) else {
+            let date: Date
+            do {
+                date = try decoder.dateStrategy.parse(str)
+            } catch {
                 throw DecodingError.typeMismatch(Date.self, DecodingError.Context(
                     codingPath: [key],
                     debugDescription: "Could not convert '\(str)' to Date for '\(key.stringValue)'",

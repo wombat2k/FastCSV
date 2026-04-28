@@ -8,27 +8,27 @@ A high-performance CSV parser and writer for Swift
 
 ## Overview
 
-FastCSV is a high-performance CSV parser and writer for Swift. The parser processes large CSV files with minimal memory overhead through streaming and zero-copy techniques. The writer provides Codable round-tripping — read CSV into structs, transform, write back out.
+FastCSV is a high-performance CSV parser and writer for Swift. The parser processes large CSV files with minimal memory overhead through streaming and zero-copy techniques. The writer provides Codable round-tripping: read CSV into structs, transform, write back out.
 
 ## Features
 
 ### Reading
-- **Decodable support** — decode CSV rows directly into Swift structs, only materializing the columns you need
-- **Column mapping** — map CSV headers to struct properties at the call site, no CodingKeys required
+- **Decodable support**: decode CSV rows directly into Swift structs, only materializing the columns you need
+- **Column mapping**: map CSV headers to struct properties at the call site, no CodingKeys required
 - **High-performance parsing** with zero-copy techniques
-- **Low memory footprint** through chunked streaming — constant memory regardless of file size
-- **Three API tiers** — typed structs via `Decodable`, dictionary access by column name, or raw array iteration
+- **Low memory footprint** through chunked streaming: constant memory regardless of file size
+- **Three API tiers**: typed structs via `Decodable`, dictionary access by column name, or raw array iteration
 - **Configurable delimiters** supporting standard CSV, TSV, and custom formats
 - **Quote handling** with optional optimization for quote-free data
 - **Error recovery** allowing processing to continue despite malformed rows
 - **UTF-8 BOM detection** and automatic removal
 
 ### Writing
-- **Encodable support** — write Swift structs directly to CSV with automatic header derivation
-- **RFC 4180 quoting** — fields containing delimiters, quotes, or newlines are quoted automatically
-- **Multiple output targets** — write to file path, URL, or string
-- **Row-by-row or batch** — streaming writes via `CSVWriter` or one-shot via static methods
-- **Round-trip fidelity** — read, transform, and write back with full type preservation
+- **Encodable support**: write Swift structs directly to CSV with automatic header derivation
+- **RFC 4180 quoting**: fields containing delimiters, quotes, or newlines are quoted automatically
+- **Multiple output targets**: write to file path, URL, or string
+- **Row-by-row or batch**: streaming writes via `CSVWriter` or one-shot via static methods
+- **Round-trip fidelity**: read, transform, and write back with full type preservation
 
 ## Installation
 
@@ -67,7 +67,7 @@ try rows.forEach { route in
 }
 ```
 
-Rows are decoded lazily — one at a time, not all at once. Memory stays constant regardless of file size.
+Rows are decoded lazily, one at a time, not all at once. Memory stays constant regardless of file size.
 
 ## Column Mapping
 
@@ -100,7 +100,7 @@ var rows = try FastCSV.makeRows(BusRoute.self, fromPath: "ridership.csv")
 
 ## Iterating
 
-### forEach — process every row
+### forEach: process every row
 
 Use `forEach` when you want to iterate through all rows. The callback receives a decoded struct directly:
 
@@ -110,9 +110,9 @@ try rows.forEach { route in
 }
 ```
 
-Use `return` to skip rows (not `continue` — you're inside a closure). Note that `forEach` always reads every row in the file, even when individual iterations return early.
+Use `return` to skip rows (not `continue`, since you're inside a closure). Note that `forEach` always reads every row in the file, even when individual iterations return early.
 
-### for-in — stop early with break
+### for-in: stop early with break
 
 Use `for-in` when you need to stop before the end. Each element is a `Result<T, Error>`:
 
@@ -165,7 +165,7 @@ for row in dictRows {
 }
 ```
 
-`CSVValue` provides typed accessors: `.string`, `.int`, `.double`, `.float`, `.bool`, `.date`, `.decimal`. Use the `IfPresent` variants (`.stringIfPresent`, `.intIfPresent`, etc.) when a field might be empty — they return `nil` instead of throwing.
+`CSVValue` provides typed accessors: `.string`, `.int`, `.double`, `.float`, `.bool`, `.date`, `.decimal`. Use the `IfPresent` variants (`.stringIfPresent`, `.intIfPresent`, etc.) when a field might be empty; they return `nil` instead of throwing.
 
 Optional struct fields also decode empty CSV values as `nil`:
 
@@ -251,6 +251,70 @@ var rows = try FastCSV.makeRows(
 )
 ```
 
+## Dates
+
+FastCSV uses `CSVDateStrategy` for `Date` parsing and formatting, not `DateFormatter`. This keeps the package free of ICU on Linux when built against `FoundationEssentials`. The strategy is honored on both reads (Decodable) and writes (Encodable).
+
+The default is ISO 8601 date-only (`yyyy-MM-dd`) in GMT. So this just works:
+
+```swift
+struct Sale: Decodable {
+    let item: String
+    let date: Date
+}
+
+var rows = try FastCSV.makeRows(Sale.self, fromString: "item,date\nWidget,2026-03-15\n")
+try rows.forEach { print($0.date) }
+```
+
+For other formats, build a strategy from any `ParseableFormatStyle`. Most callers will use `Date.VerbatimFormatStyle`:
+
+```swift
+let style = Date.VerbatimFormatStyle(
+    format: "\(month: .twoDigits)/\(day: .twoDigits)/\(year: .defaultDigits)",
+    locale: .init(identifier: "en_US_POSIX"),
+    timeZone: .gmt,
+    calendar: .init(identifier: .gregorian)
+)
+
+let config = CSVConfig(dateStrategy: .formatStyle(style))
+
+var rows = try FastCSV.makeRows(Sale.self, fromString: "item,date\nWidget,03/15/2026\n", config: config)
+```
+
+The same `config` works for writing: you'll get `03/15/2026` back out.
+
+Built-ins:
+
+| Strategy | Format |
+|----------|--------|
+| `.iso8601Date` (default) | `yyyy-MM-dd` in GMT |
+| `.iso8601` | Full ISO 8601 date-time, e.g. `2026-04-27T12:34:56Z` |
+| `.formatStyle(_:)` | Wrap any `ParseableFormatStyle<Date, String>` |
+| `CSVDateStrategy(format:parse:)` | Provide your own closures |
+
+### Migrating from DateFormatter
+
+Pre-1.1 FastCSV exposed `dateFormatter: DateFormatter` on `CSVConfig`. Replace with `dateStrategy`:
+
+```swift
+// Before
+let f = DateFormatter()
+f.dateFormat = "MM/dd/yyyy"
+let config = CSVConfig(dateFormatter: f)
+
+// After
+let style = Date.VerbatimFormatStyle(
+    format: "\(month: .twoDigits)/\(day: .twoDigits)/\(year: .defaultDigits)",
+    locale: .init(identifier: "en_US_POSIX"),
+    timeZone: .gmt,
+    calendar: .init(identifier: .gregorian)
+)
+let config = CSVConfig(dateStrategy: .formatStyle(style))
+```
+
+The Verbatim format string uses Swift string interpolation rather than the `MM/dd/yyyy` patterns from `DateFormatter`. The components map directly: `\(month: .twoDigits)` for `MM`, `\(day: .twoDigits)` for `dd`, `\(year: .defaultDigits)` for `yyyy`, etc. See the [Date.VerbatimFormatStyle docs](https://developer.apple.com/documentation/foundation/date/verbatimformatstyle) for the full reference.
+
 ## Examples
 
 The [Examples](Examples/) directory contains runnable examples using real CTA bus ridership data (40K rows). Each example is a standalone executable target:
@@ -273,7 +337,7 @@ FastCSV is optimized for high-throughput scenarios. Benchmarked against a 1.4GB 
 | Array iterator (standard) | 1.1M | Same access pattern, with quote detection |
 | Decodable + columnMapping | 477K | Full struct decoding, 6 typed fields |
 
-Memory stays constant regardless of file size — peak was 8.5MB (0.6% of the 1.4GB file).
+Memory stays constant regardless of file size: peak was 8.5MB (0.6% of the 1.4GB file).
 
 The Decodable path is roughly 2x slower than raw array access with equivalent field access. This overhead comes from Swift's Codable protocol machinery (dynamic dispatch, `KeyedDecodingContainer`, `CodingKey` resolution per field per row) and is inherent to any Decoder implementation. For maximum throughput on very large files, use the array or dictionary iterators directly.
 
@@ -285,4 +349,4 @@ The Decodable path is roughly 2x slower than raw array access with equivalent fi
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License: see [LICENSE](LICENSE) for details.

@@ -1,5 +1,9 @@
 @testable import FastCSV
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 import Testing
 
 // MARK: - Test Types
@@ -155,14 +159,12 @@ struct CSVWriterTests {
     }
 
     @Test
-    func `Date encoding with default formatter`() throws {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        let date = try #require(formatter.date(from: "2026-03-15"))
+    func `Date encoding with default strategy`() throws {
+        let strategy: CSVDateStrategy = .iso8601Date
+        let date = try #require(try? strategy.parse("2026-03-15"))
 
         let items = [WithDate(name: "Alice", startDate: date)]
-        let config = CSVWriterConfig(dateFormatter: formatter)
+        let config = CSVWriterConfig(dateStrategy: strategy)
         let csv = try FastCSV.writeString(items, config: config)
         #expect(csv.contains("2026-03-15"))
     }

@@ -1,4 +1,8 @@
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 /// Controls the delimiters used for parsing and writing CSV files.
 /// By default, it is RFC 4180 compliant.

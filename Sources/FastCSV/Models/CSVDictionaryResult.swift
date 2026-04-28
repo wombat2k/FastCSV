@@ -1,4 +1,8 @@
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 /// Represents a row of CSV values as a dictionary.
 /// This type efficiently handles the raw bytes without unnecessary copying.

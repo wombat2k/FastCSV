@@ -2,7 +2,11 @@
 // Query CTA ridership data using lazy iteration.
 
 import FastCSV
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 struct BusRoute: Decodable {
     let route: String

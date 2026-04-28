@@ -1,4 +1,8 @@
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 extension FastCSV {
     /// Zero-copy iterator for CSV rows, returning raw field pointers to the underlying buffer

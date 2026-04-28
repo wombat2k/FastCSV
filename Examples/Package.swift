@@ -13,5 +13,6 @@ let package = Package(
         .executableTarget(name: "Aggregation", dependencies: ["FastCSV"]),
         .executableTarget(name: "Writing", dependencies: ["FastCSV"]),
         .executableTarget(name: "RawAccess", dependencies: ["FastCSV"]),
+        .executableTarget(name: "Dates", dependencies: ["FastCSV"]),
     ],
 )

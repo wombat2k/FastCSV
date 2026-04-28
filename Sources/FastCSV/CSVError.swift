@@ -1,4 +1,8 @@
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 public enum CSVError: Error {
     /// Error indicating that the delimiter character is invalid (not an ASCII character).

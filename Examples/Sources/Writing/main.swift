@@ -3,7 +3,11 @@
 // Demonstrates the full read-transform-write round-trip.
 
 import FastCSV
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 // --- Read and transform: extract one route's history ---
 

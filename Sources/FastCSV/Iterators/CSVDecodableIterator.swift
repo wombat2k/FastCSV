@@ -1,4 +1,8 @@
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 public extension FastCSV {
     /// Lazy sequence that decodes CSV rows into Decodable structs on each iteration.
@@ -13,8 +17,15 @@ public extension FastCSV {
         private var valueArrayIterator: CSVArrayIterator
         private let columnIndexMap: [String: Int]
         private let quoteChar: UInt8
+        private let dateStrategy: CSVDateStrategy
 
-        init(valueArrayIterator: CSVArrayIterator, headers: [String], quoteChar: UInt8, columnMapping: [String: String] = [:]) {
+        init(
+            valueArrayIterator: CSVArrayIterator,
+            headers: [String],
+            quoteChar: UInt8,
+            dateStrategy: CSVDateStrategy = .iso8601Date,
+            columnMapping: [String: String] = [:],
+        ) {
             self.valueArrayIterator = valueArrayIterator
 
             var map = [String: Int](minimumCapacity: headers.count)
@@ -24,6 +35,7 @@ public extension FastCSV {
             }
             columnIndexMap = map
             self.quoteChar = quoteChar
+            self.dateStrategy = dateStrategy
         }
 
         /// Returns the next decoded row, or nil when iteration is complete.
@@ -41,6 +53,7 @@ public extension FastCSV {
                     values: arrayResult.values,
                     columnIndexMap: columnIndexMap,
                     quoteChar: quoteChar,
+                    dateStrategy: dateStrategy,
                 )
                 let decoded = try T(from: decoder)
                 return .success(decoded)

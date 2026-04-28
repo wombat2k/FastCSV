@@ -1,5 +1,9 @@
 @testable import FastCSV
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 import Testing
 
 // MARK: - Test Types
@@ -29,6 +33,11 @@ private struct TypeRich: Decodable, Equatable {
 private struct WithDecimal: Decodable, Equatable {
     let name: String
     let price: Decimal
+}
+
+private struct WithDate: Decodable, Equatable {
+    let name: String
+    let startDate: Date
 }
 
 // MARK: - Tests
@@ -316,5 +325,49 @@ struct CSVDecodableTests {
         let result = try requireNext(&rows)
 
         #expect(result == Person(name: "Alice", age: 30))
+    }
+
+    // MARK: - Date Decoding
+
+    @Test
+    func `Date decoding uses default ISO 8601 strategy`() throws {
+        var rows = try FastCSV.makeRows(
+            WithDate.self,
+            fromString: "name,startDate\nAlice,2026-03-15\n",
+        )
+        let result = try requireNext(&rows)
+
+        #expect(result.name == "Alice")
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        let components = calendar.dateComponents([.year, .month, .day], from: result.startDate)
+        #expect(components.year == 2026)
+        #expect(components.month == 3)
+        #expect(components.day == 15)
+    }
+
+    @Test
+    func `Date decoding honors config dateStrategy`() throws {
+        let style = Date.VerbatimFormatStyle(
+            format: "\(month: .twoDigits)/\(day: .twoDigits)/\(year: .defaultDigits)",
+            locale: .init(identifier: "en_US_POSIX"),
+            timeZone: .gmt,
+            calendar: .init(identifier: .gregorian),
+        )
+        let config = CSVParserConfig(dateStrategy: .formatStyle(style))
+
+        var rows = try FastCSV.makeRows(
+            WithDate.self,
+            fromString: "name,startDate\nAlice,03/15/2026\n",
+            config: config,
+        )
+        let result = try requireNext(&rows)
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        let components = calendar.dateComponents([.year, .month, .day], from: result.startDate)
+        #expect(components.year == 2026)
+        #expect(components.month == 3)
+        #expect(components.day == 15)
     }
 }

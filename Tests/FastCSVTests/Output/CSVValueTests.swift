@@ -1,5 +1,9 @@
 @testable import FastCSV
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 import Testing
 
 struct CSVValueTests {
@@ -360,11 +364,12 @@ struct CSVValueTests {
     // MARK: - Date Accessors
 
     @Test
-    func `Date with default formatter (yyyy-MM-dd)`() throws {
+    func `Date with default strategy (ISO 8601 yyyy-MM-dd)`() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("2026-03-29".utf8), source: .own)
         let result = try csvValue.date()
 
-        let calendar = Calendar(identifier: .gregorian)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
         let components = calendar.dateComponents([.year, .month, .day], from: result)
         #expect(components.year == 2026)
         #expect(components.month == 3)
@@ -372,14 +377,19 @@ struct CSVValueTests {
     }
 
     @Test
-    func `Date with custom formatter`() throws {
+    func `Date with custom strategy`() throws {
         let csvValue = TestUtils.createCSVValue(from: [UInt8]("03/29/2026".utf8), source: .own)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM/dd/yyyy"
+        let style = Date.VerbatimFormatStyle(
+            format: "\(month: .twoDigits)/\(day: .twoDigits)/\(year: .defaultDigits)",
+            locale: .init(identifier: "en_US_POSIX"),
+            timeZone: .gmt,
+            calendar: .init(identifier: .gregorian),
+        )
 
-        let result = try csvValue.date(formatter: formatter)
+        let result = try csvValue.date(strategy: .formatStyle(style))
 
-        let calendar = Calendar(identifier: .gregorian)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
         let components = calendar.dateComponents([.year, .month, .day], from: result)
         #expect(components.year == 2026)
         #expect(components.month == 3)

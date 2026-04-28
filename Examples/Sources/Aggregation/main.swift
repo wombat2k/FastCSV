@@ -3,7 +3,11 @@
 // Nothing is loaded into an array — just running totals.
 
 import FastCSV
-import Foundation
+#if canImport(FoundationEssentials)
+    import FoundationEssentials
+#else
+    import Foundation
+#endif
 
 struct BusRoute: Decodable {
     let route: String
