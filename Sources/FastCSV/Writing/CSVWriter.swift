@@ -167,7 +167,17 @@ public final class CSVWriter {
             || field.contains("\r")
 
         if needsQuoting {
-            return quoteChar + field.replacing(quoteChar, with: doubledQuote) + quoteChar
+            // Apple FoundationEssentials has both `replacingOccurrences` (legacy NSString
+            // bridge) and `replacing(_:with:)` (iOS 16+). swift-foundation's FE on Linux
+            // has only the modern `replacing`. We need iOS 15 support, so on Apple we use
+            // the legacy method (works back to iOS 8). When we drop iOS 15, collapse this
+            // to a single `replacing(_:with:)` call.
+            #if canImport(Darwin)
+                let doubled = field.replacingOccurrences(of: quoteChar, with: doubledQuote)
+            #else
+                let doubled = field.replacing(quoteChar, with: doubledQuote)
+            #endif
+            return quoteChar + doubled + quoteChar
         }
         return field
     }

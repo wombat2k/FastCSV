@@ -228,7 +228,7 @@ struct CSVWriterTests {
     @Test
     func `Write to file and read back`() throws {
         let url = FileManager.default.temporaryDirectory
-            .appending(path: "test_write_\(UUID().uuidString).csv")
+            .appendingPathComponent("test_write_\(UUID().uuidString).csv")
         defer { try? FileManager.default.removeItem(at: url) }
 
         let people = [

@@ -369,7 +369,7 @@ struct CSVValueTests {
         let result = try csvValue.date()
 
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .gmt
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let components = calendar.dateComponents([.year, .month, .day], from: result)
         #expect(components.year == 2026)
         #expect(components.month == 3)
@@ -385,14 +385,14 @@ struct CSVValueTests {
         let style = Date.VerbatimFormatStyle(
             format: "\(month: .twoDigits)/\(day: .twoDigits)/\(year: .defaultDigits)",
             locale: .init(identifier: "en_US_POSIX"),
-            timeZone: .gmt,
+            timeZone: TimeZone(secondsFromGMT: 0)!,
             calendar: .init(identifier: .gregorian),
         )
 
         let result = try csvValue.date(strategy: .formatStyle(style))
 
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .gmt
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let components = calendar.dateComponents([.year, .month, .day], from: result)
         #expect(components.year == 2026)
         #expect(components.month == 3)

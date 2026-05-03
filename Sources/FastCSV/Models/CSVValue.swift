@@ -425,10 +425,18 @@ public extension CSVValue {
         // If surrounded by quotes, remove them and process escaped quotes
         if str.hasPrefix(quote), str.hasSuffix(quote) {
             // Remove surrounding quotes
-            let content = str.dropFirst().dropLast()
+            let content = String(str.dropFirst().dropLast())
 
-            // Replace doubled quotes with single quote (escape sequence)
-            return String(content).replacing(quote + quote, with: quote)
+            // Apple FoundationEssentials has both `replacingOccurrences` (legacy NSString
+            // bridge) and `replacing(_:with:)` (iOS 16+). swift-foundation's FE on Linux
+            // has only the modern `replacing`. We need iOS 15 support, so on Apple we use
+            // the legacy method (works back to iOS 8). When we drop iOS 15, collapse this
+            // to a single `replacing(_:with:)` call.
+            #if canImport(Darwin)
+                return content.replacingOccurrences(of: quote + quote, with: quote)
+            #else
+                return content.replacing(quote + quote, with: quote)
+            #endif
         }
 
         return str

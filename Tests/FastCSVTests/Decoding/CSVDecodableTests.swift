@@ -339,7 +339,7 @@ struct CSVDecodableTests {
 
         #expect(result.name == "Alice")
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .gmt
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let components = calendar.dateComponents([.year, .month, .day], from: result.startDate)
         #expect(components.year == 2026)
         #expect(components.month == 3)
@@ -354,7 +354,7 @@ struct CSVDecodableTests {
         let style = Date.VerbatimFormatStyle(
             format: "\(month: .twoDigits)/\(day: .twoDigits)/\(year: .defaultDigits)",
             locale: .init(identifier: "en_US_POSIX"),
-            timeZone: .gmt,
+            timeZone: TimeZone(secondsFromGMT: 0)!,
             calendar: .init(identifier: .gregorian),
         )
         let config = CSVParserConfig(dateStrategy: .formatStyle(style))
@@ -367,7 +367,7 @@ struct CSVDecodableTests {
         let result = try requireNext(&rows)
 
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = .gmt
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         let components = calendar.dateComponents([.year, .month, .day], from: result.startDate)
         #expect(components.year == 2026)
         #expect(components.month == 3)

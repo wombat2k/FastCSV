@@ -73,7 +73,7 @@ enum TestUtils {
     /// Create a temporary CSV file from raw string content (no automatic delimiters added)
     static func createRawCSVFile(content: String) throws -> URL {
         let url = FileManager.default.temporaryDirectory
-            .appending(path: "test_\(UUID().uuidString).csv")
+            .appendingPathComponent("test_\(UUID().uuidString).csv")
         try content.data(using: .utf8)?.write(to: url)
         return url
     }

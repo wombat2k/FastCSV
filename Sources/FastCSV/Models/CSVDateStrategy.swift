@@ -4,6 +4,18 @@
     import Foundation
 #endif
 
+// Apple FoundationEssentials gates `TimeZone.gmt` to iOS 16+ / macOS 13+;
+// swift-foundation's FE on Linux has it. We need iOS 15 support, so on Apple
+// we use the legacy `TimeZone(secondsFromGMT:)` initializer (works back to iOS 2).
+// When iOS 15 support is dropped, collapse this to `TimeZone.gmt`.
+private let gmtTimeZone: TimeZone = {
+    #if canImport(Darwin)
+        TimeZone(secondsFromGMT: 0)!
+    #else
+        TimeZone.gmt
+    #endif
+}()
+
 /// Strategy for converting between `Date` and `String` for CSV fields.``
 /// The `dateStrategy` is honored on both encode (writer) and decode (Decodable reader).
 public struct CSVDateStrategy: Sendable {
@@ -28,7 +40,7 @@ public struct CSVDateStrategy: Sendable {
 public extension CSVDateStrategy {
     /// ISO 8601 date-only (`yyyy-MM-dd`) in GMT. The default for FastCSV.
     static let iso8601Date: CSVDateStrategy = .formatStyle(
-        Date.ISO8601FormatStyle(timeZone: .gmt).year().month().day(),
+        Date.ISO8601FormatStyle(timeZone: gmtTimeZone).year().month().day(),
     )
 
     /// Full ISO 8601 date-time (e.g. `2026-04-27T12:34:56Z`) in GMT.
