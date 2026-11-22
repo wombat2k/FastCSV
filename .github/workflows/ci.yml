@@ -6,16 +6,24 @@ on:
   pull_request:
     branches: [main]
 
+# Test both ends of the supported range: the package floor
+# (swift-tools-version) and the latest toolchain we develop on.
 jobs:
   test-macos:
-    name: Test (macOS)
+    name: Test (macOS, Swift ${{ matrix.swift }})
     runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        swift: ['6.2', '6.4']
     steps:
       - uses: actions/checkout@v4
-      - name: Install Swift 6.2
-        uses: swift-actions/setup-swift@v2
+      # v3 installs via Swiftly, so it can fetch any released toolchain;
+      # v2 has a hardcoded version list that stops at 6.2.1.
+      - name: Install Swift ${{ matrix.swift }}
+        uses: swift-actions/setup-swift@v3.0.0-beta.1
         with:
-          swift-version: '6.2'
+          swift-version: ${{ matrix.swift }}
       - name: Build
         run: swift build
       - name: Test
@@ -24,9 +32,13 @@ jobs:
         run: cd Examples && swift build
 
   test-linux:
-    name: Test (Linux)
+    name: Test (Linux, Swift ${{ matrix.swift }})
     runs-on: ubuntu-latest
-    container: swift:6.2
+    strategy:
+      fail-fast: false
+      matrix:
+        swift: ['6.2', '6.4']
+    container: swift:${{ matrix.swift }}
     steps:
       - uses: actions/checkout@v4
       - name: Build

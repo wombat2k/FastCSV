@@ -1,0 +1,3 @@
+# CI and the package minimum are Swift 6.2; keep swiftformat from using
+# newer syntax (e.g. dropping parens in `(some P)?`). Inherits ~/.swiftformat.
+--swiftversion 6.2

@@ -181,7 +181,7 @@ private struct CSVKeyedEncodingContainer<Key: CodingKey>: KeyedEncodingContainer
         storage.set(value.map { String($0) }, forKey: key.stringValue)
     }
 
-    mutating func encodeIfPresent(_ value: some Encodable?, forKey key: Key) throws {
+    mutating func encodeIfPresent(_ value: (some Encodable)?, forKey key: Key) throws {
         guard let value else {
             storage.set(nil, forKey: key.stringValue)
             return
