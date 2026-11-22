@@ -6,10 +6,28 @@
 
 #if canImport(Darwin)
     import Darwin
+
+    // strtod_l/strtof_l. Newer SDKs split xlocale into submodules that Darwin
+    // doesn't re-export to Swift.
+    #if canImport(_xlocale_stdlib_h)
+        import _xlocale_stdlib_h
+    #endif
 #elseif canImport(Glibc)
     import Glibc
 #elseif canImport(Musl)
     import Musl
+#endif
+
+/// C locale for `strtod_l`/`strtof_l`. Plain `strtod` honors `LC_NUMERIC`, so a
+/// host app that calls `setlocale` (e.g. `de_DE`) would make "1.5" unparseable.
+/// Swift's `Double(String)` is locale-independent; this keeps us matching it.
+/// Darwin: `LC_C_LOCALE` is `(locale_t)NULL` (the macro doesn't import), so we pass nil.
+/// Glibc: `LC_NUMERIC_MASK` is `1 << LC_NUMERIC` (also doesn't import). `strtod_l`
+/// is GNU-only (needs `_GNU_SOURCE`, which Swift's Glibc module doesn't set), so we
+/// swap the thread-local locale with POSIX `uselocale` around plain `strtod` instead.
+/// musl's `strtod` is already locale-independent.
+#if canImport(Glibc)
+    private nonisolated(unsafe) let cLocale = newlocale(1 << LC_NUMERIC, "C", nil)
 #endif
 
 /// Represents a field value in a CSV file.
@@ -76,7 +94,7 @@ public struct CSVValue {
 
 // MARK: - Direct Byte Parsing
 
-private extension CSVValue {
+extension CSVValue {
     /// Execute a closure with access to the raw bytes, returning nil for empty values.
     func withRawBytes<T>(_ body: (UnsafeBufferPointer<UInt8>) throws -> T) rethrows -> T? {
         switch valueSource {
@@ -86,6 +104,23 @@ private extension CSVValue {
             try body(buffer)
         case let .own(bytes):
             try bytes.withUnsafeBufferPointer { try body($0) }
+        }
+    }
+
+    /// Like `withRawBytes`, but with one surrounding pair of `quoteChar` removed.
+    ///
+    /// Escaped (doubled) quotes inside are left as-is. That's only correct for
+    /// callers parsing scalars (numbers, bools), where any quote byte in the
+    /// content makes the value invalid either way — not for strings.
+    func withUnquotedBytes<T>(
+        quoteChar: UInt8,
+        _ body: (UnsafeBufferPointer<UInt8>) throws -> T,
+    ) rethrows -> T? {
+        try withRawBytes { bytes in
+            if bytes.count >= 2, bytes[0] == quoteChar, bytes[bytes.count - 1] == quoteChar {
+                return try body(UnsafeBufferPointer(rebasing: bytes[1 ..< bytes.count - 1]))
+            }
+            return try body(bytes)
         }
     }
 
@@ -150,7 +185,15 @@ private extension CSVValue {
 
             let cStr = temp.baseAddress!.assumingMemoryBound(to: CChar.self)
             var endPtr: UnsafeMutablePointer<CChar>?
-            let result = strtod(cStr, &endPtr)
+            #if canImport(Darwin)
+                let result = strtod_l(cStr, &endPtr, nil)
+            #elseif canImport(Glibc)
+                let previous = uselocale(cLocale)
+                let result = strtod(cStr, &endPtr)
+                uselocale(previous)
+            #else
+                let result = strtod(cStr, &endPtr)
+            #endif
 
             guard let end = endPtr, end == cStr + bytes.count else { return nil }
             return result
@@ -172,7 +215,15 @@ private extension CSVValue {
 
             let cStr = temp.baseAddress!.assumingMemoryBound(to: CChar.self)
             var endPtr: UnsafeMutablePointer<CChar>?
-            let result = strtof(cStr, &endPtr)
+            #if canImport(Darwin)
+                let result = strtof_l(cStr, &endPtr, nil)
+            #elseif canImport(Glibc)
+                let previous = uselocale(cLocale)
+                let result = strtof(cStr, &endPtr)
+                uselocale(previous)
+            #else
+                let result = strtof(cStr, &endPtr)
+            #endif
 
             guard let end = endPtr, end == cStr + bytes.count else { return nil }
             return result

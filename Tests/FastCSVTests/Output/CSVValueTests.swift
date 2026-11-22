@@ -547,3 +547,32 @@ struct CSVValueTests {
         #expect(i64 == 42)
     }
 }
+
+// MARK: - Locale independence (Glibc)
+
+#if canImport(Glibc)
+    import Glibc
+
+    /// A comma-decimal locale, if the host has one installed.
+    private nonisolated(unsafe) let commaDecimalLocale = newlocale(1 << LC_NUMERIC, "de_DE.UTF-8", nil)
+
+    extension CSVValueTests {
+        /// The calling thread's `LC_NUMERIC` must not leak into float parsing.
+        /// Synchronous so the thread-local locale stays on this thread.
+        @Test(.enabled(if: commaDecimalLocale != nil, "de_DE.UTF-8 locale not installed"))
+        func `Float parsing ignores thread LC_NUMERIC`() throws {
+            // Sanity: the host locale really does use a comma.
+            let previous = uselocale(commaDecimalLocale)
+            defer { uselocale(previous) }
+            var end: UnsafeMutablePointer<CChar>?
+            let probe = "1,5".withCString { s in (strtod(s, &end), end.map { UnsafePointer($0) == s + 3 } ?? false) }
+            try #require(probe == (1.5, true), "de_DE should parse a comma decimal")
+
+            let bytes = Array("1.5".utf8)
+            bytes.withUnsafeBufferPointer { buf in
+                #expect(CSVValue.parseDouble(from: buf) == 1.5)
+                #expect(CSVValue.parseFloat(from: buf) == 1.5)
+            }
+        }
+    }
+#endif

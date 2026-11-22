@@ -157,91 +157,84 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
     // MARK: - Bool
 
     func decode(_: Bool.Type, forKey key: Key) throws -> Bool {
-        guard let str = try stringValue(for: key) else {
-            throw DecodingError.valueNotFound(Bool.self, DecodingError.Context(
-                codingPath: [key],
-                debugDescription: "Expected Bool but found empty field for '\(key.stringValue)'",
-            ))
-        }
-        let utf8 = Array(str.utf8)
-        guard let result = utf8.withUnsafeBufferPointer({ CSVValue.parseBool(from: $0) }) else {
-            throw DecodingError.typeMismatch(Bool.self, DecodingError.Context(
-                codingPath: [key],
-                debugDescription: "Could not convert '\(str)' to Bool for '\(key.stringValue)'",
-            ))
-        }
-        return result
+        try decodeParsed(key: key) { CSVValue.parseBool(from: $0) }
     }
 
     // MARK: - Int
 
     func decode(_: Int.Type, forKey key: Key) throws -> Int {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseInteger(from: $0) }
     }
 
     // MARK: - Double
 
     func decode(_: Double.Type, forKey key: Key) throws -> Double {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseDouble(from: $0) }
     }
 
     // MARK: - Float
 
     func decode(_: Float.Type, forKey key: Key) throws -> Float {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseFloat(from: $0) }
     }
 
     // MARK: - Integer Width Variants
 
     func decode(_: Int8.Type, forKey key: Key) throws -> Int8 {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseInteger(from: $0) }
     }
 
     func decode(_: Int16.Type, forKey key: Key) throws -> Int16 {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseInteger(from: $0) }
     }
 
     func decode(_: Int32.Type, forKey key: Key) throws -> Int32 {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseInteger(from: $0) }
     }
 
     func decode(_: Int64.Type, forKey key: Key) throws -> Int64 {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseInteger(from: $0) }
     }
 
     func decode(_: UInt.Type, forKey key: Key) throws -> UInt {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseInteger(from: $0) }
     }
 
     func decode(_: UInt8.Type, forKey key: Key) throws -> UInt8 {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseInteger(from: $0) }
     }
 
     func decode(_: UInt16.Type, forKey key: Key) throws -> UInt16 {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseInteger(from: $0) }
     }
 
     func decode(_: UInt32.Type, forKey key: Key) throws -> UInt32 {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseInteger(from: $0) }
     }
 
     func decode(_: UInt64.Type, forKey key: Key) throws -> UInt64 {
-        try decodeFromString(key: key)
+        try decodeParsed(key: key) { CSVValue.parseInteger(from: $0) }
     }
 
-    /// Decode any LosslessStringConvertible type (Int, Double, Float, all integer widths)
-    /// by going through the quote-stripped string.
-    private func decodeFromString<T: LosslessStringConvertible>(key: Key) throws -> T {
-        guard let str = try stringValue(for: key) else {
+    /// Decode a scalar by parsing the quote-stripped bytes directly, skipping
+    /// String construction. The String is only built to word the error.
+    @inline(__always)
+    private func decodeParsed<T>(
+        key: Key,
+        _ parse: (UnsafeBufferPointer<UInt8>) -> T?,
+    ) throws -> T {
+        let csvValue = try value(for: key)
+        guard let parsed = csvValue.withUnquotedBytes(quoteChar: context.quoteChar, parse) else {
             throw DecodingError.valueNotFound(T.self, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "Expected \(T.self) but found empty field for '\(key.stringValue)'",
             ))
         }
-        guard let result = T(str) else {
+        guard let result = parsed else {
+            let shown = (try? csvValue.stringIfPresent(quoteChar: context.quoteChar)) ?? nil
             throw DecodingError.typeMismatch(T.self, DecodingError.Context(
                 codingPath: [key],
-                debugDescription: "Could not convert '\(str)' to \(T.self) for '\(key.stringValue)'",
+                debugDescription: "Could not convert '\(shown ?? "?")' to \(T.self) for '\(key.stringValue)'",
             ))
         }
         return result
