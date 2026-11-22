@@ -30,7 +30,9 @@ for row in arrayRows {
     print("\(name): \(total)")
 
     count += 1
-    if count >= 5 { break }
+    if count >= 5 {
+        break
+    }
 }
 
 // --- Dictionary access: rows as [String: CSVValue] ---
@@ -57,7 +59,9 @@ for row in dictRows {
     }
 
     count += 1
-    if count >= 200 { break }
+    if count >= 200 {
+        break
+    }
 }
 
 // --- Working with CSVValue types ---

@@ -1,10 +1,10 @@
+import Testing
 @testable import FastCSV
 #if canImport(FoundationEssentials)
     import FoundationEssentials
 #else
     import Foundation
 #endif
-import Testing
 
 private struct Person: Decodable, Equatable {
     let name: String

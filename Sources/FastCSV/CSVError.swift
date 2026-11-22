@@ -29,9 +29,9 @@ extension CSVError: CustomStringConvertible {
              let .invalidCSV(message),
              let .invalidValueConversion(message),
              let .writeError(message):
-            return message
+            message
         case let .rowError(row, message):
-            return "Row \(row): \(message)"
+            "Row \(row): \(message)"
         }
     }
 }

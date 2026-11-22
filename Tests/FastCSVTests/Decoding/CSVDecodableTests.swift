@@ -1,10 +1,10 @@
+import Testing
 @testable import FastCSV
 #if canImport(FoundationEssentials)
     import FoundationEssentials
 #else
     import Foundation
 #endif
-import Testing
 
 // MARK: - Test Types
 
@@ -339,7 +339,7 @@ struct CSVDecodableTests {
 
         #expect(result.name == "Alice")
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
         let components = calendar.dateComponents([.year, .month, .day], from: result.startDate)
         #expect(components.year == 2026)
         #expect(components.month == 3)
@@ -349,29 +349,29 @@ struct CSVDecodableTests {
     // Date.VerbatimFormatStyle lives in FoundationInternationalization, which would
     // pull ICU into the test binary on Linux. Skip on Linux to keep the dependency-free build.
     #if !os(Linux)
-    @Test
-    func `Date decoding honors config dateStrategy`() throws {
-        let style = Date.VerbatimFormatStyle(
-            format: "\(month: .twoDigits)/\(day: .twoDigits)/\(year: .defaultDigits)",
-            locale: .init(identifier: "en_US_POSIX"),
-            timeZone: TimeZone(secondsFromGMT: 0)!,
-            calendar: .init(identifier: .gregorian),
-        )
-        let config = CSVParserConfig(dateStrategy: .formatStyle(style))
+        @Test
+        func `Date decoding honors config dateStrategy`() throws {
+            let style = try Date.VerbatimFormatStyle(
+                format: "\(month: .twoDigits)/\(day: .twoDigits)/\(year: .defaultDigits)",
+                locale: .init(identifier: "en_US_POSIX"),
+                timeZone: #require(TimeZone(secondsFromGMT: 0)),
+                calendar: .init(identifier: .gregorian),
+            )
+            let config = CSVParserConfig(dateStrategy: .formatStyle(style))
 
-        var rows = try FastCSV.makeRows(
-            WithDate.self,
-            fromString: "name,startDate\nAlice,03/15/2026\n",
-            config: config,
-        )
-        let result = try requireNext(&rows)
+            var rows = try FastCSV.makeRows(
+                WithDate.self,
+                fromString: "name,startDate\nAlice,03/15/2026\n",
+                config: config,
+            )
+            let result = try requireNext(&rows)
 
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        let components = calendar.dateComponents([.year, .month, .day], from: result.startDate)
-        #expect(components.year == 2026)
-        #expect(components.month == 3)
-        #expect(components.day == 15)
-    }
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+            let components = calendar.dateComponents([.year, .month, .day], from: result.startDate)
+            #expect(components.year == 2026)
+            #expect(components.month == 3)
+            #expect(components.day == 15)
+        }
     #endif
 }

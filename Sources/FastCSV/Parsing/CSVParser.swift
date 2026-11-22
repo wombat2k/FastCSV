@@ -210,7 +210,7 @@ extension FastCSV {
                 }
 
                 if chunkReader.isFinished {
-                    if inQuote && parsingError == nil {
+                    if inQuote, parsingError == nil {
                         parsingError = .rowError(
                             row: currentRowNumber,
                             message: "Row \(currentRowNumber) has an unclosed quote.",

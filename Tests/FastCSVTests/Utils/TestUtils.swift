@@ -1,10 +1,10 @@
+import Testing
 @testable import FastCSV
 #if canImport(FoundationEssentials)
     import FoundationEssentials
 #else
     import Foundation
 #endif
-import Testing
 
 /// Unwrap the next row from a Decodable iterator, failing the test if no row exists.
 func requireNext<T: Decodable>(_ rows: inout FastCSV.CSVDecodableIterator<T>) throws -> T {

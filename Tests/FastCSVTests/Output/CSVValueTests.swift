@@ -1,10 +1,10 @@
+import Testing
 @testable import FastCSV
 #if canImport(FoundationEssentials)
     import FoundationEssentials
 #else
     import Foundation
 #endif
-import Testing
 
 struct CSVValueTests {
     // MARK: - Owned CSVValue
@@ -369,7 +369,7 @@ struct CSVValueTests {
         let result = try csvValue.date()
 
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
         let components = calendar.dateComponents([.year, .month, .day], from: result)
         #expect(components.year == 2026)
         #expect(components.month == 3)
@@ -379,25 +379,25 @@ struct CSVValueTests {
     // Date.VerbatimFormatStyle lives in FoundationInternationalization, which would
     // pull ICU into the test binary on Linux. Skip on Linux to keep the dependency-free build.
     #if !os(Linux)
-    @Test
-    func `Date with custom strategy`() throws {
-        let csvValue = TestUtils.createCSVValue(from: [UInt8]("03/29/2026".utf8), source: .own)
-        let style = Date.VerbatimFormatStyle(
-            format: "\(month: .twoDigits)/\(day: .twoDigits)/\(year: .defaultDigits)",
-            locale: .init(identifier: "en_US_POSIX"),
-            timeZone: TimeZone(secondsFromGMT: 0)!,
-            calendar: .init(identifier: .gregorian),
-        )
+        @Test
+        func `Date with custom strategy`() throws {
+            let csvValue = TestUtils.createCSVValue(from: [UInt8]("03/29/2026".utf8), source: .own)
+            let style = try Date.VerbatimFormatStyle(
+                format: "\(month: .twoDigits)/\(day: .twoDigits)/\(year: .defaultDigits)",
+                locale: .init(identifier: "en_US_POSIX"),
+                timeZone: #require(TimeZone(secondsFromGMT: 0)),
+                calendar: .init(identifier: .gregorian),
+            )
 
-        let result = try csvValue.date(strategy: .formatStyle(style))
+            let result = try csvValue.date(strategy: .formatStyle(style))
 
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
-        let components = calendar.dateComponents([.year, .month, .day], from: result)
-        #expect(components.year == 2026)
-        #expect(components.month == 3)
-        #expect(components.day == 29)
-    }
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+            let components = calendar.dateComponents([.year, .month, .day], from: result)
+            #expect(components.year == 2026)
+            #expect(components.month == 3)
+            #expect(components.day == 29)
+        }
     #endif
 
     @Test

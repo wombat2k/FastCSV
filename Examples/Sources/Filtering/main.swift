@@ -49,7 +49,9 @@ try rows.forEach { route in
     if topMonths.count < 10 || route.monthTotal > topMonths.last!.2 {
         topMonths.append((route.name, route.monthBeginning, route.monthTotal))
         topMonths.sort { $0.2 > $1.2 }
-        if topMonths.count > 10 { topMonths.removeLast() }
+        if topMonths.count > 10 {
+            topMonths.removeLast()
+        }
     }
 }
 
@@ -82,9 +84,15 @@ for result in try FastCSV.makeRows(BusRoute.self, fromPath: "cta-ridership.csv",
     let route = try result.get()
     guard route.route == "9" else { continue }
 
-    if route.monthBeginning == "01/01/2020" { jan2020 = route }
-    if route.monthBeginning == "01/01/2021" { jan2021 = route }
-    if jan2020 != nil, jan2021 != nil { break }
+    if route.monthBeginning == "01/01/2020" {
+        jan2020 = route
+    }
+    if route.monthBeginning == "01/01/2021" {
+        jan2021 = route
+    }
+    if jan2020 != nil, jan2021 != nil {
+        break
+    }
 }
 
 if let before = jan2020, let during = jan2021 {

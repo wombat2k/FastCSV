@@ -224,26 +224,26 @@ private final class FileWriteTarget: CSVWriteTarget {
 @inline(__always)
 private func posixWrite(_ fd: Int32, _ buf: UnsafePointer<UInt8>, _ n: Int) -> Int {
     #if canImport(Darwin)
-        return Darwin.write(fd, buf, n)
+        Darwin.write(fd, buf, n)
     #elseif canImport(Glibc)
-        return Glibc.write(fd, buf, n)
+        Glibc.write(fd, buf, n)
     #elseif canImport(Musl)
-        return Musl.write(fd, buf, n)
+        Musl.write(fd, buf, n)
     #else
-        return -1
+        -1
     #endif
 }
 
 @inline(__always)
 private func posixClose(_ fd: Int32) -> Int32 {
     #if canImport(Darwin)
-        return Darwin.close(fd)
+        Darwin.close(fd)
     #elseif canImport(Glibc)
-        return Glibc.close(fd)
+        Glibc.close(fd)
     #elseif canImport(Musl)
-        return Musl.close(fd)
+        Musl.close(fd)
     #else
-        return -1
+        -1
     #endif
 }
 

@@ -195,25 +195,37 @@ extension CSVValue {
             }
         case 2:
             if (bytes[0] | 0x20) == UInt8(ascii: "n"),
-               (bytes[1] | 0x20) == UInt8(ascii: "o") { return false }
+               (bytes[1] | 0x20) == UInt8(ascii: "o")
+            {
+                return false
+            }
             return nil
         case 3:
             if (bytes[0] | 0x20) == UInt8(ascii: "y"),
                (bytes[1] | 0x20) == UInt8(ascii: "e"),
-               (bytes[2] | 0x20) == UInt8(ascii: "s") { return true }
+               (bytes[2] | 0x20) == UInt8(ascii: "s")
+            {
+                return true
+            }
             return nil
         case 4:
             if (bytes[0] | 0x20) == UInt8(ascii: "t"),
                (bytes[1] | 0x20) == UInt8(ascii: "r"),
                (bytes[2] | 0x20) == UInt8(ascii: "u"),
-               (bytes[3] | 0x20) == UInt8(ascii: "e") { return true }
+               (bytes[3] | 0x20) == UInt8(ascii: "e")
+            {
+                return true
+            }
             return nil
         case 5:
             if (bytes[0] | 0x20) == UInt8(ascii: "f"),
                (bytes[1] | 0x20) == UInt8(ascii: "a"),
                (bytes[2] | 0x20) == UInt8(ascii: "l"),
                (bytes[3] | 0x20) == UInt8(ascii: "s"),
-               (bytes[4] | 0x20) == UInt8(ascii: "e") { return false }
+               (bytes[4] | 0x20) == UInt8(ascii: "e")
+            {
+                return false
+            }
             return nil
         default:
             return nil
