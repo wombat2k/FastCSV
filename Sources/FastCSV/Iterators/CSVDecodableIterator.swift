@@ -15,9 +15,9 @@ public extension FastCSV {
         public typealias Element = Result<T, any Error>
 
         private var valueArrayIterator: CSVArrayIterator
-        private let columnIndexMap: [String: Int]
-        private let quoteChar: UInt8
-        private let dateStrategy: CSVDateStrategy
+        // Row-invariant config, allocated once and shared by reference into
+        // every row's decoder so CSVRowDecoder stays inline in `any Decoder`.
+        private let context: CSVDecoderContext
 
         init(
             valueArrayIterator: CSVArrayIterator,
@@ -33,9 +33,11 @@ public extension FastCSV {
                 let key = columnMapping[header] ?? header
                 map[key] = index
             }
-            columnIndexMap = map
-            self.quoteChar = quoteChar
-            self.dateStrategy = dateStrategy
+            context = CSVDecoderContext(
+                columnIndexMap: map,
+                quoteChar: quoteChar,
+                dateStrategy: dateStrategy,
+            )
         }
 
         /// Returns the next decoded row, or nil when iteration is complete.
@@ -49,12 +51,7 @@ public extension FastCSV {
             }
 
             do {
-                let decoder = CSVRowDecoder(
-                    values: arrayResult.values,
-                    columnIndexMap: columnIndexMap,
-                    quoteChar: quoteChar,
-                    dateStrategy: dateStrategy,
-                )
+                let decoder = CSVRowDecoder(context: context, values: arrayResult.values)
                 let decoded = try T(from: decoder)
                 return .success(decoded)
             } catch {
