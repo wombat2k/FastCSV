@@ -15,9 +15,10 @@ public extension FastCSV {
         public typealias Element = Result<T, any Error>
 
         private var valueArrayIterator: CSVArrayIterator
-        // Row-invariant config, allocated once and shared by reference into
-        // every row's decoder so CSVRowDecoder stays inline in `any Decoder`.
+        // Shared decode state, allocated once per iteration. See
+        // CSVDecoderContext and CSVKeyedContainerCache.
         private let context: CSVDecoderContext
+        private let containerCache: CSVKeyedContainerCache
 
         init(
             valueArrayIterator: CSVArrayIterator,
@@ -38,6 +39,7 @@ public extension FastCSV {
                 quoteChar: quoteChar,
                 dateStrategy: dateStrategy,
             )
+            containerCache = CSVKeyedContainerCache(context: context)
         }
 
         /// Returns the next decoded row, or nil when iteration is complete.
@@ -51,8 +53,9 @@ public extension FastCSV {
             }
 
             do {
-                let decoder = CSVRowDecoder(context: context, values: arrayResult.values)
-                let decoded = try T(from: decoder)
+                context.values = arrayResult.values
+                defer { context.values = [] }
+                let decoded = try T(from: CSVRowDecoder(cache: containerCache))
                 return .success(decoded)
             } catch {
                 return .failure(error)

@@ -4,17 +4,18 @@
     import Foundation
 #endif
 
-/// Row-invariant decoder configuration, shared by reference across every row.
+/// Decoding state shared by reference across every row of one iteration.
 ///
-/// Holding this out of `CSVRowDecoder` keeps that struct two words wide
-/// (`context` + `values`), so it fits the 3-word inline buffer of the
-/// `any Decoder` existential and `T(from:)` no longer heap-boxes it per row.
-/// The column map / quote char / date strategy are identical for all rows, so
-/// this is allocated exactly once per iteration by CSVDecodableIterator.
+/// The column map / quote char / date strategy are row-invariant. `values` is
+/// the current row: CSVDecodableIterator sets it before `T(from:)` and clears
+/// it afterwards so the parser's reused row buffer stays uniquely referenced.
 final class CSVDecoderContext {
     let columnIndexMap: [String: Int]
     let quoteChar: UInt8
     let dateStrategy: CSVDateStrategy
+
+    /// The row currently being decoded. Empty between rows.
+    var values: [CSVValue] = []
 
     init(columnIndexMap: [String: Int], quoteChar: UInt8, dateStrategy: CSVDateStrategy) {
         self.columnIndexMap = columnIndexMap
@@ -23,14 +24,46 @@ final class CSVDecoderContext {
     }
 }
 
+/// Reuses one `KeyedDecodingContainer` across rows.
+///
+/// `KeyedDecodingContainer` wraps its concrete container in a stdlib-internal
+/// class box, so building one per row costs a heap allocation per row. The
+/// container reads the row through `CSVDecoderContext` rather than capturing
+/// it, so the same instance is valid for every row and only needs building
+/// once per `Key` type.
+///
+/// This is a separate object from the context on purpose: the container holds
+/// the context strongly, and if the context also held the cache that would be
+/// a retain cycle. Breaking it with `unowned` costs ~14% decode time in
+/// refcount checks on every field access.
+final class CSVKeyedContainerCache {
+    let context: CSVDecoderContext
+
+    /// `KeyedDecodingContainer<Key>` for the most recent `Key` type. One slot
+    /// is enough: a given `T` asks for the same key type on every row.
+    private var cached: Any?
+
+    init(context: CSVDecoderContext) {
+        self.context = context
+    }
+
+    func container<Key: CodingKey>(keyedBy _: Key.Type) -> KeyedDecodingContainer<Key> {
+        if let cached = cached as? KeyedDecodingContainer<Key> {
+            return cached
+        }
+        let container = KeyedDecodingContainer(CSVKeyedDecodingContainer<Key>(context: context))
+        cached = container
+        return container
+    }
+}
+
 /// Decoder that maps a single CSV row's values to a Decodable type.
 /// Uses a column index map (header name -> array index) for O(1) key lookup.
 /// Quote stripping happens here via stringIfPresent — the Decoder's job is to
 /// bridge CSV format conventions to Swift types.
 struct CSVRowDecoder: Decoder {
-    // Computed, not stored: an empty-array / empty-dict singleton costs a word
-    // each if stored, which would push the struct past the inline existential
-    // buffer and reintroduce the per-row heap box this design exists to avoid.
+    // Computed, not stored: keeps the struct a single word (`cache`) so it
+    // stays inline in the `any Decoder` existential instead of being boxed.
     var codingPath: [CodingKey] {
         []
     }
@@ -39,11 +72,10 @@ struct CSVRowDecoder: Decoder {
         [:]
     }
 
-    let context: CSVDecoderContext
-    let values: [CSVValue]
+    let cache: CSVKeyedContainerCache
 
-    func container<Key: CodingKey>(keyedBy _: Key.Type) throws -> KeyedDecodingContainer<Key> {
-        KeyedDecodingContainer(CSVKeyedDecodingContainer<Key>(decoder: self))
+    func container<Key: CodingKey>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> {
+        cache.container(keyedBy: type)
     }
 
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
@@ -69,38 +101,38 @@ struct CSVRowDecoder: Decoder {
 
 private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainerProtocol {
     let codingPath: [CodingKey] = []
-    let decoder: CSVRowDecoder
+    let context: CSVDecoderContext
 
     var allKeys: [Key] {
-        decoder.context.columnIndexMap.keys.compactMap { Key(stringValue: $0) }
+        context.columnIndexMap.keys.compactMap { Key(stringValue: $0) }
     }
 
     func contains(_ key: Key) -> Bool {
-        decoder.context.columnIndexMap[key.stringValue] != nil
+        context.columnIndexMap[key.stringValue] != nil
     }
 
     // MARK: - Value Lookup
 
     private func value(for key: Key) throws -> CSVValue {
-        guard let index = decoder.context.columnIndexMap[key.stringValue] else {
+        guard let index = context.columnIndexMap[key.stringValue] else {
             throw DecodingError.keyNotFound(key, DecodingError.Context(
                 codingPath: [key],
                 debugDescription: "No column named '\(key.stringValue)' found in CSV headers",
             ))
         }
-        guard index < decoder.values.count else {
+        guard index < context.values.count else {
             throw DecodingError.keyNotFound(key, DecodingError.Context(
                 codingPath: [key],
-                debugDescription: "Column '\(key.stringValue)' at index \(index) is out of bounds for row with \(decoder.values.count) fields",
+                debugDescription: "Column '\(key.stringValue)' at index \(index) is out of bounds for row with \(context.values.count) fields",
             ))
         }
-        return decoder.values[index]
+        return context.values[index]
     }
 
     /// Get the quote-stripped string for a key. Returns nil for empty fields.
     private func stringValue(for key: Key) throws -> String? {
         let csvValue = try value(for: key)
-        return try csvValue.stringIfPresent(quoteChar: decoder.context.quoteChar)
+        return try csvValue.stringIfPresent(quoteChar: context.quoteChar)
     }
 
     // MARK: - Nil Check
@@ -228,7 +260,7 @@ private struct CSVKeyedDecodingContainer<Key: CodingKey>: KeyedDecodingContainer
             }
             let date: Date
             do {
-                date = try decoder.context.dateStrategy.parse(str)
+                date = try context.dateStrategy.parse(str)
             } catch {
                 throw DecodingError.typeMismatch(Date.self, DecodingError.Context(
                     codingPath: [key],
